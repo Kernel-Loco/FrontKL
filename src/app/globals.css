@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+/* Tokens de diseño de Cirdan. Tailwind v4 genera utilidades a partir de @theme
+   (bg-cirdan-950, text-cirdan-blue, fill-cirdan-700, font-logo, ...). */
+@theme {
+  --color-cirdan-50: #f5f0fe;
+  --color-cirdan-100: #ebe1fc;
+  --color-cirdan-200: #d6c4f8;
+  --color-cirdan-400: #9b6ef0;
+  --color-cirdan-500: #7b3fe4; /* círculo del logo */
+  --color-cirdan-600: #6c1a96;
+  --color-cirdan-700: #5e1083; /* formas decorativas, botón secundario */
+  --color-cirdan-800: #45095a; /* anillo intermedio */
+  --color-cirdan-900: #380c5f;
+  --color-cirdan-950: #2d0a4e; /* fondo de autenticación */
+
+  --color-cirdan-blue: #2b3fc7; /* texto del botón principal */
+  --color-cirdan-indigo: #5b5fd6; /* íconos y casillas de código */
+  --color-cirdan-mist: #eeedf7; /* tarjetas claras de ícono */
+}
+
+@theme inline {
+  --font-sans: var(--font-montserrat), ui-sans-serif, system-ui, sans-serif;
+  --font-logo: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Foco visible por defecto; cada zona puede redefinir --focus-ring. */
+:focus-visible {
+  outline: 2px solid var(--focus-ring, var(--color-cirdan-500));
+  outline-offset: 2px;
+}
+
+/* Evita el fondo amarillo/blanco del autocompletado en los inputs transparentes. */
+.auth-input:-webkit-autofill,
+.auth-input:-webkit-autofill:hover,
+.auth-input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #fff;
+  caret-color: #fff;
+  transition: background-color 9999s ease-in-out 0s;
+}
