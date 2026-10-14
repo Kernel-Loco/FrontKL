@@ -1,6 +1,6 @@
-# Cirdan · Frontend (FrontKL)
+# LowTide · Frontend (FrontKL)
 
-Frontend de Cirdan en Next.js 16 (App Router, TypeScript, Tailwind CSS v4).
+Frontend de LowTide en Next.js 16 (App Router, TypeScript, Tailwind CSS v4).
 Por ahora funciona con **datos simulados**; la capa `src/services/` está lista para
 conectarse a la API de FastAPI (busca `TODO: conectar con backend`).
 
