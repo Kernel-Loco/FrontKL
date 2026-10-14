@@ -21,7 +21,7 @@ const emailSchema = z
 
 // En login no se valida la política: solo se exige que haya algo que enviar.
 export const loginSchema = z.object({
-  username: required("El usuario es obligatorio."),
+  email: emailSchema,
   password: z.string().min(1, "La contraseña es obligatoria."),
 });
 

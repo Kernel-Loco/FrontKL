@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Mail } from "lucide-react";
 import { Notice } from "@/components/auth/Notice";
 import { Button } from "@/components/Button";
 import { TextInput } from "@/components/TextInput";
@@ -39,17 +38,14 @@ export function ForgotPasswordForm() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
-      <p className="text-center text-sm text-white/90">
-        Ingresa el e-mail de tu cuenta y te enviaremos un código de verificación.
-      </p>
-      <TextInput label="E-mail" type="email" icon={Mail} autoComplete="email" error={errors.email?.message} {...register("email")} />
+            <TextInput label="Correo" placeholder="analista@organizacion.com" type="email" autoComplete="email" error={errors.email?.message} {...register("email")} />
       {formError && <Notice tone="error">{formError}</Notice>}
       <div className="space-y-4 pt-2">
         <Button type="submit" loading={busy}>
-          Send code
+          Enviar código
         </Button>
         <Button variant="secondary" onClick={() => router.push("/login")} disabled={busy}>
-          Back
+          Volver
         </Button>
       </div>
     </form>

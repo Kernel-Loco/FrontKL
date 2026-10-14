@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Lock, User } from "lucide-react";
 import { Notice } from "@/components/auth/Notice";
 import { Button } from "@/components/Button";
 import { TextInput } from "@/components/TextInput";
@@ -38,19 +38,31 @@ export function LoginForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
-      <TextInput label="Username" icon={User} autoComplete="username" error={errors.username?.message} {...register("username")} />
+    <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
       <TextInput
-        label="Password"
+        label="Correo"
+        type="email"
+        placeholder="analista@organizacion.com"
+        autoComplete="username"
+        error={errors.email?.message}
+        {...register("email")}
+      />
+      <TextInput
+        label="Contraseña"
         type="password"
-        icon={Lock}
+        placeholder="••••••••••••"
         autoComplete="current-password"
         error={errors.password?.message}
+        labelAction={
+          <Link href="/forgot-password" className="rounded-sm text-xs font-medium text-lt-primary hover:underline">
+            ¿Olvidaste tu contraseña?
+          </Link>
+        }
         {...register("password")}
       />
       {formError && <Notice tone="error">{formError}</Notice>}
-      <Button type="submit" loading={isSubmitting || navigating} className="mt-2">
-        Login
+      <Button type="submit" loading={isSubmitting || navigating} className="!mt-6">
+        Iniciar sesión
       </Button>
     </form>
   );

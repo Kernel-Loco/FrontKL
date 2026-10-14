@@ -19,7 +19,7 @@ export interface Session {
 }
 
 export interface LoginRequest {
-  username: string;
+  email: string;
   password: string;
 }
 

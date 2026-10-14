@@ -1,18 +1,19 @@
 "use client";
 
-import { useId, useState, type InputHTMLAttributes, type Ref } from "react";
-import { Eye, EyeOff, type LucideIcon } from "lucide-react";
+import { useId, useState, type InputHTMLAttributes, type ReactNode, type Ref } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import { FieldError } from "./FieldError";
 
-interface TextInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "placeholder"> {
-  /** Texto del label (oculto visualmente) y del placeholder. */
+interface TextInputProps extends InputHTMLAttributes<HTMLInputElement> {
   label: string;
-  icon?: LucideIcon;
   error?: string;
+  /** Contenido a la derecha del label, como el enlace «¿Olvidaste tu contraseña?». */
+  labelAction?: ReactNode;
   ref?: Ref<HTMLInputElement>;
 }
 
-export function TextInput({ label, icon: Icon, error, type = "text", id, ref, className = "", ...rest }: TextInputProps) {
+/** Campo de las pantallas de acceso (fondo claro), con label visible. */
+export function TextInput({ label, error, labelAction, type = "text", id, ref, className = "", ...rest }: TextInputProps) {
   const autoId = useId();
   const inputId = id ?? autoId;
   const errorId = `${inputId}-error`;
@@ -21,27 +22,22 @@ export function TextInput({ label, icon: Icon, error, type = "text", id, ref, cl
 
   return (
     <div className={`w-full ${className}`}>
-      <label htmlFor={inputId} className="sr-only">
-        {label}
-      </label>
+      <div className="mb-1.5 flex items-center justify-between gap-2">
+        <label htmlFor={inputId} className="text-xs font-medium text-slate-600">
+          {label}
+        </label>
+        {labelAction}
+      </div>
       <div className="relative">
-        {Icon && (
-          <Icon
-            aria-hidden="true"
-            strokeWidth={1.5}
-            className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-white"
-          />
-        )}
         <input
           ref={ref}
           id={inputId}
           type={isPassword && visible ? "text" : type}
-          placeholder={label}
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? errorId : undefined}
-          className={`auth-input h-11 w-full rounded-[4px] border bg-transparent text-sm text-white outline-none transition-colors placeholder:text-[13px] placeholder:uppercase placeholder:tracking-wide placeholder:text-white/85 focus-visible:ring-2 focus-visible:ring-white/70 ${
-            Icon ? "pl-14" : "pl-4"
-          } ${isPassword ? "pr-12" : "pr-4"} ${error ? "border-red-300" : "border-white/90 focus:border-white"}`}
+          className={`h-11 w-full rounded-lg border bg-lt-paper px-3.5 text-sm text-lt-ink outline-none transition-colors placeholder:text-slate-400 focus:border-lt-primary focus:bg-white focus-visible:ring-2 focus-visible:ring-lt-primary/25 ${
+            isPassword ? "pr-11" : ""
+          } ${error ? "border-red-400" : "border-lt-line"}`}
           {...rest}
         />
         {isPassword && (
@@ -51,13 +47,9 @@ export function TextInput({ label, icon: Icon, error, type = "text", id, ref, cl
             aria-label={visible ? "Ocultar contraseña" : "Mostrar contraseña"}
             aria-pressed={visible}
             aria-controls={inputId}
-            className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-1.5 text-white hover:bg-white/10"
+            className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
           >
-            {visible ? (
-              <Eye aria-hidden="true" className="h-5 w-5" strokeWidth={1.5} />
-            ) : (
-              <EyeOff aria-hidden="true" className="h-5 w-5" strokeWidth={1.5} />
-            )}
+            {visible ? <Eye aria-hidden="true" className="h-4 w-4" /> : <EyeOff aria-hidden="true" className="h-4 w-4" />}
           </button>
         )}
       </div>
