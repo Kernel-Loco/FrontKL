@@ -94,12 +94,12 @@ export const mockReports: ListResponse<Report> = {
   total: 2,
 };
 
-/** Usuarios de Acme Demo. Los 3 primeros son las cuentas de prueba del login (src/mocks/users.ts). */
+/** Usuarios de Acme Demo (los de la semilla de la base; las tres primeras son las cuentas de demo). */
 export const mockUsers: ListResponse<OrgUser> = {
   items: [
-    { id: "u-001", full_name: "Ana Torres", email: "analista@cirdan.test", role: "analista", mfa_enabled: true, is_active: true, last_login_at: "2026-10-13T09:12:00-06:00" },
-    { id: "u-002", full_name: "Gabriel Méndez", email: "gerente@cirdan.test", role: "gerente", mfa_enabled: true, is_active: true, last_login_at: "2026-10-10T17:40:00-06:00" },
-    { id: "u-003", full_name: "Alex Ramírez", email: "admin@cirdan.test", role: "admin", mfa_enabled: true, is_active: true, last_login_at: "2026-10-14T08:05:00-06:00" },
+    { id: "30000000-0000-4000-8000-000000000001", full_name: "Alex Morgan", email: "alex.morgan@acme-demo.mx", role: "admin", mfa_enabled: true, is_active: true, last_login_at: "2026-10-14T08:05:00-06:00" },
+    { id: "30000000-0000-4000-8000-000000000002", full_name: "Maya Reed", email: "maya.reed@acme-demo.mx", role: "gerente", mfa_enabled: true, is_active: true, last_login_at: "2026-10-10T17:40:00-06:00" },
+    { id: "30000000-0000-4000-8000-000000000003", full_name: "Jordan Tate", email: "jordan.tate@acme-demo.mx", role: "analista", mfa_enabled: true, is_active: true, last_login_at: "2026-10-13T09:12:00-06:00" },
     { id: "u-004", full_name: "Diego Salas", email: "diego.salas@acme-demo.mx", role: "analista", mfa_enabled: false, is_active: false, last_login_at: null },
   ],
   total: 4,
@@ -206,12 +206,12 @@ export const mockAlertPolicies: AlertPolicies = {
 /** Bitácora de Acme Demo (tabla audit_log), del más nuevo al más viejo. */
 export const mockAuditLog: ListResponse<AuditEntry> = {
   items: [
-    { id: "c0000000-0000-4000-8000-000000000006", occurred_at: "2026-09-30T14:47:00-06:00", actor_type: "user", actor: "gerente@cirdan.test", action: "report.downloaded", entity_type: "report", details: { kind: "pdf_report" } },
+    { id: "c0000000-0000-4000-8000-000000000006", occurred_at: "2026-09-30T14:47:00-06:00", actor_type: "user", actor: "maya.reed@acme-demo.mx", action: "report.downloaded", entity_type: "report", details: { kind: "pdf_report" } },
     { id: "c0000000-0000-4000-8000-000000000005", occurred_at: "2026-09-30T14:25:00-06:00", actor_type: "system", actor: null, action: "alert.created", entity_type: "alert", details: { event_type: "score.above_threshold", score: 68 } },
     { id: "c0000000-0000-4000-8000-000000000004", occurred_at: "2026-09-30T14:24:30-06:00", actor_type: "system", actor: null, action: "finding.severity_changed", entity_type: "finding", details: { from: "high", to: "critical" } },
-    { id: "c0000000-0000-4000-8000-000000000003", occurred_at: "2026-09-15T11:02:00-06:00", actor_type: "user", actor: "gerente@cirdan.test", action: "organization.threshold_changed", entity_type: "organization", details: { alert_score_threshold: 60 } },
-    { id: "c0000000-0000-4000-8000-000000000002", occurred_at: "2026-09-01T09:55:00-06:00", actor_type: "user", actor: "admin@cirdan.test", action: "authorization.uploaded", entity_type: "domain_authorization", details: { fqdn: "acme-demo.mx", valid_until: "2026-12-31" } },
-    { id: "c0000000-0000-4000-8000-000000000001", occurred_at: "2026-09-01T09:40:00-06:00", actor_type: "user", actor: "admin@cirdan.test", action: "domain.added", entity_type: "domain", details: { fqdn: "acme-demo.mx" } },
+    { id: "c0000000-0000-4000-8000-000000000003", occurred_at: "2026-09-15T11:02:00-06:00", actor_type: "user", actor: "maya.reed@acme-demo.mx", action: "organization.threshold_changed", entity_type: "organization", details: { alert_score_threshold: 60 } },
+    { id: "c0000000-0000-4000-8000-000000000002", occurred_at: "2026-09-01T09:55:00-06:00", actor_type: "user", actor: "alex.morgan@acme-demo.mx", action: "authorization.uploaded", entity_type: "domain_authorization", details: { fqdn: "acme-demo.mx", valid_until: "2026-12-31" } },
+    { id: "c0000000-0000-4000-8000-000000000001", occurred_at: "2026-09-01T09:40:00-06:00", actor_type: "user", actor: "alex.morgan@acme-demo.mx", action: "domain.added", entity_type: "domain", details: { fqdn: "acme-demo.mx" } },
   ],
   total: 6,
 };

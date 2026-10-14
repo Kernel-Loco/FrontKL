@@ -37,7 +37,7 @@ export function ForgotPasswordForm() {
   const busy = isSubmitting || navigating;
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
+    <form method="post" onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
             <TextInput label="Correo" placeholder="analista@organizacion.com" type="email" autoComplete="email" error={errors.email?.message} {...register("email")} />
       {formError && <Notice tone="error">{formError}</Notice>}
       <div className="space-y-4 pt-2">

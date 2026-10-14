@@ -4,15 +4,14 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Clock } from "lucide-react";
 import { IDLE_TIMEOUT_MS, IDLE_WARNING_MS, SESSION_REFRESH_INTERVAL_MS } from "@/config/session";
-import { readSessionCookie, refreshSessionCookie } from "@/lib/session/client";
-import { logout } from "@/services/authService";
+import { getCurrentUser, logout } from "@/services/authService";
 
 const ACTIVITY_EVENTS = ["mousemove", "mousedown", "keydown", "wheel", "touchstart", "scroll"] as const;
 
 /**
  * Cierra la sesión tras IDLE_TIMEOUT_MS sin actividad y avisa IDLE_WARNING_MS antes.
- * TODO: conectar con backend — FastAPI también debe expirar la sesión en servidor
- * (TTL en Valkey); este temporizador es solo la parte de la interfaz.
+ * La sesión también expira en el servidor (15 min en Valkey): la actividad la renueva con
+ * GET /auth/me, y si el servidor ya la cerró, el portal sale de inmediato.
  */
 export function IdleTimeout() {
   const router = useRouter();
@@ -45,16 +44,15 @@ export function IdleTimeout() {
       lastActivity.current = now;
       if (now - lastRefresh.current >= SESSION_REFRESH_INTERVAL_MS) {
         lastRefresh.current = now;
-        refreshSessionCookie();
+        void getCurrentUser()
+          .then((user) => {
+            if (!user) void endSession("/login?notice=expired");
+          })
+          .catch(() => {});
       }
     };
 
     const tick = () => {
-      // La sesión se cerró en otra pestaña o la cookie ya expiró.
-      if (!readSessionCookie()) {
-        void endSession("/login");
-        return;
-      }
       const idle = Date.now() - lastActivity.current;
       if (idle >= IDLE_TIMEOUT_MS) {
         void endSession("/login?notice=expired");
@@ -77,8 +75,12 @@ export function IdleTimeout() {
     warningOpen.current = false;
     lastActivity.current = now;
     lastRefresh.current = now;
-    refreshSessionCookie();
     setSecondsLeft(null);
+    void getCurrentUser()
+      .then((user) => {
+        if (!user) void endSession("/login?notice=expired");
+      })
+      .catch(() => {});
   };
 
   if (secondsLeft === null) return null;

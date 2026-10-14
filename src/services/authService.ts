@@ -1,11 +1,10 @@
-// Capa de autenticación. Hoy devuelve datos mock; cada función indica con un
-// TODO el endpoint de FastAPI que la reemplazará (vía `apiClient`).
+// Inicio de sesión contra FastAPI (/api/v1/auth, #25 y RC-5). La sesión es una cookie httpOnly
+// que emite la API al verificar el MFA: este módulo nunca ve ni guarda su valor.
 // Se usa desde componentes de cliente.
-import { DEFAULT_ROLE } from "@/config/permissions";
-import { mockDelay } from "@/lib/mock";
-import { clearSessionCookie, readSessionCookie, setSessionCookie } from "@/lib/session/client";
-import { MOCK_MFA_CODE, MOCK_RESET_CODE, mockAccounts } from "@/mocks/users";
+import { apiClient, ApiError } from "@/lib/apiClient";
+import { toUser } from "@/lib/session/shared";
 import type {
+  ApiUser,
   LoginRequest,
   LoginResponse,
   MfaVerifyRequest,
@@ -20,109 +19,59 @@ import type {
 } from "@/types";
 import { ServiceError } from "./errors";
 
-const MFA_TOKEN_PREFIX = "mock-mfa.";
-const RESET_TOKEN_PREFIX = "mock-reset.";
-
-/** Mismo mensaje exista o no la cuenta, para no permitir enumerarlas. */
-const INVALID_CREDENTIALS = "Correo o contraseña incorrectos.";
-
 export async function login(payload: LoginRequest): Promise<LoginResponse> {
-  // TODO: conectar con backend → return apiClient.post<LoginResponse>("/auth/login", payload);
-  await mockDelay();
-  const account = mockAccounts.find(
-    (a) => a.user.email.toLowerCase() === payload.email.trim().toLowerCase(),
-  );
-  if (!account || account.password !== payload.password) {
-    throw new ServiceError("invalid_credentials", INVALID_CREDENTIALS);
-  }
-  return { mfa_required: true, mfa_token: `${MFA_TOKEN_PREFIX}${account.user.id}` };
+  return apiClient.post<LoginResponse>("/auth/login", payload);
 }
 
 export async function verifyMfa(payload: MfaVerifyRequest): Promise<MfaVerifyResponse> {
-  // TODO: conectar con backend → apiClient.post<MfaVerifyResponse>("/auth/mfa/verify", payload);
-  // FastAPI responderá con Set-Cookie (httpOnly, Secure, SameSite) y el frontend no tocará la cookie.
-  await mockDelay();
-  const userId = payload.mfa_token.startsWith(MFA_TOKEN_PREFIX) ? payload.mfa_token.slice(MFA_TOKEN_PREFIX.length) : "";
-  const account = mockAccounts.find((a) => a.user.id === userId);
-  if (!account) {
-    throw new ServiceError("mfa_expired", "Tu verificación expiró. Inicia sesión de nuevo.");
-  }
-  if (payload.code !== MOCK_MFA_CODE) {
-    throw new ServiceError("invalid_mfa_code", "El código no es válido o ya expiró.");
-  }
-  setSessionCookie({ user: account.user });
-  return { user: account.user };
-}
-
-export async function register(payload: RegisterRequest): Promise<User> {
-  // TODO: conectar con backend → return apiClient.post<User>("/auth/register", payload);
-  // El rol lo asigna FastAPI (Analista por defecto); el frontend nunca lo envía.
-  await mockDelay();
-  const taken = mockAccounts.some(
-    (a) =>
-      a.user.username.toLowerCase() === payload.username.toLowerCase() ||
-      a.user.email.toLowerCase() === payload.email.toLowerCase(),
-  );
-  if (taken) {
-    throw new ServiceError("registration_failed", "No pudimos crear la cuenta con esos datos. Revisa el usuario y el e-mail.");
-  }
-  const user: User = {
-    id: `u-${crypto.randomUUID().slice(0, 8)}`,
-    username: payload.username,
-    full_name: payload.full_name,
-    email: payload.email,
-    role: DEFAULT_ROLE,
-  };
-  mockAccounts.push({ user, password: payload.password });
-  return user;
-}
-
-export async function requestPasswordReset(payload: PasswordResetRequest): Promise<void> {
-  // TODO: conectar con backend → await apiClient.post<void>("/auth/password-reset", payload);
-  // Responde igual exista o no el e-mail, para no permitir enumerar cuentas.
-  void payload;
-  await mockDelay();
-}
-
-export async function verifyResetCode(payload: PasswordResetVerifyRequest): Promise<PasswordResetVerifyResponse> {
-  // TODO: conectar con backend → return apiClient.post<PasswordResetVerifyResponse>("/auth/password-reset/verify", payload);
-  await mockDelay();
-  if (payload.code !== MOCK_RESET_CODE) {
-    throw new ServiceError("invalid_reset_code", "El código no es válido o ya expiró.");
-  }
-  return { reset_token: `${RESET_TOKEN_PREFIX}${payload.email}` };
-}
-
-export async function resetPassword(payload: PasswordResetConfirmRequest): Promise<void> {
-  // TODO: conectar con backend → await apiClient.post<void>("/auth/password-reset/confirm", payload);
-  await mockDelay();
-  if (!payload.reset_token.startsWith(RESET_TOKEN_PREFIX)) {
-    throw new ServiceError("reset_expired", "La solicitud expiró. Vuelve a pedir un código.");
-  }
-  const email = payload.reset_token.slice(RESET_TOKEN_PREFIX.length).toLowerCase();
-  const account = mockAccounts.find((a) => a.user.email.toLowerCase() === email);
-  if (account) account.password = payload.new_password;
+  return apiClient.post<MfaVerifyResponse>("/auth/mfa/verify", payload);
 }
 
 export async function logout(): Promise<void> {
-  // TODO: conectar con backend → await apiClient.post<void>("/auth/logout");
-  // FastAPI invalidará la sesión en servidor (Valkey) y borrará la cookie.
-  clearSessionCookie();
-  await mockDelay(200);
+  try {
+    await apiClient.post<void>("/auth/logout");
+  } catch {
+    // Aunque la API no responda, el portal sale; la sesión expira sola en el servidor.
+  }
 }
 
+/** Usuario de la sesión, o null si terminó. Renueva la inactividad en el servidor. */
 export async function getCurrentUser(): Promise<User | null> {
-  // TODO: conectar con backend → return apiClient.get<User>("/auth/me") (401 → null).
-  return readSessionCookie()?.user ?? null;
+  try {
+    return toUser(await apiClient.get<ApiUser>("/auth/me"));
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 401) return null;
+    throw error;
+  }
 }
 
 export async function changePassword(payload: PasswordChangeRequest): Promise<void> {
-  // TODO: conectar con backend → await apiClient.post<void>("/me/password", payload);
-  await mockDelay();
-  const session = readSessionCookie();
-  const account = mockAccounts.find((a) => a.user.id === session?.user.id);
-  if (!account || account.password !== payload.current_password) {
-    throw new ServiceError("invalid_password", "La contraseña actual no es correcta.");
-  }
-  account.password = payload.new_password;
+  await apiClient.post<void>("/auth/password", payload);
+}
+
+// --- Aún sin backend: las cuentas las crea un Administrador y la recuperación por correo llega después.
+
+const NO_SIGNUP = "El registro abierto no está disponible: un Administrador te invita desde «Usuarios y roles».";
+const NO_RESET = "La recuperación por correo todavía no está disponible. Pide a un Administrador que restablezca tu contraseña.";
+
+export async function register(payload: RegisterRequest): Promise<User> {
+  // TODO: invitaciones de usuarios (POST /users/invitations) en lugar de registro abierto.
+  void payload;
+  throw new ServiceError("signup_disabled", NO_SIGNUP);
+}
+
+export async function requestPasswordReset(payload: PasswordResetRequest): Promise<void> {
+  // TODO: conectar con backend → POST /auth/password-reset (responde igual exista o no el correo).
+  void payload;
+  throw new ServiceError("reset_disabled", NO_RESET);
+}
+
+export async function verifyResetCode(payload: PasswordResetVerifyRequest): Promise<PasswordResetVerifyResponse> {
+  void payload;
+  throw new ServiceError("reset_disabled", NO_RESET);
+}
+
+export async function resetPassword(payload: PasswordResetConfirmRequest): Promise<void> {
+  void payload;
+  throw new ServiceError("reset_disabled", NO_RESET);
 }

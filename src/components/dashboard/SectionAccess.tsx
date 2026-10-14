@@ -16,7 +16,7 @@ type SectionAccess = { user: User; forbidden: null } | { user: User; forbidden: 
  */
 export async function checkSectionAccess(id: SectionId): Promise<SectionAccess> {
   const session = await getServerSession();
-  if (!session) redirect("/login");
+  if (!session) redirect("/auth/expirada");
   const { user } = session;
   if (canAccessSection(user.role, id)) return { user, forbidden: null };
   return { user, forbidden: <Forbidden sectionLabel={SECTIONS[id].label} roleLabel={ROLE_LABELS[user.role]} /> };

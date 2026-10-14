@@ -21,21 +21,25 @@ npm run dev                  # http://localhost:3000
 
 `npm run build` compila la versión de producción y `npm run lint` revisa el código con ESLint.
 
-## Usuarios de prueba
+## Inicio de sesión (con el backend)
 
-Se entra con el **correo**. Todas las cuentas usan la contraseña `Cirdan1234` y el código MFA `123456`.
+El login es real: lo hace FastAPI (BackKL, #25). Antes de entrar al portal, levanta el backend con `docker compose up -d` en BackKL (con `DEMO_ACCOUNTS=true` en su `.env`). El portal reenvía `/api/v1/*` a la API (`next.config.ts`, variable `API_INTERNAL_URL`), así que la cookie de sesión `lt_session` (httpOnly) es del mismo sitio y JavaScript nunca la ve. **Usa `npm run dev` en el puerto 3000**, porque la API solo acepta escrituras de los orígenes de `ALLOWED_ORIGINS`.
 
-| Correo                 | Rol           | Qué ve |
-|------------------------|---------------|--------|
-| `analista@cirdan.test` | Analista      | Dashboard, Dominios y autorización (solo la lista), Detalle de dominio, Hallazgos y Reportes e histórico |
-| `gerente@cirdan.test`  | Gerente       | Dashboard, Dominios, Detalle de dominio y Reportes e histórico, solo lectura |
-| `admin@cirdan.test`    | Administrador | Todo lo anterior, más registrar dominios y verificar el TXT, Políticas de alerta y la sección Administración (Resumen, Usuarios y roles, Acceso API, Webhooks y Bitácora) |
+| Correo | Rol en el portal | Qué ve |
+|---|---|---|
+| `jordan.tate@acme-demo.mx` | Analista | Dashboard, Dominios y autorización (solo la lista), Detalle de dominio, Hallazgos y Reportes e histórico |
+| `maya.reed@acme-demo.mx` | Gerente | Dashboard, Dominios, Detalle de dominio y Reportes e histórico, solo lectura |
+| `alex.morgan@acme-demo.mx` | Administrador | Todo lo anterior, más registrar dominios y verificar el TXT, Políticas de alerta y la sección Administración |
 
-Código de recuperación de contraseña: `1234`. Una contraseña nueva necesita al menos 12 caracteres. Las cuentas creadas en `/signup` solo viven en la memoria del navegador y se pierden al recargar la página.
+Contraseña: `Lowtide-Demo-2026`. **Cómo pasar el MFA** (claves para la app autenticadora o el comando que da el código) y qué hacer si algo falla: [guía de cuentas de prueba en BackKL](https://github.com/Kernel-Loco/BackKL/blob/dev/docs/cuentas_de_prueba.md) (`docs/cuentas_de_prueba.md`).
+
+La sesión expira a los 15 min sin actividad (aviso un minuto antes) y a las 8 h como máximo. El registro abierto y la recuperación por correo todavía no tienen backend: esas pantallas lo dicen al enviarlas.
+
+Lo demás (dominios, hallazgos, score, reportes, administración) sigue con **datos simulados** de `src/mocks/api/` hasta conectar la API v1 (RC-17).
 
 ## Estructura
 
-El portal se llama **Lowtide**: el acceso (login, MFA, registro y recuperación) es claro y el panel es oscuro. Todo el texto está en español.
+El portal se llama **LowTide**: el acceso (login, MFA, registro y recuperación) es claro, y el panel es oscuro con un botón para cambiar a modo claro (`ThemeToggle`). Todo el texto está en español.
 
 - `src/app/(auth)`: login con correo, MFA, registro y recuperación de contraseña.
 - `src/app/(dashboard)/dashboard`: el panel. Cada página llama primero a `checkSectionAccess()` (`src/components/dashboard/SectionAccess.tsx`) y después pide sus datos a `src/services/`.
@@ -44,9 +48,10 @@ El portal se llama **Lowtide**: el acceso (login, MFA, registro y recuperación)
 - `src/components/ui/`: piezas del tema oscuro (tarjetas, etiquetas, botones, campos, barras y modal). `tones.ts` tiene los colores de severidades y bandas.
 - `src/components/screens/<sección>/`: las pantallas, que reciben sus datos por props.
 - `src/components/auth/` y `TextInput`, `Button`, `CodeInput`: piezas del acceso claro.
-- `src/services/`: llamadas a la API (simuladas por ahora). Las pantallas solo piden datos a estas funciones, así que conectar la API cambia los servicios y no las pantallas. Cada función indica con un TODO su endpoint de `/api/v1`.
+- `src/services/`: llamadas a la API. `authService.ts` ya habla con FastAPI; los demás siguen simulados. Las pantallas solo piden datos a estas funciones, así que conectar la API cambia los servicios y no las pantallas. Cada función indica con un TODO su endpoint de `/api/v1`.
 - `src/mocks/api/`: datos simulados. `contrato.ts` sale de los JSON del contrato #21 de BackKL (`docs/api_v1/`) más los campos marcados «Propuesto» en `src/types/api.ts`; `provisional.ts` trae lo que aún no está en el contrato.
 - `src/types/api.ts`: tipos de la API v1. «Provisional» = endpoint que todavía no está en el contrato; «Propuesto» = campo nuevo que hay que agregar en BackKL.
 - `src/config/labels.ts`: nombres en español de todos los códigos de la API.
-- `src/lib`: formato de fechas, validación, fuerza de contraseña y la sesión simulada en `session/` (cookie `cirdan_session`, cierre por 15 min de inactividad).
+- `src/lib`: formato de fechas, validación y fuerza de contraseña. En `session/`, la sesión real: `server.ts` la valida con FastAPI (`GET /auth/me`) en cada página y `shared.ts` traduce el rol de la base (`analyst`, `manager`, `admin`) al del portal.
+- `src/app/auth/expirada`: borra una cookie que FastAPI ya no reconoce antes de volver al login.
 - `src/proxy.ts`: redirecciones según sesión (en Next 16 reemplaza a `middleware.ts`).

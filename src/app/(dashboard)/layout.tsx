@@ -5,7 +5,7 @@ import { getDomains } from "@/services/domainService";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await getServerSession();
-  if (!session) redirect("/login");
+  if (!session) redirect("/auth/expirada");
 
   // Dominios que necesitan atención (por validar, vencidos o en pausa): número en el menú.
   const domains = await getDomains();
