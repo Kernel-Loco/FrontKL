@@ -8,7 +8,7 @@ type Size = "sm" | "md";
 const VARIANTS: Record<Variant, string> = {
   primary: "bg-gradient-to-r from-lt-indigo to-lt-teal text-white shadow-sm hover:brightness-110",
   secondary: "border border-lt-border bg-lt-raised text-lt-text hover:border-lt-faint",
-  ghost: "text-lt-muted hover:bg-white/5 hover:text-lt-text",
+  ghost: "text-lt-muted hover:bg-lt-raised hover:text-lt-text",
   danger: "border border-lt-red/40 bg-lt-red/10 text-lt-red hover:bg-lt-red/20",
 };
 
@@ -27,7 +27,7 @@ interface ActionButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   loading?: boolean;
 }
 
-/** Botón del portal (tema oscuro). */
+/** Botón del portal. */
 export function ActionButton({
   variant = "primary",
   size = "md",

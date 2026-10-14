@@ -95,18 +95,18 @@ export function IdleTimeout() {
         <div className="flex h-11 w-11 items-center justify-center rounded-full bg-lt-indigo/15">
           <Clock aria-hidden="true" className="h-6 w-6 text-lt-indigo-soft" />
         </div>
-        <h2 id={titleId} className="mt-4 text-lg font-bold text-white">
+        <h2 id={titleId} className="mt-4 text-lg font-bold text-lt-text">
           ¿Sigues ahí?
         </h2>
         <p id={descriptionId} className="mt-1 text-sm text-lt-muted">
           Por seguridad, tu sesión se cerrará por inactividad en{" "}
-          <strong className="tabular-nums text-white">{secondsLeft} s</strong>.
+          <strong className="tabular-nums text-lt-text">{secondsLeft} s</strong>.
         </p>
         <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <button
             type="button"
             onClick={() => void endSession("/login?notice=logout")}
-            className="rounded-lg px-4 py-2 text-sm font-semibold text-lt-muted hover:bg-white/5"
+            className="rounded-lg px-4 py-2 text-sm font-semibold text-lt-muted hover:bg-lt-raised"
           >
             Cerrar sesión
           </button>

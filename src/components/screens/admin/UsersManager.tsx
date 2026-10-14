@@ -126,7 +126,7 @@ export function UsersManager({ initial, currentUserEmail }: { initial: OrgUser[]
         <ul className="space-y-4">
           {ROLES.map((r) => (
             <li key={r}>
-              <p className="text-sm font-semibold text-white">{ROLE_LABELS[r]}</p>
+              <p className="text-sm font-semibold text-lt-text">{ROLE_LABELS[r]}</p>
               <p className="mt-0.5 text-xs leading-relaxed text-lt-muted">{ROLE_DESCRIPTIONS[r]}</p>
             </li>
           ))}

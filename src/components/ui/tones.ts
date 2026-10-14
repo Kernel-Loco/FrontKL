@@ -1,4 +1,4 @@
-// Colores del tema oscuro para severidades, bandas del score y estados.
+// Colores para severidades, bandas del score y estados.
 import type { Band, Severity } from "@/types";
 
 export type Tone = "red" | "orange" | "amber" | "blue" | "teal" | "green" | "indigo" | "gray";
@@ -12,7 +12,7 @@ export const BADGE_TONES: Record<Tone, string> = {
   teal: "bg-lt-teal/12 text-lt-teal ring-lt-teal/25",
   green: "bg-lt-green/12 text-lt-green ring-lt-green/25",
   indigo: "bg-lt-indigo/15 text-lt-indigo-soft ring-lt-indigo/30",
-  gray: "bg-white/5 text-lt-muted ring-white/10",
+  gray: "bg-lt-raised text-lt-muted ring-lt-border",
 };
 
 /** Color sólido (barras, puntos, números). */
