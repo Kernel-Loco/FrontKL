@@ -31,7 +31,7 @@ export function Modal({ open, onClose, title, description, children }: ModalProp
       onClick={(event) => {
         if (event.target === ref.current) onClose();
       }}
-      className="lt-dark m-auto w-[min(32rem,calc(100vw-2rem))] rounded-xl border border-lt-border bg-lt-surface p-0 text-lt-text shadow-2xl"
+      className="m-auto w-[min(32rem,calc(100vw-2rem))] rounded-xl border border-lt-border bg-lt-surface p-0 text-lt-text shadow-2xl"
     >
       <div className="p-6">
         <div className="flex items-start justify-between gap-4">
@@ -41,7 +41,7 @@ export function Modal({ open, onClose, title, description, children }: ModalProp
             </h2>
             {description && <p className="mt-1 text-sm text-lt-muted">{description}</p>}
           </div>
-          <button type="button" onClick={onClose} aria-label="Cerrar" className="rounded-md p-1 text-lt-muted hover:bg-white/5 hover:text-lt-text">
+          <button type="button" onClick={onClose} aria-label="Cerrar" className="rounded-md p-1 text-lt-muted hover:bg-lt-raised hover:text-lt-text">
             <X aria-hidden="true" className="h-5 w-5" />
           </button>
         </div>

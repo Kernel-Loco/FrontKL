@@ -49,7 +49,7 @@ export function ExplanationPanel({ finding }: { finding: DomainFinding }) {
   return (
     <aside aria-labelledby="explicacion-titulo" aria-busy={loading} className="rounded-xl border border-lt-border bg-lt-surface p-5">
       <p className="font-mono text-[11px] uppercase tracking-[0.15em] text-lt-muted">¿Por qué es crítico?</p>
-      <h2 id="explicacion-titulo" className="mt-1.5 text-lg font-semibold leading-snug text-white">
+      <h2 id="explicacion-titulo" className="mt-1.5 text-lg font-semibold leading-snug text-lt-text">
         {finding.title}
       </h2>
       <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-lt-muted">
@@ -78,7 +78,7 @@ export function ExplanationPanel({ finding }: { finding: DomainFinding }) {
                     <span className="text-lt-text">{f.label}</span>
                     <span className={`tabular-nums ${f.value >= 0 ? "text-lt-orange" : "text-lt-blue"}`}>{f.display}</span>
                   </div>
-                  <div className="h-1.5 overflow-hidden rounded-full bg-white/8">
+                  <div className="h-1.5 overflow-hidden rounded-full bg-lt-raised">
                     <div
                       className={`h-full rounded-full ${f.value >= 0 ? "bg-lt-orange" : "bg-lt-blue"}`}
                       style={{ width: `${(Math.abs(f.value) / max) * 100}%` }}
@@ -93,7 +93,7 @@ export function ExplanationPanel({ finding }: { finding: DomainFinding }) {
               </p>
             )}
             <div className="mt-5 rounded-lg bg-lt-raised p-4">
-              <p className="text-sm font-semibold text-white">Recomendación</p>
+              <p className="text-sm font-semibold text-lt-text">Recomendación</p>
               <p className="mt-1 text-sm leading-relaxed text-lt-muted">{explanation.recommendation}</p>
             </div>
           </>

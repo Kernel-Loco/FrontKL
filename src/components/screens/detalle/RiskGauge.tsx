@@ -20,7 +20,7 @@ export function RiskGauge({ score, band, delta }: RiskGaugeProps) {
     <div className="flex flex-col items-center">
       <div className="relative h-40 w-40">
         <svg viewBox="0 0 120 120" className="h-full w-full -rotate-90" role="img" aria-label={`Riesgo global ${score} de 100, ${BAND_LABELS[band].toLowerCase()}`}>
-          <circle cx="60" cy="60" r={RADIUS} fill="none" strokeWidth="9" className="stroke-white/8" />
+          <circle cx="60" cy="60" r={RADIUS} fill="none" strokeWidth="9" className="stroke-lt-border" />
           <circle
             cx="60"
             cy="60"
@@ -34,7 +34,7 @@ export function RiskGauge({ score, band, delta }: RiskGaugeProps) {
           />
         </svg>
         <div aria-hidden="true" className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-4xl font-bold tabular-nums text-white">{score}</span>
+          <span className="text-4xl font-bold tabular-nums text-lt-text">{score}</span>
           <span className="text-xs text-lt-muted">de 100</span>
         </div>
       </div>

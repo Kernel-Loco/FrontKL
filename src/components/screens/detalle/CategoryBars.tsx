@@ -11,7 +11,7 @@ export function CategoryBars({ categories }: { categories: CategoryScore[] }) {
           <div className="mb-1.5 flex items-baseline justify-between gap-3 text-sm">
             <span className="text-lt-text">{CATEGORY_LABELS[c.category]}</span>
             <span className="text-xs text-lt-muted">
-              peso {Math.round(c.weight * 100)} % · <strong className="font-semibold text-white">{c.score}</strong>
+              peso {Math.round(c.weight * 100)} % · <strong className="font-semibold text-lt-text">{c.score}</strong>
             </span>
           </div>
           <ProgressBar value={c.score} tone={BAND_TONE[c.band]} label={`${CATEGORY_LABELS[c.category]}: ${c.score} de 100`} className="h-2" />

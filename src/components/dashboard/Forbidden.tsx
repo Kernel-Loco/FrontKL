@@ -13,7 +13,7 @@ export function Forbidden({ sectionLabel, roleLabel }: ForbiddenProps) {
         <ShieldX aria-hidden="true" className="h-7 w-7 text-lt-red" />
       </div>
       <p className="text-sm font-semibold text-lt-red">Error 403</p>
-      <h1 className="mt-1 text-xl font-bold text-white">Acceso denegado</h1>
+      <h1 className="mt-1 text-xl font-bold text-lt-text">Acceso denegado</h1>
       <p className="mt-2 text-sm text-lt-muted">
         Tu rol (<strong className="font-semibold text-lt-text">{roleLabel}</strong>) no tiene permiso para ver «{sectionLabel}».
         Si necesitas acceso, pídeselo a un Administrador.

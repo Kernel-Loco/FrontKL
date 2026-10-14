@@ -46,7 +46,7 @@ export function CompareScans({ points }: { points: ScoreHistoryPoint[] }) {
       </div>
       <ul className="mt-4 divide-y divide-lt-border">
         <li className="flex items-center justify-between py-3 text-sm">
-          <span className="font-semibold text-white">Riesgo global</span>
+          <span className="font-semibold text-lt-text">Riesgo global</span>
           <span className="flex items-center gap-2 tabular-nums text-lt-text">
             {a.score} → {b.score} <Delta value={b.score - a.score} />
           </span>

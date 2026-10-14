@@ -97,14 +97,14 @@ export function FindingsExplorer({ findings }: { findings: DomainFinding[] }) {
                       <tr
                         key={f.id}
                         onClick={() => setSelectedId(f.id)}
-                        className={`cursor-pointer border-t border-lt-border transition-colors ${active ? "bg-lt-nav/70" : "hover:bg-white/[0.03]"}`}
+                        className={`cursor-pointer border-t border-lt-border transition-colors ${active ? "bg-lt-nav/70" : "hover:bg-lt-raised"}`}
                       >
                         <td className={TD}>
                           <button
                             type="button"
                             onClick={() => setSelectedId(f.id)}
                             aria-pressed={active}
-                            className={`text-left ${active ? "font-semibold text-white" : "text-lt-text"} rounded-sm hover:text-white`}
+                            className={`text-left ${active ? "font-semibold text-lt-text" : "text-lt-text"} rounded-sm hover:text-lt-indigo`}
                           >
                             {f.title}
                           </button>

@@ -50,6 +50,27 @@
   color-scheme: dark;
 }
 
+.lt-light {
+  color-scheme: light;
+  --color-lt-bg: #f4f6fa;
+  --color-lt-sidebar: #ffffff;
+  --color-lt-surface: #ffffff;
+  --color-lt-raised: #f0f2f6;
+  --color-lt-border: #dce1ea;
+  --color-lt-text: #1c2230;
+  --color-lt-muted: #596579;
+  --color-lt-faint: #707b8e;
+  --color-lt-nav: #e8ecff;
+  --color-lt-indigo: #4f5fc5;
+  --color-lt-indigo-soft: #4958b5;
+  --color-lt-teal: #087d83;
+  --color-lt-red: #bf3745;
+  --color-lt-orange: #b64a00;
+  --color-lt-amber: #856000;
+  --color-lt-blue: #325fa5;
+  --color-lt-green: #087454;
+}
+
 /* Fondo del diálogo nativo. */
 dialog::backdrop {
   background: rgb(5 6 10 / 0.7);

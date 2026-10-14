@@ -17,7 +17,7 @@ export function DomainTabs({ tabs }: { tabs: Tab[] }) {
               href={tab.href}
               aria-current={tab.active ? "page" : undefined}
               className={`inline-block whitespace-nowrap border-b-2 px-1 pb-3 text-sm transition-colors ${
-                tab.active ? "border-lt-teal font-semibold text-white" : "border-transparent text-lt-muted hover:text-lt-text"
+                tab.active ? "border-lt-teal font-semibold text-lt-text" : "border-transparent text-lt-muted hover:text-lt-text"
               }`}
             >
               {tab.label}
