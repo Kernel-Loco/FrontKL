@@ -10,6 +10,7 @@ import type {
   LoginResponse,
   MfaVerifyRequest,
   MfaVerifyResponse,
+  PasswordChangeRequest,
   PasswordResetConfirmRequest,
   PasswordResetRequest,
   PasswordResetVerifyRequest,
@@ -22,14 +23,14 @@ import { ServiceError } from "./errors";
 const MFA_TOKEN_PREFIX = "mock-mfa.";
 const RESET_TOKEN_PREFIX = "mock-reset.";
 
-/** Mismo mensaje exista o no el usuario, para no permitir enumerarlos. */
-const INVALID_CREDENTIALS = "Usuario o contraseña incorrectos.";
+/** Mismo mensaje exista o no la cuenta, para no permitir enumerarlas. */
+const INVALID_CREDENTIALS = "Correo o contraseña incorrectos.";
 
 export async function login(payload: LoginRequest): Promise<LoginResponse> {
   // TODO: conectar con backend → return apiClient.post<LoginResponse>("/auth/login", payload);
   await mockDelay();
   const account = mockAccounts.find(
-    (a) => a.user.username.toLowerCase() === payload.username.trim().toLowerCase(),
+    (a) => a.user.email.toLowerCase() === payload.email.trim().toLowerCase(),
   );
   if (!account || account.password !== payload.password) {
     throw new ServiceError("invalid_credentials", INVALID_CREDENTIALS);
@@ -113,4 +114,15 @@ export async function logout(): Promise<void> {
 export async function getCurrentUser(): Promise<User | null> {
   // TODO: conectar con backend → return apiClient.get<User>("/auth/me") (401 → null).
   return readSessionCookie()?.user ?? null;
+}
+
+export async function changePassword(payload: PasswordChangeRequest): Promise<void> {
+  // TODO: conectar con backend → await apiClient.post<void>("/me/password", payload);
+  await mockDelay();
+  const session = readSessionCookie();
+  const account = mockAccounts.find((a) => a.user.id === session?.user.id);
+  if (!account || account.password !== payload.current_password) {
+    throw new ServiceError("invalid_password", "La contraseña actual no es correcta.");
+  }
+  account.password = payload.new_password;
 }

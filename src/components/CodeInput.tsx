@@ -126,7 +126,7 @@ export function CodeInput({ length, onChange, label, disabled, error, autoFocus 
         role="group"
         aria-label={label}
         aria-describedby={error ? errorId : undefined}
-        className="flex justify-center gap-1.5 sm:gap-2"
+        className="flex justify-between gap-1.5 sm:gap-2"
       >
         {digits.map((digit, index) => (
           <input
@@ -147,8 +147,8 @@ export function CodeInput({ length, onChange, label, disabled, error, autoFocus 
             onChange={(e) => handleChange(index, e)}
             onPaste={(e) => handlePaste(index, e)}
             onFocus={(e) => e.target.select()}
-            className={`h-12 w-10 rounded-lg border-2 bg-white text-center text-xl font-medium text-cirdan-indigo caret-cirdan-indigo outline-none transition focus-visible:ring-4 focus-visible:ring-white/60 disabled:opacity-70 sm:w-11 ${
-              error ? "border-red-400" : "border-cirdan-indigo/70 focus:border-cirdan-indigo"
+            className={`h-12 w-11 rounded-lg border bg-lt-paper text-center text-xl font-semibold text-lt-ink caret-lt-primary outline-none transition focus:border-2 focus:border-lt-primary focus:bg-white focus-visible:ring-2 focus-visible:ring-lt-primary/25 disabled:opacity-70 sm:w-12 ${
+              error ? "border-red-400" : "border-lt-line"
             }`}
           />
         ))}

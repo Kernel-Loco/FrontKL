@@ -2,8 +2,6 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { Mail } from "lucide-react";
-import { IconCard } from "@/components/auth/IconCard";
 import { Notice } from "@/components/auth/Notice";
 import { Button } from "@/components/Button";
 import { CodeInput } from "@/components/CodeInput";
@@ -101,7 +99,7 @@ export function VerifyResetCodeForm() {
 
   return (
     <form onSubmit={onSubmit} noValidate className="space-y-6">
-      <IconCard icon={Mail} />
+      <p className="text-sm text-slate-600">Enviamos un código a <strong className="font-semibold text-lt-ink">{maskEmail(data.email)}</strong>.</p>
       <CodeInput
         key={codeKey}
         length={CODE_LENGTH}
@@ -112,29 +110,25 @@ export function VerifyResetCodeForm() {
         }}
         disabled={busy}
       />
-      <div className="text-center">
-        <h2 className="text-lg font-semibold text-white">Check your email</h2>
-        <p className="mt-1 text-sm text-white/80">Enviamos un código a {maskEmail(data.email)}</p>
-      </div>
       {error && <Notice tone="error">{error}</Notice>}
       {info && !error && <Notice>{info}</Notice>}
       <div className="space-y-4">
         <Button type="submit" loading={busy}>
-          Submit
+          Verificar
         </Button>
         <Button variant="secondary" onClick={goBack} disabled={busy}>
-          Back
+          Volver
         </Button>
       </div>
-      <p className="text-center text-sm text-white">
-        Didn&apos;t you receive any code?{" "}
+      <p className="text-center text-sm text-slate-500">
+        ¿No te llegó el código?{" "}
         <button
           type="button"
           onClick={onResend}
           disabled={cooldown > 0 || resending}
-          className="ml-1.5 rounded-sm font-bold hover:underline disabled:cursor-not-allowed disabled:font-semibold disabled:text-white/60 disabled:no-underline"
+          className="ml-1 rounded-sm font-semibold text-lt-primary hover:underline disabled:cursor-not-allowed disabled:text-slate-400 disabled:no-underline"
         >
-          {resending ? "Sending…" : "Resend code"}
+          {resending ? "Enviando…" : "Reenviar código"}
           {cooldown > 0 && <span className="tabular-nums"> ({cooldown}s)</span>}
         </button>
       </p>

@@ -1,13 +1,11 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { AuthPrompt } from "@/components/auth/AuthLinks";
 import { AuthTitle } from "@/components/auth/AuthTitle";
 import { LoginForm } from "@/components/auth/forms/LoginForm";
 import { Notice } from "@/components/auth/Notice";
+import { SsoButton } from "@/components/auth/SsoButton";
 import { Divider } from "@/components/Divider";
-import { SocialButtons } from "@/components/SocialButtons";
 
-export const metadata: Metadata = { title: "Login" };
+export const metadata: Metadata = { title: "Iniciar sesión" };
 
 const NOTICES: Record<string, string> = {
   expired: "Tu sesión expiró por inactividad. Vuelve a iniciar sesión.",
@@ -22,19 +20,13 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
 
   return (
     <div className="space-y-6">
-      <AuthTitle>Login</AuthTitle>
+      <AuthTitle eyebrow="Acceso seguro" description="Ingresa tus credenciales para entrar a tu espacio de trabajo.">
+        Iniciar sesión
+      </AuthTitle>
       {message && <Notice>{message}</Notice>}
       <LoginForm />
-      <div className="space-y-4">
-        <p className="text-center">
-          <Link href="/forgot-password" className="rounded-sm text-sm text-white hover:underline">
-            Forgot password?
-          </Link>
-        </p>
-        <AuthPrompt text="don't have account?" linkText="Sign Up" href="/signup" />
-      </div>
-      <Divider />
-      <SocialButtons />
+      <Divider label="o inicia sesión con" />
+      <SsoButton />
     </div>
   );
 }

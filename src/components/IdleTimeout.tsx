@@ -84,29 +84,29 @@ export function IdleTimeout() {
   if (secondsLeft === null) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-cirdan-950/60 p-4 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
       <div
         role="alertdialog"
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={descriptionId}
-        className="w-full max-w-sm rounded-xl bg-white p-6 shadow-2xl"
+        className="w-full max-w-sm rounded-xl border border-lt-border bg-lt-surface p-6 shadow-2xl"
       >
-        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-cirdan-50">
-          <Clock aria-hidden="true" className="h-6 w-6 text-cirdan-700" />
+        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-lt-indigo/15">
+          <Clock aria-hidden="true" className="h-6 w-6 text-lt-indigo-soft" />
         </div>
-        <h2 id={titleId} className="mt-4 text-lg font-bold text-slate-900">
+        <h2 id={titleId} className="mt-4 text-lg font-bold text-white">
           ¿Sigues ahí?
         </h2>
-        <p id={descriptionId} className="mt-1 text-sm text-slate-600">
+        <p id={descriptionId} className="mt-1 text-sm text-lt-muted">
           Por seguridad, tu sesión se cerrará por inactividad en{" "}
-          <strong className="tabular-nums text-slate-900">{secondsLeft} s</strong>.
+          <strong className="tabular-nums text-white">{secondsLeft} s</strong>.
         </p>
         <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <button
             type="button"
             onClick={() => void endSession("/login?notice=logout")}
-            className="rounded-lg px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+            className="rounded-lg px-4 py-2 text-sm font-semibold text-lt-muted hover:bg-white/5"
           >
             Cerrar sesión
           </button>
@@ -114,7 +114,7 @@ export function IdleTimeout() {
             type="button"
             autoFocus
             onClick={keepAlive}
-            className="rounded-lg bg-cirdan-700 px-4 py-2 text-sm font-semibold text-white hover:bg-cirdan-600"
+            className="rounded-lg bg-gradient-to-r from-lt-indigo to-lt-teal px-4 py-2 text-sm font-semibold text-white hover:brightness-110"
           >
             Continuar sesión
           </button>
