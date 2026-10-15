@@ -24,17 +24,27 @@ export default async function HistoricoPage({ searchParams }: Props) {
   const { user, forbidden } = await checkSectionAccess("historico");
   if (forbidden) return forbidden;
 
-  const options = scoredDomains((await getDomains()).items).map((d) => d.fqdn);
+  const [domainResponse, reports] = await Promise.all([getDomains(), getReports()]);
+  const domains = domainResponse.items;
+  const options = scoredDomains(domains).map((d) => d.fqdn);
   const { dominio } = await searchParams;
   const fqdn = typeof dominio === "string" && options.includes(dominio) ? dominio : options[0];
-  const reports = await getReports();
   const canReport = can(user.role, "request_report");
+  const reportData = canReport
+    ? {
+        domains: domains.map(({ fqdn, score, band, last_scan_at, open_findings }) => ({ fqdn, score, band, last_scan_at, open_findings })),
+        findings: (await Promise.all(domains.map(async (domain) => {
+          const result = await getDomainFindings(domain.fqdn);
+          return result.items.map((finding) => ({ domain: domain.fqdn, finding }));
+        }))).flat(),
+      }
+    : undefined;
 
   if (!fqdn) {
     return (
       <div className="space-y-8">
         <PageHeader title="Histórico de escaneos" />
-        <ReportsCard reports={reports.items} />
+        <ReportsCard reports={reports.items} reportData={reportData} />
       </div>
     );
   }
@@ -109,7 +119,7 @@ export default async function HistoricoPage({ searchParams }: Props) {
         </div>
       )}
 
-      <ReportsCard reports={domainReports} />
+      <ReportsCard reports={domainReports} reportData={reportData} />
     </div>
   );
 }

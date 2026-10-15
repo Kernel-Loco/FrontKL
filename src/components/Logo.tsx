@@ -17,9 +17,9 @@ interface LogoProps {
 
 export function Logo({ tone = "dark", className = "" }: LogoProps) {
   return (
-    <span className={`inline-flex items-center gap-2.5 ${className}`}>
+    <span className={`inline-flex items-end gap-2.5 ${className}`}>
       <LogoMark className="h-8 w-auto shrink-0" />
-      <span className={`text-[15px] font-extrabold tracking-[0.04em] ${tone === "light" ? "text-lt-ink" : "text-white"}`}>
+      <span className={`translate-y-px text-xl font-black leading-none tracking-normal ${tone === "light" ? "text-lt-ink" : "text-white"}`}>
         LOWTIDE
       </span>
     </span>
