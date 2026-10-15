@@ -5,14 +5,14 @@ export type Tone = "red" | "orange" | "amber" | "blue" | "teal" | "green" | "ind
 
 /** Etiqueta: fondo tenue y texto del color. */
 export const BADGE_TONES: Record<Tone, string> = {
-  red: "bg-lt-red/12 text-lt-red ring-lt-red/25",
-  orange: "bg-lt-orange/12 text-lt-orange ring-lt-orange/25",
-  amber: "bg-lt-amber/12 text-lt-amber ring-lt-amber/25",
-  blue: "bg-lt-blue/12 text-lt-blue ring-lt-blue/25",
-  teal: "bg-lt-teal/12 text-lt-teal ring-lt-teal/25",
-  green: "bg-lt-green/12 text-lt-green ring-lt-green/25",
-  indigo: "bg-lt-indigo/15 text-lt-indigo-soft ring-lt-indigo/30",
-  gray: "bg-lt-raised text-lt-muted ring-lt-border",
+  red: "bg-lt-red/12 text-lt-red",
+  orange: "bg-lt-orange/12 text-lt-orange",
+  amber: "bg-lt-amber/12 text-lt-amber",
+  blue: "bg-lt-blue/12 text-lt-blue",
+  teal: "bg-lt-teal/12 text-lt-teal",
+  green: "bg-lt-green/12 text-lt-green",
+  indigo: "bg-lt-indigo/15 text-lt-indigo-soft",
+  gray: "bg-lt-raised text-lt-muted",
 };
 
 /** Color sólido (barras, puntos, números). */
