@@ -1,38 +1,41 @@
-// Escaneos OSINT (provisional: aún no está en el contrato #21). Se usa desde el servidor
-// (lista) y desde componentes de cliente (botón «Escanear ahora»).
-import { mockDelay } from "@/lib/mock";
-import { mockDomains } from "@/mocks/api/contrato";
-import { mockScans } from "@/mocks/api/provisional";
-import type { ListResponse, Scan, ScanRequestResult } from "@/types";
-import { SCAN_BLOCK_REASON_LABELS } from "@/config/labels";
-import { ServiceError } from "./errors";
+// Pedir un escaneo desde el navegador (botón «Escanear ahora», #22). La lista de escaneos de las
+// páginas está en queries.ts.
+import { apiClient, ApiError } from "@/lib/apiClient";
+import type { Scan, ScanBlockReason, ScanRequestResult } from "@/types";
 
-export async function getScans(): Promise<ListResponse<Scan>> {
-  // TODO: conectar con backend → GET /scans
-  await mockDelay(300);
-  return structuredClone(mockScans);
+interface ApiScan {
+  id: string;
+  domain: string;
+  trigger: Scan["trigger"];
+  status: Scan["status"];
+  queued_at: string;
+  finished_at: string | null;
+  sources: Scan["sources"];
+}
+
+interface ScanRejection {
+  accepted: false;
+  detail: string;
+  reasons: ScanBlockReason[];
+}
+
+function isRejection(body: unknown): body is ScanRejection {
+  return Boolean(body && typeof body === "object" && "accepted" in body && (body as ScanRejection).accepted === false);
 }
 
 /**
- * Pide un escaneo. Solo se acepta con autorización vigente y TXT verificado (#22);
- * si no, devuelve `accepted: false` con el motivo para mostrarlo.
+ * Pide un escaneo a FastAPI (#22). Solo se acepta con autorización vigente y TXT verificado justo
+ * antes; si no, devuelve `accepted: false` con el motivo para mostrarlo. Solo Analista y Admin.
  */
 export async function requestScan(fqdn: string): Promise<ScanRequestResult> {
-  // TODO: conectar con backend → POST /domains/{fqdn}/scans (409 si no se puede escanear)
-  await mockDelay(600);
-  const domain = mockDomains.items.find((d) => d.fqdn === fqdn);
-  if (!domain) throw new ServiceError("not_found", "Dominio no encontrado para esta organización");
-  const { can_scan, reasons } = domain.scan_eligibility;
-  if (!can_scan) {
-    return {
-      accepted: false,
-      reasons,
-      detail: `No se puede escanear: ${reasons.map((r) => SCAN_BLOCK_REASON_LABELS[r].replace(/^./, (c) => c.toLowerCase())).join(" y ")}.`,
-    };
+  try {
+    const { scan } = await apiClient.post<{ accepted: true; scan: ApiScan }>(`/domains/${encodeURIComponent(fqdn)}/scans`);
+    return { accepted: true, scan: { ...scan, stats: null } };
+  } catch (error) {
+    // 409 (no cumple) y 404 (no es de tu organización) traen el motivo en el cuerpo.
+    if (error instanceof ApiError && isRejection(error.detail)) {
+      return { accepted: false, detail: error.detail.detail, reasons: error.detail.reasons };
+    }
+    throw error;
   }
-  const now = new Date().toISOString();
-  return {
-    accepted: true,
-    scan: { id: `scan-${Date.now()}`, domain: fqdn, trigger: "on_demand", status: "queued", queued_at: now, finished_at: null, stats: null, sources: [] },
-  };
 }

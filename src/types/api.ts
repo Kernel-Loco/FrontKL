@@ -34,11 +34,15 @@ export type AuthorizationStatus = "valid" | "expired" | "revoked" | "missing";
 export type TxtStatus = "verified" | "missing";
 export type ScanBlockReason =
   | "authorization_missing"
+  | "authorization_not_started"
   | "authorization_expired"
   | "authorization_revoked"
   | "txt_not_verified"
   | "domain_paused"
-  | "domain_removed";
+  | "domain_removed"
+  | "domain_not_found"
+  | "scan_in_progress"
+  | "live_scan_not_allowed";
 
 export type SeverityCounts = Record<Severity, number>;
 

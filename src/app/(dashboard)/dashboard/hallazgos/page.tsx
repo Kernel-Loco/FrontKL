@@ -8,7 +8,7 @@ import { scoredDomains } from "@/components/screens/shared/domainState";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { canAccessSection, SECTIONS } from "@/config/permissions";
-import { getDomainFindings, getDomains } from "@/services/domainService";
+import { getDomainFindings, getDomains } from "@/services/queries";
 
 export const metadata: Metadata = { title: SECTIONS.hallazgos.label };
 

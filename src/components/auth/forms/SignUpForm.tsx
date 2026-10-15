@@ -37,7 +37,7 @@ export function SignUpForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
+    <form method="post" onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
       <TextInput label="Usuario" autoComplete="username" error={errors.username?.message} {...register("username")} />
       <TextInput label="Nombre completo" autoComplete="name" error={errors.full_name?.message} {...register("full_name")} />
       <TextInput label="Correo" type="email" autoComplete="email" error={errors.email?.message} {...register("email")} />

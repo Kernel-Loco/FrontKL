@@ -56,7 +56,7 @@ export function ResetPasswordForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
+    <form method="post" onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
             <div>
         <TextInput
           label="Contraseña nueva"

@@ -13,7 +13,7 @@ import { Card, TableWrap, TD, TH, TR } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { can, canAccessSection, SECTIONS } from "@/config/permissions";
 import { formatDate } from "@/lib/format";
-import { getDomainFindings, getDomains, getScoreHistory } from "@/services/domainService";
+import { getDomainFindings, getDomains, getScoreHistory } from "@/services/queries";
 import { getReports } from "@/services/reportService";
 
 export const metadata: Metadata = { title: SECTIONS.historico.label };
@@ -30,6 +30,8 @@ export default async function HistoricoPage({ searchParams }: Props) {
   const { dominio } = await searchParams;
   const fqdn = typeof dominio === "string" && options.includes(dominio) ? dominio : options[0];
   const canReport = can(user.role, "request_report");
+  // Los reportes siguen simulados: solo se muestran los de los dominios de tu empresa.
+  const orgReports = reports.items.filter((r) => r.domain === null || domains.some((d) => d.fqdn === r.domain));
   const reportData = canReport
     ? {
         domains: domains.map(({ fqdn, score, band, last_scan_at, open_findings }) => ({ fqdn, score, band, last_scan_at, open_findings })),
@@ -44,7 +46,7 @@ export default async function HistoricoPage({ searchParams }: Props) {
     return (
       <div className="space-y-8">
         <PageHeader title="Histórico de escaneos" />
-        <ReportsCard reports={reports.items} reportData={reportData} />
+        <ReportsCard reports={orgReports} reportData={reportData} />
       </div>
     );
   }
@@ -53,7 +55,7 @@ export default async function HistoricoPage({ searchParams }: Props) {
   const points = history.items;
   const newestFirst = points.map((p, i) => ({ point: p, change: i > 0 ? p.score - points[i - 1]!.score : 0, first: i === 0 })).reverse();
   const canOpenDetail = canAccessSection(user.role, "detalle");
-  const domainReports = reports.items.filter((r) => r.domain === fqdn || r.domain === null);
+  const domainReports = orgReports.filter((r) => r.domain === fqdn || r.domain === null);
 
   return (
     <div className="space-y-6">

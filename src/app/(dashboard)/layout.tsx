@@ -1,11 +1,11 @@
 import { redirect } from "next/navigation";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { getServerSession } from "@/lib/session/server";
-import { getDomains } from "@/services/domainService";
+import { getDomains } from "@/services/queries";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await getServerSession();
-  if (!session) redirect("/login");
+  if (!session) redirect("/auth/expirada");
 
   // Dominios que necesitan atención (por validar, vencidos o en pausa): número en el menú.
   const domains = await getDomains();

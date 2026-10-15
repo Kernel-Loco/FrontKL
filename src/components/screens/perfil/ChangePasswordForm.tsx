@@ -39,7 +39,7 @@ export function ChangePasswordForm() {
   };
 
   return (
-    <form ref={formRef} onSubmit={onSubmit} noValidate className="space-y-4">
+    <form ref={formRef} method="post" onSubmit={onSubmit} noValidate className="space-y-4">
       <Field label="Contraseña actual" htmlFor="pw-current">
         <input id="pw-current" name="current" type="password" autoComplete="current-password" className={INPUT} />
       </Field>

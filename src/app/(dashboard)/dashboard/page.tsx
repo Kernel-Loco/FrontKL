@@ -10,8 +10,7 @@ import { scoredDomains } from "@/components/screens/shared/domainState";
 import { BAND_TONE } from "@/components/ui/tones";
 import { can, canAccessSection } from "@/config/permissions";
 import { scoreBand } from "@/lib/format";
-import { getDomainFindings, getDomains } from "@/services/domainService";
-import { getScans } from "@/services/scanService";
+import { getDomainFindings, getDomains, getScans } from "@/services/queries";
 
 export const metadata: Metadata = { title: "Dashboard" };
 

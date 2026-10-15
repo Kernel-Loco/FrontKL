@@ -27,10 +27,15 @@ export function LoginForm() {
   const onSubmit = async (values: LoginValues) => {
     setFormError(null);
     try {
-      const { mfa_token } = await login(values);
-      writeFlow("mfa", { mfa_token });
+      const result = await login(values);
       setNavigating(true);
-      router.push("/login/mfa");
+      if (result.mfa_required) {
+        writeFlow("mfa", { mfa_token: result.mfa_token });
+        router.push("/login/mfa");
+      } else {
+        router.replace("/dashboard");
+        router.refresh();
+      }
     } catch (error) {
       resetField("password");
       setFormError(getErrorMessage(error));
@@ -38,11 +43,11 @@ export function LoginForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
+    <form method="post" onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
       <TextInput
         label="Correo"
         type="email"
-        placeholder="analista@organizacion.com"
+        placeholder="nombre@organizacion.com"
         autoComplete="username"
         error={errors.email?.message}
         {...register("email")}
