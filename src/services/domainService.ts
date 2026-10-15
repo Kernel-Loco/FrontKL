@@ -3,7 +3,7 @@
 // endpoint de FastAPI que la reemplazará (vía `apiClient`). Las pantallas solo llaman
 // a estas funciones, así que conectar la API no les cambia nada.
 import { mockDelay } from "@/lib/mock";
-import { mockDomains, mockExplanation, mockFindings, mockScore, mockScoreHistory } from "@/mocks/api/contrato";
+import { mockDomains, mockExplanation, mockFindings, mockFindingsByDomain, mockScore, mockScoreHistory } from "@/mocks/api/contrato";
 import { mockAssets, mockExplanationsExtra, mockTxtVerifications } from "@/mocks/api/provisional";
 import type {
   Asset,
@@ -39,7 +39,7 @@ export async function getDomainFindings(fqdn: string): Promise<DomainFindings> {
   // TODO: conectar con backend → GET /domains/{fqdn}/findings
   await mockDelay(300);
   knownDomain(fqdn);
-  return fqdn === DEMO_DOMAIN ? structuredClone(mockFindings) : { domain: fqdn, items: [], total: 0 };
+  return structuredClone(mockFindingsByDomain[fqdn] ?? { domain: fqdn, items: [], total: 0 });
 }
 
 export async function getDomainScore(fqdn: string): Promise<DomainScore> {

@@ -58,8 +58,8 @@ export const mockDomains: ListResponse<Domain> = {
       "open_findings": {
         "critical": 0,
         "high": 0,
-        "medium": 0,
-        "low": 0
+        "medium": 1,
+        "low": 1
       },
       "last_scan_at": "2026-09-29T09:12:00-06:00",
       "next_scan_at": "2026-10-06T09:12:00-06:00"
@@ -88,7 +88,7 @@ export const mockDomains: ListResponse<Domain> = {
         "critical": 0,
         "high": 0,
         "medium": 0,
-        "low": 0
+        "low": 2
       },
       "last_scan_at": "2026-09-27T18:45:00-06:00",
       "next_scan_at": "2026-10-04T18:45:00-06:00"
@@ -289,6 +289,106 @@ export const mockFindings: DomainFindings = {
     }
   ],
   "total": 4
+};
+
+export const mockFindingsByDomain: Record<string, DomainFindings> = {
+  [mockFindings.domain]: mockFindings,
+  "acme-tienda.mx": {
+    domain: "acme-tienda.mx",
+    items: [
+      {
+        id: "80000000-0000-4000-8000-000000000005",
+        title: "Falta una política DMARC para el correo de acme-tienda.mx",
+        asset: "acme-tienda.mx",
+        asset_type: "domain",
+        category: "configuration",
+        rule_code: "dmarc_missing",
+        source: "dns",
+        severity: "medium",
+        base_severity: "medium",
+        status: "open",
+        recurrence: "recurring",
+        cve_id: null,
+        cvss: null,
+        epss: null,
+        in_kev: false,
+        evidence: { record: "_dmarc.acme-tienda.mx", observed: "NXDOMAIN" },
+        caracteristicas: { tipo: "dmarc_faltante", antiguedad_dias: 14, exposicion: "publica", sensibilidad: "media" },
+        detected_at: "2026-09-29T09:13:10-06:00",
+        last_scan_id: "60000000-0000-4000-8000-000000000002"
+      },
+      {
+        id: "80000000-0000-4000-8000-000000000006",
+        title: "Se detectó un dominio similar a acme-tienda.mx",
+        asset: "acme-tienda-login.mx",
+        asset_type: "domain",
+        category: "digital_identity",
+        rule_code: "lookalike_domain",
+        source: "whois",
+        severity: "low",
+        base_severity: "medium",
+        status: "open",
+        recurrence: "new",
+        cve_id: null,
+        cvss: null,
+        epss: null,
+        in_kev: false,
+        evidence: { similarity: 0.92, registration_status: "active" },
+        caracteristicas: { tipo: "dominio_similar", antiguedad_dias: 0, exposicion: "publica", sensibilidad: "media" },
+        detected_at: "2026-09-29T09:14:02-06:00",
+        last_scan_id: "60000000-0000-4000-8000-000000000002"
+      }
+    ],
+    total: 2
+  },
+  "acme-portal.mx": {
+    domain: "acme-portal.mx",
+    items: [
+      {
+        id: "80000000-0000-4000-8000-000000000007",
+        title: "Falta un registro SPF en acme-portal.mx",
+        asset: "acme-portal.mx",
+        asset_type: "domain",
+        category: "configuration",
+        rule_code: "spf_missing",
+        source: "dns",
+        severity: "low",
+        base_severity: "low",
+        status: "open",
+        recurrence: "new",
+        cve_id: null,
+        cvss: null,
+        epss: null,
+        in_kev: false,
+        evidence: { record: "acme-portal.mx", observed: "NXDOMAIN" },
+        caracteristicas: { tipo: "spf_faltante", antiguedad_dias: 0, exposicion: "publica", sensibilidad: "baja" },
+        detected_at: "2026-09-27T18:46:18-06:00",
+        last_scan_id: "60000000-0000-4000-8000-000000000003"
+      },
+      {
+        id: "80000000-0000-4000-8000-000000000008",
+        title: "Una cuenta del portal aparece en una brecha pública",
+        asset: "acme-portal.mx",
+        asset_type: "domain",
+        category: "data_leaks",
+        rule_code: "breach_exposure",
+        source: "hibp",
+        severity: "low",
+        base_severity: "low",
+        status: "open",
+        recurrence: "new",
+        cve_id: null,
+        cvss: null,
+        epss: null,
+        in_kev: false,
+        evidence: { emails_exposed: 1, data_classes: ["Email addresses"], breach_name: "PortalBreach-2026" },
+        caracteristicas: { tipo: "correo_en_brecha", antiguedad_dias: 0, exposicion: "publica", sensibilidad: "baja" },
+        detected_at: "2026-09-27T18:47:06-06:00",
+        last_scan_id: "60000000-0000-4000-8000-000000000003"
+      }
+    ],
+    total: 2
+  }
 };
 
 /** docs/api_v1/score.json */

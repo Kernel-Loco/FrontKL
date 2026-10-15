@@ -52,7 +52,7 @@ export const mockScans: ListResponse<Scan> = {
       status: "completed",
       queued_at: "2026-09-29T09:12:00-06:00",
       finished_at: "2026-09-29T09:15:40-06:00",
-      stats: null,
+      stats: { assets: 4, new_findings: 1, resolved_findings: 0 },
       sources: [],
     },
     {
@@ -62,7 +62,7 @@ export const mockScans: ListResponse<Scan> = {
       status: "completed",
       queued_at: "2026-09-27T18:45:00-06:00",
       finished_at: "2026-09-27T18:48:20-06:00",
-      stats: null,
+      stats: { assets: 3, new_findings: 2, resolved_findings: 0 },
       sources: [],
     },
     {
