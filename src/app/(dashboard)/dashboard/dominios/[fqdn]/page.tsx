@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { checkSectionAccess } from "@/components/dashboard/SectionAccess";
+import { AssetsCard } from "@/components/screens/detalle/AssetsCard";
 import { CategoryBars } from "@/components/screens/detalle/CategoryBars";
 import { DomainTabs, domainTabs } from "@/components/screens/detalle/DomainTabs";
 import { RiskGauge } from "@/components/screens/detalle/RiskGauge";
@@ -16,7 +17,7 @@ import { InlineAlert } from "@/components/ui/InlineAlert";
 import { CATEGORY_LABELS, SCAN_BLOCK_REASON_LABELS } from "@/config/labels";
 import { can, canAccessSection } from "@/config/permissions";
 import { formatDate, formatDateTime } from "@/lib/format";
-import { getDomainFindings, getDomains, getDomainScore, getScoreHistory } from "@/services/domainService";
+import { getDomainAssets, getDomainFindings, getDomains, getDomainScore, getScoreHistory } from "@/services/queries";
 
 type Props = { params: Promise<{ fqdn: string }> };
 
@@ -34,7 +35,7 @@ export default async function DomainDetailPage({ params }: Props) {
   if (!domain) notFound();
 
   const canSeeFindings = canAccessSection(user.role, "hallazgos");
-  const [findings, history] = await Promise.all([getDomainFindings(fqdn), getScoreHistory(fqdn)]);
+  const [findings, history, assets] = await Promise.all([getDomainFindings(fqdn), getScoreHistory(fqdn), getDomainAssets(fqdn)]);
   const score = domain.score !== null ? await getDomainScore(fqdn) : null;
   const points = history.items;
   const delta = points.length >= 2 ? points[points.length - 1]!.score - points[points.length - 2]!.score : null;
@@ -124,6 +125,8 @@ export default async function DomainDetailPage({ params }: Props) {
           </EmptyState>
         </Card>
       )}
+
+      <AssetsCard assets={assets.items} />
     </div>
   );
 }

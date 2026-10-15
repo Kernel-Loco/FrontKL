@@ -6,7 +6,7 @@ import { scoredDomains } from "@/components/screens/shared/domainState";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { SECTIONS } from "@/config/permissions";
-import { getDomains } from "@/services/domainService";
+import { getDomains } from "@/services/queries";
 
 export const metadata: Metadata = { title: SECTIONS.detalle.label };
 

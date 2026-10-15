@@ -12,7 +12,7 @@ import { Card } from "@/components/ui/Card";
 import { ROLE_LABELS, SECTIONS } from "@/config/permissions";
 import { ROLES } from "@/types";
 import { getApiKeys, getAuditLog, getIntegrations } from "@/services/adminService";
-import { getDomains } from "@/services/domainService";
+import { getDomains } from "@/services/queries";
 import { getUsers } from "@/services/userService";
 
 export const metadata: Metadata = { title: "Administración" };

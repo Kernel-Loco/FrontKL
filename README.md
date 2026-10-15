@@ -35,7 +35,7 @@ Contraseña: `Lowtide-Demo-2026`. **Cómo pasar el MFA** (claves para la app aut
 
 La sesión expira a los 15 min sin actividad (aviso un minuto antes) y a las 8 h como máximo. El registro abierto y la recuperación por correo todavía no tienen backend: esas pantallas lo dicen al enviarlas.
 
-Lo demás (dominios, hallazgos, score, reportes, administración) sigue con **datos simulados** de `src/mocks/api/` hasta conectar la API v1 (RC-17).
+**Datos reales (RC-17):** Dashboard, Dominios y autorización, Detalle de dominio, Hallazgos (con «¿Por qué es crítico?») y el histórico leen de la API v1, y «Escanear» pide un escaneo real al orquestador (#22). Cada usuario ve solo los dominios de su empresa: `admin@olmardo.com` ve olmardo.com, el único que se escanea en vivo. Siguen simulados el alta de dominios y la verificación TXT (#26), los reportes, usuarios, llaves de API, webhooks, alertas y bitácora.
 
 ## Estructura
 
@@ -48,7 +48,7 @@ El portal se llama **LowTide**: el acceso (login, MFA, registro y recuperación)
 - `src/components/ui/`: piezas del tema oscuro (tarjetas, etiquetas, botones, campos, barras y modal). `tones.ts` tiene los colores de severidades y bandas.
 - `src/components/screens/<sección>/`: las pantallas, que reciben sus datos por props.
 - `src/components/auth/` y `TextInput`, `Button`, `CodeInput`: piezas del acceso claro.
-- `src/services/`: llamadas a la API. `authService.ts` ya habla con FastAPI; los demás siguen simulados. Las pantallas solo piden datos a estas funciones, así que conectar la API cambia los servicios y no las pantallas. Cada función indica con un TODO su endpoint de `/api/v1`.
+- `src/services/`: llamadas a la API. `queries.ts` son las lecturas de las páginas (en el servidor, con `src/lib/apiServer.ts`, que reenvía la cookie de sesión). `authService.ts`, `scanService.ts` y `domainService.ts` son acciones desde el navegador. Los demás siguen simulados. Las pantallas solo piden datos a estas funciones, así que conectar la API cambia los servicios y no las pantallas. Cada función indica con un TODO su endpoint de `/api/v1`.
 - `src/mocks/api/`: datos simulados. `contrato.ts` sale de los JSON del contrato #21 de BackKL (`docs/api_v1/`) más los campos marcados «Propuesto» en `src/types/api.ts`; `provisional.ts` trae lo que aún no está en el contrato.
 - `src/types/api.ts`: tipos de la API v1. «Provisional» = endpoint que todavía no está en el contrato; «Propuesto» = campo nuevo que hay que agregar en BackKL.
 - `src/config/labels.ts`: nombres en español de todos los códigos de la API.

@@ -6,7 +6,7 @@ import { DomainsAdmin } from "@/components/screens/dominios/DomainsAdmin";
 import { RegisteredDomainsTable } from "@/components/screens/dominios/RegisteredDomainsTable";
 import { Card } from "@/components/ui/Card";
 import { can, canAccessSection, SECTIONS } from "@/config/permissions";
-import { getDomains, getTxtVerifications } from "@/services/domainService";
+import { getDomains, getTxtVerifications } from "@/services/queries";
 
 export const metadata: Metadata = { title: SECTIONS.dominios.label };
 

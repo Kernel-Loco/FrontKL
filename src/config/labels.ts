@@ -83,11 +83,15 @@ export const TXT_STATUS_LABELS: Record<TxtStatus, string> = {
 /** Por qué no se puede escanear un dominio. */
 export const SCAN_BLOCK_REASON_LABELS: Record<ScanBlockReason, string> = {
   authorization_missing: "Falta la autorización firmada",
+  authorization_not_started: "La autorización todavía no entra en vigor",
   authorization_expired: "La autorización venció",
   authorization_revoked: "La autorización fue revocada",
   txt_not_verified: "Falta verificar el registro TXT",
   domain_paused: "El dominio está en pausa",
   domain_removed: "El dominio fue eliminado",
+  domain_not_found: "El dominio no está registrado",
+  scan_in_progress: "Ya hay un escaneo en curso",
+  live_scan_not_allowed: "Dominio de la demo: no se consulta en vivo",
 };
 
 export const FINDING_STATUS_LABELS: Record<FindingStatus, string> = {
