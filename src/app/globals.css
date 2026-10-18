@@ -1,40 +1,78 @@
 @import "tailwindcss";
 
-/* Tokens de diseño de Cirdan. Tailwind v4 genera utilidades a partir de @theme
-   (bg-cirdan-950, text-cirdan-blue, fill-cirdan-700, font-logo, ...). */
+/* Tokens de diseño de Lowtide. Tailwind v4 genera utilidades a partir de @theme
+   (bg-lt-bg, text-lt-muted, border-lt-border, ...).
+   El acceso (login y MFA) es claro; el portal es oscuro. */
 @theme {
-  --color-cirdan-50: #f5f0fe;
-  --color-cirdan-100: #ebe1fc;
-  --color-cirdan-200: #d6c4f8;
-  --color-cirdan-400: #9b6ef0;
-  --color-cirdan-500: #7b3fe4; /* círculo del logo */
-  --color-cirdan-600: #6c1a96;
-  --color-cirdan-700: #5e1083; /* formas decorativas, botón secundario */
-  --color-cirdan-800: #45095a; /* anillo intermedio */
-  --color-cirdan-900: #380c5f;
-  --color-cirdan-950: #2d0a4e; /* fondo de autenticación */
+  /* Portal oscuro */
+  --color-lt-bg: #0b0c11; /* fondo de página */
+  --color-lt-sidebar: #0e0f15;
+  --color-lt-surface: #13141c; /* tarjetas */
+  --color-lt-raised: #1a1c26; /* inputs, filas activas */
+  --color-lt-border: #252838;
+  --color-lt-text: #e8eaf2;
+  --color-lt-muted: #9196ab;
+  --color-lt-faint: #5f6378;
+  --color-lt-nav: #1b1d36; /* elemento activo del menú */
 
-  --color-cirdan-blue: #2b3fc7; /* texto del botón principal */
-  --color-cirdan-indigo: #5b5fd6; /* íconos y casillas de código */
-  --color-cirdan-mist: #eeedf7; /* tarjetas claras de ícono */
+  /* Marca */
+  --color-lt-indigo: #5b6cf0;
+  --color-lt-indigo-soft: #8f9bff;
+  --color-lt-teal: #5ec8d0;
+  --color-lt-primary: #4f7cf0; /* botón principal del acceso */
+
+  /* Severidades y bandas del score */
+  --color-lt-red: #f0616b;
+  --color-lt-orange: #f0954a;
+  --color-lt-amber: #e8c35a;
+  --color-lt-blue: #6b9ef0;
+  --color-lt-green: #4fd1a5;
+
+  /* Acceso claro */
+  --color-lt-paper: #f5f6f9;
+  --color-lt-ink: #0f1115;
+  --color-lt-line: #e3e5eb;
 }
 
 @theme inline {
-  --font-sans: var(--font-montserrat), ui-sans-serif, system-ui, sans-serif;
-  --font-logo: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-mono-lt), ui-monospace, "SFMono-Regular", Menlo, monospace;
 }
 
 /* Foco visible por defecto; cada zona puede redefinir --focus-ring. */
 :focus-visible {
-  outline: 2px solid var(--focus-ring, var(--color-cirdan-500));
+  outline: 2px solid var(--focus-ring, var(--color-lt-indigo));
   outline-offset: 2px;
 }
 
-/* Evita el fondo amarillo/blanco del autocompletado en los inputs transparentes. */
-.auth-input:-webkit-autofill,
-.auth-input:-webkit-autofill:hover,
-.auth-input:-webkit-autofill:focus {
-  -webkit-text-fill-color: #fff;
-  caret-color: #fff;
-  transition: background-color 9999s ease-in-out 0s;
+/* Los controles nativos (fecha, select, scroll) siguen el tema de cada zona. */
+.lt-dark {
+  color-scheme: dark;
+}
+
+.lt-light {
+  color-scheme: light;
+  --color-lt-bg: #f4f6fa;
+  --color-lt-sidebar: #ffffff;
+  --color-lt-surface: #ffffff;
+  --color-lt-raised: #f0f2f6;
+  --color-lt-border: #dce1ea;
+  --color-lt-text: #1c2230;
+  --color-lt-muted: #596579;
+  --color-lt-faint: #707b8e;
+  --color-lt-nav: #e8ecff;
+  --color-lt-indigo: #4f5fc5;
+  --color-lt-indigo-soft: #4958b5;
+  --color-lt-teal: #087d83;
+  --color-lt-red: #bf3745;
+  --color-lt-orange: #b64a00;
+  --color-lt-amber: #856000;
+  --color-lt-blue: #325fa5;
+  --color-lt-green: #087454;
+}
+
+/* Fondo del diálogo nativo. */
+dialog::backdrop {
+  background: rgb(5 6 10 / 0.7);
+  backdrop-filter: blur(2px);
 }

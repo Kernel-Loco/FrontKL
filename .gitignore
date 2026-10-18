@@ -42,3 +42,7 @@ next-env.d.ts
 
 # Plantilla de variables (sí se versiona)
 !.env.example
+
+# En la raíz solo se versiona README.md; la demás documentación va en docs/
+/*.md
+!/README.md

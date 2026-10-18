@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Lock, Mail, User } from "lucide-react";
 import { Notice } from "@/components/auth/Notice";
 import { Button } from "@/components/Button";
 import { PasswordStrength } from "@/components/PasswordStrength";
@@ -38,15 +37,15 @@ export function SignUpForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
-      <TextInput label="Username" icon={User} autoComplete="username" error={errors.username?.message} {...register("username")} />
-      <TextInput label="Name" icon={User} autoComplete="name" error={errors.full_name?.message} {...register("full_name")} />
-      <TextInput label="E-mail" type="email" icon={Mail} autoComplete="email" error={errors.email?.message} {...register("email")} />
+    <form method="post" onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
+      <TextInput label="Usuario" autoComplete="username" error={errors.username?.message} {...register("username")} />
+      <TextInput label="Nombre completo" autoComplete="name" error={errors.full_name?.message} {...register("full_name")} />
+      <TextInput label="Correo" type="email" autoComplete="email" error={errors.email?.message} {...register("email")} />
       <div>
         <TextInput
-          label="Password"
+          label="Contraseña"
           type="password"
-          icon={Lock}
+         
           autoComplete="new-password"
           error={errors.password?.message}
           {...register("password")}
@@ -54,20 +53,20 @@ export function SignUpForm() {
         <PasswordStrength password={password} context={[username, email.split("@")[0] ?? ""]} />
       </div>
       <TextInput
-        label="Confirm password"
+        label="Confirma la contraseña"
         type="password"
-        icon={Lock}
+       
         autoComplete="new-password"
         error={errors.confirmPassword?.message}
         {...register("confirmPassword")}
       />
-      <p className="text-xs text-white/80">
-        Tu cuenta se creará con rol <strong className="font-semibold text-white">Analista</strong>. Un Admin puede
+      <p className="text-xs text-slate-500">
+        Tu cuenta se creará con rol <strong className="font-semibold text-lt-ink">Analista</strong>. Un Admin puede
         asignarte otro rol.
       </p>
       {formError && <Notice tone="error">{formError}</Notice>}
       <Button type="submit" loading={isSubmitting || navigating} className="mt-2">
-        Sign Up
+        Crear cuenta
       </Button>
     </form>
   );

@@ -1,30 +1,19 @@
-// Formato de la cookie de sesión mock, compartido por proxy, servidor y cliente.
-import { ROLES, type Session } from "@/types";
+// Sesión real: FastAPI la emite como cookie httpOnly al verificar el MFA y la guarda en Valkey.
+// El portal nunca puede leer ni escribir su valor desde JavaScript; solo sabe si existe.
+import type { ApiRole, ApiUser, Role, User } from "@/types";
 
-export const SESSION_COOKIE = "cirdan_session";
+export const SESSION_COOKIE = "lt_session";
 
-export function serializeSession(session: Session): string {
-  return JSON.stringify(session);
-}
+const ROLE_FROM_API: Record<ApiRole, Role> = { analyst: "analista", manager: "gerente", admin: "admin" };
 
-/** Recibe el valor ya decodificado de la cookie y valida su forma. */
-export function parseSession(value: string | null | undefined): Session | null {
-  if (!value) return null;
-  try {
-    const data: unknown = JSON.parse(value);
-    if (!data || typeof data !== "object" || !("user" in data)) return null;
-    const user = (data as Session).user;
-    if (
-      typeof user?.id !== "string" ||
-      typeof user.username !== "string" ||
-      typeof user.full_name !== "string" ||
-      typeof user.email !== "string" ||
-      !ROLES.includes(user.role)
-    ) {
-      return null;
-    }
-    return { user };
-  } catch {
-    return null;
-  }
+export function toUser(user: ApiUser): User {
+  return {
+    id: user.id,
+    email: user.email,
+    full_name: user.full_name,
+    role: ROLE_FROM_API[user.role],
+    organization_name: user.organization_name,
+    mfa_enabled: user.mfa_enabled,
+    last_login_at: user.last_login_at,
+  };
 }

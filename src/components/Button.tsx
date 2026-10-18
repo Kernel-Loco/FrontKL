@@ -4,8 +4,8 @@ import { Spinner } from "./Spinner";
 type Variant = "primary" | "secondary";
 
 const VARIANTS: Record<Variant, string> = {
-  primary: "bg-white text-cirdan-blue shadow-[0_4px_14px_rgba(0,0,0,0.35)] hover:bg-cirdan-50",
-  secondary: "bg-cirdan-700 text-white shadow-[0_4px_14px_rgba(0,0,0,0.25)] hover:bg-cirdan-600",
+  primary: "bg-lt-primary text-white shadow-sm hover:bg-[#3f6de6]",
+  secondary: "border border-lt-line bg-lt-paper text-slate-700 hover:bg-slate-100",
 };
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -14,6 +14,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   loading?: boolean;
 }
 
+/** Botón de las pantallas de acceso (fondo claro). */
 export function Button({
   variant = "primary",
   loading = false,
@@ -28,7 +29,7 @@ export function Button({
       type={type}
       disabled={disabled || loading}
       aria-busy={loading || undefined}
-      className={`inline-flex h-11 w-full items-center justify-center gap-2 rounded-[4px] px-4 text-sm font-semibold uppercase tracking-wide transition-colors disabled:cursor-not-allowed disabled:opacity-75 ${VARIANTS[variant]} ${className}`}
+      className={`inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-70 ${VARIANTS[variant]} ${className}`}
       {...rest}
     >
       {loading && <Spinner />}

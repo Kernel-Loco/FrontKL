@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Lock } from "lucide-react";
 import { Notice } from "@/components/auth/Notice";
 import { Button } from "@/components/Button";
 import { PasswordStrength } from "@/components/PasswordStrength";
@@ -57,13 +56,12 @@ export function ResetPasswordForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
-      <p className="text-center text-sm text-white/90">Elige una contraseña nueva de al menos 12 caracteres.</p>
-      <div>
+    <form method="post" onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
+            <div>
         <TextInput
-          label="New password"
+          label="Contraseña nueva"
           type="password"
-          icon={Lock}
+         
           autoComplete="new-password"
           autoFocus
           error={errors.password?.message}
@@ -72,9 +70,9 @@ export function ResetPasswordForm() {
         <PasswordStrength password={password} context={[data.email.split("@")[0] ?? ""]} />
       </div>
       <TextInput
-        label="Confirm password"
+        label="Confirma la contraseña"
         type="password"
-        icon={Lock}
+       
         autoComplete="new-password"
         error={errors.confirmPassword?.message}
         {...register("confirmPassword")}

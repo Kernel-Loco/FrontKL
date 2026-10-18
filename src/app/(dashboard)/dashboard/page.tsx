@@ -1,45 +1,59 @@
 import type { Metadata } from "next";
-import { CalendarClock, Gauge, Server, ShieldAlert } from "lucide-react";
-import { FindingsTable } from "@/components/dashboard/FindingsTable";
 import { PageHeader } from "@/components/dashboard/PageHeader";
-import { KpiCard } from "@/components/KpiCard";
-import { formatDateTime, formatRelative, riskLevel } from "@/lib/format";
-import { getDashboardSummary } from "@/services/dashboardService";
+import { checkSectionAccess } from "@/components/dashboard/SectionAccess";
+import { DomainsRiskTable } from "@/components/screens/dashboard/DomainsRiskTable";
+import { FindingsByTypeChart } from "@/components/screens/dashboard/FindingsByTypeChart";
+import { KpiTile } from "@/components/screens/dashboard/KpiTile";
+import { RecentChanges, type Change } from "@/components/screens/dashboard/RecentChanges";
+import { ScanButton } from "@/components/screens/shared/ScanButton";
+import { scoredDomains } from "@/components/screens/shared/domainState";
+import { BAND_TONE } from "@/components/ui/tones";
+import { can, canAccessSection } from "@/config/permissions";
+import { scoreBand } from "@/lib/format";
+import { getDomainFindings, getDomains, getScans } from "@/services/queries";
 
-export const metadata: Metadata = { title: "Resumen" };
+export const metadata: Metadata = { title: "Dashboard" };
 
-export default async function ResumenPage() {
-  const summary = await getDashboardSummary();
+export default async function DashboardPage() {
+  const { user, forbidden } = await checkSectionAccess("dashboard");
+  if (forbidden) return forbidden;
+
+  const [domains, scans] = await Promise.all([getDomains(), getScans()]);
+  const visible = domains.items.filter((d) => d.status !== "removed");
+  const scored = scoredDomains(visible);
+  const average = scored.length ? Math.round(scored.reduce((sum, d) => sum + (d.score ?? 0), 0) / scored.length) : null;
+  const critical = visible.reduce((sum, d) => sum + d.open_findings.critical, 0);
+  const running = scans.items.filter((s) => s.status === "queued" || s.status === "running").length;
+
+  // El gráfico incluye todos los dominios activos; la lista de cambios conserva el alcance por score.
+  const findings = await Promise.all(visible.map((domain) => getDomainFindings(domain.fqdn)));
+  const scoredFqdns = new Set(scored.map((domain) => domain.fqdn));
+  const changes: Change[] = findings
+    .filter((result) => scoredFqdns.has(result.domain))
+    .flatMap((f) => f.items.filter((item) => item.recurrence === "new").map((finding) => ({ domain: f.domain, finding })))
+    .slice(0, 5);
+
+  // Primero los que tienen score (de mayor a menor riesgo), luego los demás.
+  const rows = [...scored, ...visible.filter((d) => d.score === null)];
 
   return (
     <div className="space-y-8">
-      <PageHeader title="Resumen" description="Estado general de la superficie de ataque monitoreada." />
-
+      <PageHeader
+        title="Dashboard"
+        description="Riesgo de todos los dominios autorizados."
+        actions={can(user.role, "request_scan") ? <ScanButton domains={visible} /> : undefined}
+      />
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiCard label="Activos monitoreados" value={summary.monitored_assets} hint="Dominios, IPs y servicios expuestos" icon={Server} />
-        <KpiCard
-          label="Hallazgos críticos"
-          value={summary.critical_findings}
-          hint={`${summary.kev_findings} hallazgos en CISA KEV`}
-          icon={ShieldAlert}
-          tone="critical"
-        />
-        <KpiCard
-          label="Score de riesgo promedio"
-          value={summary.average_risk_score}
-          suffix="/100"
-          hint={`Riesgo ${riskLevel(summary.average_risk_score).toLowerCase()} · KEV, EPSS y CVSS`}
-          icon={Gauge}
-        />
-        <KpiCard
-          label="Último escaneo"
-          value={formatRelative(summary.last_scan_at)}
-          hint={formatDateTime(summary.last_scan_at)}
-          icon={CalendarClock}
-        />
+        <KpiTile label="Dominios monitoreados" value={visible.filter((d) => d.status === "verified").length} />
+        <KpiTile label="Riesgo promedio" value={average ?? "—"} tone={average !== null ? BAND_TONE[scoreBand(average)] : undefined} />
+        <KpiTile label="Hallazgos críticos" value={critical} tone={critical > 0 ? "red" : undefined} />
+        <KpiTile label="Escaneos en curso" value={running} />
       </div>
-
-      <FindingsTable findings={summary.recent_findings} />
+      <FindingsByTypeChart series={findings.map(({ domain, items }) => ({ domain, findings: items }))} />
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)]">
+        <DomainsRiskTable domains={rows} canOpenDetail={canAccessSection(user.role, "detalle")} />
+        <RecentChanges changes={changes} />
+      </div>
     </div>
   );
 }

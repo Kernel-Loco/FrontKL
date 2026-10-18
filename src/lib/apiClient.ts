@@ -1,7 +1,7 @@
-// Cliente HTTP base para la API de FastAPI. Todavía no se usa: los servicios
-// devuelven datos mock, pero sus TODO indican la llamada que reemplazará cada uno.
+// Cliente HTTP para la API de FastAPI. En el navegador llama a /api/v1 del propio portal
+// (Next lo reenvía, ver next.config.ts) para que la cookie de sesión viaje sola.
 
-const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1").replace(/\/$/, "");
+const API_URL = "/api/v1";
 
 export class ApiError extends Error {
   readonly status: number;
@@ -21,9 +21,9 @@ async function request<T>(method: string, path: string, { body, headers, ...init
   const response = await fetch(`${API_URL}${path}`, {
     ...init,
     method,
-    // La sesión viaja en una cookie httpOnly emitida por FastAPI; nunca en headers
+    // La sesión viaja en la cookie httpOnly emitida por FastAPI; nunca en headers
     // construidos con tokens guardados en el navegador.
-    credentials: "include",
+    credentials: "same-origin",
     headers: {
       Accept: "application/json",
       ...(body !== undefined && { "Content-Type": "application/json" }),
@@ -38,7 +38,9 @@ async function request<T>(method: string, path: string, { body, headers, ...init
     const message =
       detail && typeof detail === "object" && "detail" in detail && typeof detail.detail === "string"
         ? detail.detail
-        : response.statusText;
+        : response.status === 422
+          ? "Revisa los datos e inténtalo de nuevo."
+          : response.statusText;
     throw new ApiError(response.status, message, detail);
   }
 

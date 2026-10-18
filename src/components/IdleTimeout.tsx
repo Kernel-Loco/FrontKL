@@ -4,15 +4,14 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Clock } from "lucide-react";
 import { IDLE_TIMEOUT_MS, IDLE_WARNING_MS, SESSION_REFRESH_INTERVAL_MS } from "@/config/session";
-import { readSessionCookie, refreshSessionCookie } from "@/lib/session/client";
-import { logout } from "@/services/authService";
+import { getCurrentUser, logout } from "@/services/authService";
 
 const ACTIVITY_EVENTS = ["mousemove", "mousedown", "keydown", "wheel", "touchstart", "scroll"] as const;
 
 /**
  * Cierra la sesión tras IDLE_TIMEOUT_MS sin actividad y avisa IDLE_WARNING_MS antes.
- * TODO: conectar con backend — FastAPI también debe expirar la sesión en servidor
- * (TTL en Valkey); este temporizador es solo la parte de la interfaz.
+ * La sesión también expira en el servidor (15 min en Valkey): la actividad la renueva con
+ * GET /auth/me, y si el servidor ya la cerró, el portal sale de inmediato.
  */
 export function IdleTimeout() {
   const router = useRouter();
@@ -45,16 +44,15 @@ export function IdleTimeout() {
       lastActivity.current = now;
       if (now - lastRefresh.current >= SESSION_REFRESH_INTERVAL_MS) {
         lastRefresh.current = now;
-        refreshSessionCookie();
+        void getCurrentUser()
+          .then((user) => {
+            if (!user) void endSession("/login?notice=expired");
+          })
+          .catch(() => {});
       }
     };
 
     const tick = () => {
-      // La sesión se cerró en otra pestaña o la cookie ya expiró.
-      if (!readSessionCookie()) {
-        void endSession("/login");
-        return;
-      }
       const idle = Date.now() - lastActivity.current;
       if (idle >= IDLE_TIMEOUT_MS) {
         void endSession("/login?notice=expired");
@@ -77,36 +75,40 @@ export function IdleTimeout() {
     warningOpen.current = false;
     lastActivity.current = now;
     lastRefresh.current = now;
-    refreshSessionCookie();
     setSecondsLeft(null);
+    void getCurrentUser()
+      .then((user) => {
+        if (!user) void endSession("/login?notice=expired");
+      })
+      .catch(() => {});
   };
 
   if (secondsLeft === null) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-cirdan-950/60 p-4 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
       <div
         role="alertdialog"
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={descriptionId}
-        className="w-full max-w-sm rounded-xl bg-white p-6 shadow-2xl"
+        className="w-full max-w-sm rounded-xl border border-lt-border bg-lt-surface p-6 shadow-2xl"
       >
-        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-cirdan-50">
-          <Clock aria-hidden="true" className="h-6 w-6 text-cirdan-700" />
+        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-lt-indigo/15">
+          <Clock aria-hidden="true" className="h-6 w-6 text-lt-indigo-soft" />
         </div>
-        <h2 id={titleId} className="mt-4 text-lg font-bold text-slate-900">
+        <h2 id={titleId} className="mt-4 text-lg font-bold text-lt-text">
           ¿Sigues ahí?
         </h2>
-        <p id={descriptionId} className="mt-1 text-sm text-slate-600">
+        <p id={descriptionId} className="mt-1 text-sm text-lt-muted">
           Por seguridad, tu sesión se cerrará por inactividad en{" "}
-          <strong className="tabular-nums text-slate-900">{secondsLeft} s</strong>.
+          <strong className="tabular-nums text-lt-text">{secondsLeft} s</strong>.
         </p>
         <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <button
             type="button"
             onClick={() => void endSession("/login?notice=logout")}
-            className="rounded-lg px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+            className="rounded-lg px-4 py-2 text-sm font-semibold text-lt-muted hover:bg-lt-raised"
           >
             Cerrar sesión
           </button>
@@ -114,7 +116,7 @@ export function IdleTimeout() {
             type="button"
             autoFocus
             onClick={keepAlive}
-            className="rounded-lg bg-cirdan-700 px-4 py-2 text-sm font-semibold text-white hover:bg-cirdan-600"
+            className="rounded-lg bg-gradient-to-r from-lt-indigo to-lt-teal px-4 py-2 text-sm font-semibold text-white hover:brightness-110"
           >
             Continuar sesión
           </button>
