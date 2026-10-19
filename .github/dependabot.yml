@@ -1,0 +1,9 @@
+# Dependabot revisa cada semana los paquetes de npm (package.json y package-lock.json)
+# y abre un PR a dev cuando hay una versión nueva.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    target-branch: dev
+    schedule:
+      interval: weekly
