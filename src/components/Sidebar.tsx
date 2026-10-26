@@ -44,6 +44,12 @@ function SidebarContent({ user, badges, theme, onThemeToggle, onNavigate }: { us
           <Logo tone={theme === "light" ? "light" : "dark"} />
         </Link>
       </div>
+      <div className="mx-6 mb-2 border-b border-lt-border px-1 pb-4">
+        <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-lt-faint">Empresa activa</p>
+        <p title={user.organization_name} className="mt-1 truncate text-sm font-semibold text-lt-text">
+          {user.organization_name}
+        </p>
+      </div>
       <nav aria-label="Navegación principal" className="flex-1 space-y-7 overflow-y-auto px-3 py-2">
         {getNavigation(user.role).map((group) => (
           <div key={group.title}>

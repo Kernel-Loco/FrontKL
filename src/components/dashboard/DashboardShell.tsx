@@ -14,6 +14,8 @@ interface DashboardShellProps {
   children: React.ReactNode;
 }
 
+const DEMO_ORGANIZATIONS = new Set(["Acme Demo", "Beta Corp"]);
+
 function subscribeToTheme(onChange: () => void) {
   window.addEventListener("storage", onChange);
   window.addEventListener("lowtide-theme-change", onChange);
@@ -64,9 +66,18 @@ export function DashboardShell({ user, badges, children }: DashboardShellProps) 
             <Menu aria-hidden="true" className="h-5 w-5" />
           </button>
           <Logo tone={theme === "light" ? "light" : "dark"} />
+          <span title={user.organization_name} className="min-w-0 flex-1 truncate text-xs font-medium text-lt-muted">
+            {user.organization_name}
+          </span>
           <ThemeToggle theme={theme} onToggle={toggleTheme} compact />
         </header>
         <main id="contenido" className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 md:px-10 md:py-10">
+          {DEMO_ORGANIZATIONS.has(user.organization_name) && (
+            <div role="status" className="mb-6 border-l-2 border-lt-amber bg-lt-amber/5 px-4 py-3">
+              <p className="text-sm font-semibold text-lt-amber">Datos de demostración</p>
+              <p className="mt-0.5 text-xs text-lt-muted">Esta empresa usa información de prueba.</p>
+            </div>
+          )}
           {children}
         </main>
       </div>
