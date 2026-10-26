@@ -6,7 +6,7 @@ import { parseFlow, readFlowRaw, type FlowData, type FlowKey } from "@/lib/flowS
 const noopSubscribe = () => () => {};
 
 /**
- * Lee el estado de un flujo desde sessionStorage sin romper la hidratación.
+ * Lee el estado de un flujo (memoria de la pestaña, ver flowStorage) sin romper la hidratación.
  * `ready` es false durante el render del servidor y la hidratación.
  */
 export function useFlowState<K extends FlowKey>(key: K): { ready: boolean; data: FlowData[K] | null } {
