@@ -8,12 +8,14 @@
   --color-lt-bg: #0a0b0f; /* fondo de página */
   --color-lt-sidebar: #0a0b0f;
   --color-lt-surface: #0f172a; /* tablas y tarjetas */
-  --color-lt-raised: #111827; /* buscador, inputs, paneles */
+  /* buscador, inputs, paneles, hover y pistas dentro de las tarjetas. El Figma pone #111827, que casi no se
+     distingue de surface (1.01:1), y aquí raised va encima de surface */
+  --color-lt-raised: #1e293b;
   --color-lt-border: #252838;
   --color-lt-text: #e8eaf2;
   --color-lt-muted: #9196ab;
   --color-lt-faint: #5f6378;
-  --color-lt-nav: #12182a; /* elemento activo del menú */
+  --color-lt-nav: color-mix(in srgb, #4b6fe8 18%, #0f172a); /* fila elegida; el activo del menú va en .lt-side */
 
   /* Marca */
   --color-lt-indigo: #4b6fe8; /* botones */
@@ -71,7 +73,7 @@
   --color-lt-text: #1c2230;
   --color-lt-muted: #596579;
   --color-lt-faint: #707b8e;
-  --color-lt-nav: #1d2230;
+  --color-lt-nav: #e8ecff;
   --color-lt-indigo: #4f5fc5;
   --color-lt-indigo-soft: #4958b5;
   --color-lt-teal: #087d83;
@@ -80,18 +82,25 @@
   --color-lt-amber: #856000;
   --color-lt-blue: #325fa5;
   --color-lt-green: #087454;
+  /* El Figma pone Media igual que Alta en modo claro (#fff4e0). Media se queda amarilla para no confundirlas. */
   --color-lt-sev-high-bg: #fff4e0;
-  --color-lt-sev-medium-bg: #fff4e0;
+}
+
+/* Menú lateral en los dos modos: activo del Figma, hover a medio camino entre el fondo y el activo, y títulos de
+   grupo con 4.5:1 o más sobre el fondo del menú. */
+.lt-side {
+  --color-lt-nav: #12182a;
+  --color-lt-raised: color-mix(in srgb, var(--color-lt-nav) 50%, var(--color-lt-sidebar));
+  --color-lt-faint: color-mix(in srgb, #9196ab 60%, #5f6378);
 }
 
 /* En modo claro el menú lateral sigue oscuro: recupera el texto del portal oscuro. */
 .lt-light .lt-side {
   color-scheme: dark;
-  --color-lt-raised: #1d2230;
+  --color-lt-nav: #1d2230;
   --color-lt-border: #252838;
   --color-lt-text: #e8eaf2;
   --color-lt-muted: #9196ab;
-  --color-lt-faint: #5f6378;
   --color-lt-indigo: #4b6fe8;
   --color-lt-indigo-soft: #8f9bff;
   --color-lt-amber: #e8c35a;
