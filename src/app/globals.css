@@ -5,21 +5,21 @@
    El acceso (login y MFA) es claro; el portal es oscuro. */
 @theme {
   /* Portal oscuro */
-  --color-lt-bg: #0b0c11; /* fondo de página */
-  --color-lt-sidebar: #0e0f15;
-  --color-lt-surface: #13141c; /* tarjetas */
-  --color-lt-raised: #1a1c26; /* inputs, filas activas */
+  --color-lt-bg: #0a0b0f; /* fondo de página */
+  --color-lt-sidebar: #0a0b0f;
+  --color-lt-surface: #0f172a; /* tablas y tarjetas */
+  --color-lt-raised: #111827; /* buscador, inputs, paneles */
   --color-lt-border: #252838;
   --color-lt-text: #e8eaf2;
   --color-lt-muted: #9196ab;
   --color-lt-faint: #5f6378;
-  --color-lt-nav: #1b1d36; /* elemento activo del menú */
+  --color-lt-nav: #12182a; /* elemento activo del menú */
 
   /* Marca */
-  --color-lt-indigo: #5b6cf0;
+  --color-lt-indigo: #4b6fe8; /* botones */
   --color-lt-indigo-soft: #8f9bff;
   --color-lt-teal: #5ec8d0;
-  --color-lt-primary: #4f7cf0; /* botón principal del acceso */
+  --color-lt-primary: #3b82f6; /* botón principal del acceso */
 
   /* Severidades y bandas del score */
   --color-lt-red: #f0616b;
@@ -28,10 +28,21 @@
   --color-lt-blue: #6b9ef0;
   --color-lt-green: #4fd1a5;
 
+  /* Etiquetas de severidad: fondo pastel y texto oscuro en los dos modos */
+  --color-lt-sev-critical-bg: #fee2e2;
+  --color-lt-sev-high-bg: #fff3e0;
+  --color-lt-sev-medium-bg: #fef9c3;
+  --color-lt-sev-low-bg: #dcfce7;
+  --color-lt-sev-critical-fg: #bf3745;
+  --color-lt-sev-high-fg: #b64a00;
+  --color-lt-sev-medium-fg: #856000;
+  --color-lt-sev-low-fg: #325fa5;
+
   /* Acceso claro */
-  --color-lt-paper: #f5f6f9;
+  --color-lt-paper: #f5f7fa;
   --color-lt-ink: #0f1115;
   --color-lt-line: #e3e5eb;
+  --color-lt-field: #f8fafc; /* campos del acceso */
 }
 
 @theme inline {
@@ -52,15 +63,15 @@
 
 .lt-light {
   color-scheme: light;
-  --color-lt-bg: #f4f6fa;
-  --color-lt-sidebar: #ffffff;
+  --color-lt-bg: #f5f6fa;
+  --color-lt-sidebar: #111111;
   --color-lt-surface: #ffffff;
   --color-lt-raised: #f0f2f6;
   --color-lt-border: #dce1ea;
   --color-lt-text: #1c2230;
   --color-lt-muted: #596579;
   --color-lt-faint: #707b8e;
-  --color-lt-nav: #e8ecff;
+  --color-lt-nav: #1d2230;
   --color-lt-indigo: #4f5fc5;
   --color-lt-indigo-soft: #4958b5;
   --color-lt-teal: #087d83;
@@ -69,6 +80,22 @@
   --color-lt-amber: #856000;
   --color-lt-blue: #325fa5;
   --color-lt-green: #087454;
+  --color-lt-sev-high-bg: #fff4e0;
+  --color-lt-sev-medium-bg: #fff4e0;
+}
+
+/* En modo claro el menú lateral sigue oscuro: recupera el texto del portal oscuro. */
+.lt-light .lt-side {
+  color-scheme: dark;
+  --color-lt-raised: #1d2230;
+  --color-lt-border: #252838;
+  --color-lt-text: #e8eaf2;
+  --color-lt-muted: #9196ab;
+  --color-lt-faint: #5f6378;
+  --color-lt-indigo: #4b6fe8;
+  --color-lt-indigo-soft: #8f9bff;
+  --color-lt-amber: #e8c35a;
+  --color-lt-bg: #0a0b0f;
 }
 
 /* Fondo del diálogo nativo. */
