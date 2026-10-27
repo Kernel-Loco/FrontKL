@@ -35,7 +35,7 @@ export function TextInput({ label, error, labelAction, type = "text", id, ref, c
           type={isPassword && visible ? "text" : type}
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? errorId : undefined}
-          className={`h-11 w-full rounded-lg border bg-lt-paper px-3.5 text-sm text-lt-ink outline-none transition-colors placeholder:text-slate-400 focus:border-lt-primary focus:bg-white focus-visible:ring-2 focus-visible:ring-lt-primary/25 ${
+          className={`h-11 w-full rounded-lg border bg-lt-field px-3.5 text-sm text-lt-ink outline-none transition-colors placeholder:text-slate-400 focus:border-lt-primary focus:bg-white focus-visible:ring-2 focus-visible:ring-lt-primary/25 ${
             isPassword ? "pr-11" : ""
           } ${error ? "border-red-400" : "border-lt-line"}`}
           {...rest}
