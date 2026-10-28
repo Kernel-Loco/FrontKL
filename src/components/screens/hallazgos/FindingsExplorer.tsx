@@ -9,12 +9,14 @@ import { CATEGORY_LABELS, SEVERITY_LABELS, SOURCE_LABELS } from "@/config/labels
 import type { Category, DomainFinding, Severity } from "@/types";
 import { ExplanationPanel } from "./ExplanationPanel";
 
-export function FindingsExplorer({ findings }: { findings: DomainFinding[] }) {
-  const ids = { search: useId(), category: useId(), severity: useId() };
+export function FindingsExplorer({ findings, initialRule = "" }: { findings: DomainFinding[]; initialRule?: string }) {
+  const ids = { search: useId(), category: useId(), severity: useId(), rule: useId() };
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<Category | "">("");
   const [severity, setSeverity] = useState<Severity | "">("");
+  const [rule, setRule] = useState(initialRule);
   const [selectedId, setSelectedId] = useState(findings[0]?.id ?? null);
+  const rules = [...new Set(findings.map((finding) => finding.rule_code))].sort();
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -22,15 +24,16 @@ export function FindingsExplorer({ findings }: { findings: DomainFinding[] }) {
       (f) =>
         (!category || f.category === category) &&
         (!severity || f.severity === severity) &&
+          (!rule || f.rule_code === rule) &&
         (!q || `${f.title} ${f.asset} ${SOURCE_LABELS[f.source]} ${f.caracteristicas.tipo}`.toLowerCase().includes(q)),
     );
-  }, [findings, query, category, severity]);
+        }, [findings, query, category, severity, rule]);
 
   const selected = visible.find((f) => f.id === selectedId) ?? visible[0];
 
   return (
     <div className="space-y-5">
-      <div className="grid gap-3 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)]">
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,2fr)_repeat(3,minmax(0,1fr))]">
         <div>
           <label htmlFor={ids.search} className="mb-1.5 block text-xs font-medium text-lt-muted">
             Buscar
@@ -68,6 +71,15 @@ export function FindingsExplorer({ findings }: { findings: DomainFinding[] }) {
                 {SEVERITY_LABELS[s]}
               </option>
             ))}
+          </select>
+        </div>
+        <div>
+          <label htmlFor={ids.rule} className="mb-1.5 block text-xs font-medium text-lt-muted">
+            Acción del plan
+          </label>
+          <select id={ids.rule} value={rule} onChange={(e) => setRule(e.target.value)} className={`${SELECT} h-11`}>
+            <option value="">Todas</option>
+            {rules.map((code) => <option key={code} value={code}>{code.replace(/_/g, " ")}</option>)}
           </select>
         </div>
       </div>
