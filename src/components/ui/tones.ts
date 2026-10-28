@@ -29,3 +29,11 @@ export const SOLID_TONES: Record<Tone, { bg: string; text: string; stroke: strin
 
 export const SEVERITY_TONE: Record<Severity, Tone> = { critical: "red", high: "orange", medium: "amber", low: "blue" };
 export const BAND_TONE: Record<Band, Tone> = { critical: "red", high: "orange", medium: "amber", low: "blue" };
+
+/** Etiqueta de severidad: fondo pastel del Figma y texto oscuro, igual en los dos modos. */
+export const SEVERITY_BADGE: Record<Severity, string> = {
+  critical: "bg-lt-sev-critical-bg text-lt-sev-critical-fg",
+  high: "bg-lt-sev-high-bg text-lt-sev-high-fg",
+  medium: "bg-lt-sev-medium-bg text-lt-sev-medium-fg",
+  low: "bg-lt-sev-low-bg text-lt-sev-low-fg",
+};

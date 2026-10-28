@@ -15,6 +15,12 @@ interface DashboardShellProps {
 }
 
 const DEMO_ORGANIZATIONS = new Set(["Acme Demo", "Beta Corp"]);
+// Atribución que pide la licencia CC BY 4.0 de DB-IP Lite, de donde salen el país, el ASN y el proveedor de las IP
+// (BackKL NOTICE, RC-166). Va en todo el panel para que cubra cualquier pantalla que llegue a mostrar esos datos.
+const DBIP_URL = "https://db-ip.com";
+const CC_BY_URL = "https://creativecommons.org/licenses/by/4.0/";
+const FOOTER_LINK = "underline underline-offset-2 hover:text-lt-text";
+const NEW_TAB = <span lang="es" className="sr-only"> (se abre en una pestaña nueva)</span>;
 
 function subscribeToTheme(onChange: () => void) {
   window.addEventListener("storage", onChange);
@@ -80,6 +86,15 @@ export function DashboardShell({ user, badges, children }: DashboardShellProps) 
           )}
           {children}
         </main>
+        <footer className="mx-auto w-full max-w-7xl px-4 pb-6 text-xs text-lt-muted md:px-10">
+          <a href={DBIP_URL} lang="en" target="_blank" rel="noopener noreferrer" className={FOOTER_LINK}>
+            IP Geolocation by DB-IP{NEW_TAB}
+          </a>
+          {" · "}
+          <a href={CC_BY_URL} target="_blank" rel="noopener noreferrer" className={FOOTER_LINK}>
+            CC BY 4.0{NEW_TAB}
+          </a>
+        </footer>
       </div>
       <IdleTimeout />
     </div>

@@ -41,7 +41,7 @@ function SidebarContent({ user, badges, theme, onThemeToggle, onNavigate }: { us
     <>
       <div className="flex h-20 shrink-0 items-center px-6">
         <Link href="/dashboard" onClick={onNavigate} className="rounded-md" aria-label="Lowtide, ir al dashboard">
-          <Logo tone={theme === "light" ? "light" : "dark"} />
+          <Logo />
         </Link>
       </div>
       <div className="mx-6 mb-2 border-b border-lt-border px-1 pb-4">
@@ -139,7 +139,7 @@ export function Sidebar({ user, badges, theme, onThemeToggle, mobileOpen, onMobi
 
   return (
     <>
-      <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r border-lt-border bg-lt-sidebar md:flex">
+      <aside className="lt-side sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r border-lt-border bg-lt-sidebar md:flex">
         <SidebarContent user={user} badges={badges} theme={theme} onThemeToggle={onThemeToggle} />
       </aside>
 
@@ -149,7 +149,7 @@ export function Sidebar({ user, badges, theme, onThemeToggle, mobileOpen, onMobi
           <aside
             id={MOBILE_NAV_ID}
             aria-label="Menú"
-            className="absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col border-r border-lt-border bg-lt-sidebar shadow-xl"
+            className="lt-side absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col border-r border-lt-border bg-lt-sidebar shadow-xl"
           >
             <button
               type="button"
