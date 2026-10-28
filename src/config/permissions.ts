@@ -8,6 +8,7 @@ import {
   KeyRound,
   LayoutDashboard,
   LayoutGrid,
+  ListChecks,
   ScanSearch,
   ScrollText,
   TriangleAlert,
@@ -23,6 +24,7 @@ export type SectionId =
   | "detalle"
   | "hallazgos"
   | "historico"
+  | "plan"
   | "alertas"
   | "admin"
   | "usuarios"
@@ -47,6 +49,7 @@ export const SECTIONS: Record<SectionId, SectionConfig> = {
   detalle: section("detalle", "Detalle de dominio", "/dashboard/detalle", ScanSearch),
   hallazgos: section("hallazgos", "Hallazgos", "/dashboard/hallazgos", TriangleAlert),
   historico: section("historico", "Reportes e histórico", "/dashboard/historico", History),
+  plan: section("plan", "Plan de acción", "/dashboard/plan", ListChecks),
   alertas: section("alertas", "Políticas de alerta", "/dashboard/alertas", Bell),
   admin: section("admin", "Resumen", "/dashboard/admin", LayoutDashboard),
   usuarios: section("usuarios", "Usuarios y roles", "/dashboard/admin/usuarios", Users),
@@ -78,10 +81,10 @@ export interface NavGroup {
 
 /** Menú de cada rol, en el orden en que aparece en la barra lateral. */
 export const ROLE_NAVIGATION: Record<Role, NavGroup[]> = {
-  analista: [{ title: "Monitoreo", items: ["dashboard", "dominios", "detalle", "hallazgos", "historico"] }],
-  gerente: [{ title: "Monitoreo", items: ["dashboard", "dominios", "detalle", "historico"] }],
+  analista: [{ title: "Monitoreo", items: ["dashboard", "dominios", "detalle", "hallazgos", "historico", "plan"] }],
+  gerente: [{ title: "Monitoreo", items: ["dashboard", "dominios", "detalle", "historico", "plan"] }],
   admin: [
-    { title: "Monitoreo", items: ["dashboard", "dominios", "hallazgos", "historico", "alertas"] },
+    { title: "Monitoreo", items: ["dashboard", "dominios", "hallazgos", "historico", "plan", "alertas"] },
     { title: "Administración", items: ["admin", "usuarios", "api", "webhooks", "bitacora"] },
   ],
 };
