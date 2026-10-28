@@ -147,7 +147,7 @@ export function CodeInput({ length, onChange, label, disabled, error, autoFocus 
             onChange={(e) => handleChange(index, e)}
             onPaste={(e) => handlePaste(index, e)}
             onFocus={(e) => e.target.select()}
-            className={`h-12 w-11 rounded-lg border bg-lt-paper text-center text-xl font-semibold text-lt-ink caret-lt-primary outline-none transition focus:border-2 focus:border-lt-primary focus:bg-white focus-visible:ring-2 focus-visible:ring-lt-primary/25 disabled:opacity-70 sm:w-12 ${
+            className={`h-12 w-11 rounded-lg border bg-lt-field text-center text-xl font-semibold text-lt-ink caret-lt-primary outline-none transition focus:border-2 focus:border-lt-primary focus:bg-white focus-visible:ring-2 focus-visible:ring-lt-primary/25 disabled:opacity-70 sm:w-12 ${
               error ? "border-red-400" : "border-lt-line"
             }`}
           />
