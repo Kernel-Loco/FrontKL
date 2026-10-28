@@ -15,15 +15,47 @@ interface Factor {
   display: string;
 }
 
+const SHAP_LABELS: Record<string, string> = {
+  tipo: "Tipo de hallazgo",
+  antiguedad_dias: "Antigüedad",
+  exposicion: "Exposición",
+  sensibilidad: "Sensibilidad",
+};
+
 function factorsOf(explanation: FindingExplanation): Factor[] {
-  if (explanation.method === "ml" && explanation.shap) {
-    return explanation.shap.map((s) => ({
-      label: s.feature.replace(/_/g, " "),
+  if (explanation.method === "ml" && explanation.shap?.length) {
+    return [...explanation.shap]
+      .sort((a, b) => Math.abs(b.contribution) - Math.abs(a.contribution))
+      .map((s) => ({
+        label: SHAP_LABELS[s.feature] ?? s.feature.replace(/_/g, " "),
       value: s.contribution,
       display: `${s.contribution > 0 ? "+" : "−"}${Math.abs(s.contribution).toFixed(2)}`,
-    }));
+      }));
   }
   return explanation.factors.map((f) => ({ label: f.label, value: f.points, display: `${f.points > 0 ? "+" : "−"}${Math.abs(f.points)} pts` }));
+}
+
+function shapPhrase(feature: string, value: string | number, characteristics: DomainFinding["caracteristicas"], contribution: number) {
+  const direction = contribution >= 0 ? "aumenta" : "reduce";
+  const label = SHAP_LABELS[feature] ?? feature.replace(/_/g, " ");
+
+  switch (feature) {
+    case "tipo":
+      return `El tipo de hallazgo (${characteristics.tipo.replace(/_/g, " ")}) ${direction} el riesgo.`;
+    case "antiguedad_dias": {
+      const days = Number(value);
+      const age = Number.isFinite(days) ? `${days} ${days === 1 ? "día" : "días"}` : String(value);
+      return `La exposición lleva ${age}; este factor ${direction} el riesgo.`;
+    }
+    case "exposicion":
+      return characteristics.exposicion === "directa"
+        ? `El activo responde directamente desde internet; esto ${direction} el riesgo.`
+        : `El dato está disponible públicamente; esto ${direction} el riesgo.`;
+    case "sensibilidad":
+      return `La información expuesta tiene sensibilidad ${characteristics.sensibilidad}; esto ${direction} el riesgo.`;
+    default:
+      return `${label} (${String(value)}) ${direction} el riesgo.`;
+  }
 }
 
 /** Panel «¿Por qué es crítico?» del hallazgo elegido. */
@@ -43,6 +75,9 @@ export function ExplanationPanel({ finding }: { finding: DomainFinding }) {
   const loading = state?.id !== finding.id;
   const explanation = !loading ? state?.data : undefined;
   const factors = explanation ? factorsOf(explanation) : [];
+  const topShap = explanation?.method === "ml" && explanation.shap
+    ? [...explanation.shap].sort((a, b) => Math.abs(b.contribution) - Math.abs(a.contribution)).slice(0, 3)
+    : [];
   const max = Math.max(1, ...factors.map((f) => Math.abs(f.value)));
   const c = finding.caracteristicas;
 
@@ -70,23 +105,57 @@ export function ExplanationPanel({ finding }: { finding: DomainFinding }) {
         explanation && (
           <>
             <p className="mt-4 text-sm leading-relaxed text-lt-muted">{explanation.summary}</p>
-            <h3 className="mt-5 text-sm text-lt-text">Factores que más pesaron{explanation.method === "ml" ? " (SHAP)" : ""}</h3>
-            <ul className="mt-3 space-y-3">
-              {factors.map((f) => (
-                <li key={f.label}>
-                  <div className="mb-1 flex justify-between gap-3 text-[13px]">
-                    <span className="text-lt-text">{f.label}</span>
-                    <span className={`tabular-nums ${f.value >= 0 ? "text-lt-orange" : "text-lt-blue"}`}>{f.display}</span>
-                  </div>
-                  <div className="h-1.5 overflow-hidden rounded-full bg-lt-raised">
-                    <div
-                      className={`h-full rounded-full ${f.value >= 0 ? "bg-lt-orange" : "bg-lt-blue"}`}
-                      style={{ width: `${(Math.abs(f.value) / max) * 100}%` }}
-                    />
-                  </div>
-                </li>
-              ))}
-            </ul>
+            {topShap.length > 0 ? (
+              <>
+                <h3 className="mt-5 text-sm text-lt-text">Lo que más influyó</h3>
+                <ol className="mt-3 space-y-2">
+                  {topShap.map((factor, index) => (
+                    <li key={`${factor.feature}-${index}`} className="text-sm leading-relaxed text-lt-text">
+                      {shapPhrase(factor.feature, factor.value, c, factor.contribution)}
+                    </li>
+                  ))}
+                </ol>
+                <details className="mt-4 border-t border-lt-border pt-3">
+                  <summary className="cursor-pointer text-xs text-lt-muted hover:text-lt-text">Ver detalle SHAP</summary>
+                  <ul className="mt-3 space-y-3">
+                    {factors.map((f) => (
+                      <li key={f.label}>
+                        <div className="mb-1 flex justify-between gap-3 text-[13px]">
+                          <span className="text-lt-text">{f.label}</span>
+                          <span className={`tabular-nums ${f.value >= 0 ? "text-lt-orange" : "text-lt-blue"}`}>{f.display}</span>
+                        </div>
+                        <div className="h-1.5 overflow-hidden rounded-full bg-lt-raised">
+                          <div
+                            className={`h-full rounded-full ${f.value >= 0 ? "bg-lt-orange" : "bg-lt-blue"}`}
+                            style={{ width: `${(Math.abs(f.value) / max) * 100}%` }}
+                          />
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              </>
+            ) : (
+              <>
+                <h3 className="mt-5 text-sm text-lt-text">Factores que más pesaron</h3>
+                <ul className="mt-3 space-y-3">
+                  {factors.map((f) => (
+                    <li key={f.label}>
+                      <div className="mb-1 flex justify-between gap-3 text-[13px]">
+                        <span className="text-lt-text">{f.label}</span>
+                        <span className={`tabular-nums ${f.value >= 0 ? "text-lt-orange" : "text-lt-blue"}`}>{f.display}</span>
+                      </div>
+                      <div className="h-1.5 overflow-hidden rounded-full bg-lt-raised">
+                        <div
+                          className={`h-full rounded-full ${f.value >= 0 ? "bg-lt-orange" : "bg-lt-blue"}`}
+                          style={{ width: `${(Math.abs(f.value) / max) * 100}%` }}
+                        />
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
             {explanation.method === "rules" && (
               <p className="mt-2 text-[11px] text-lt-faint">
                 Suma {explanation.penalty} de {explanation.max_penalty} puntos posibles en su categoría.
