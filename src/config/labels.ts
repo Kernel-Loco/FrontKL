@@ -177,7 +177,7 @@ export const ALERT_EVENT_LABELS: Record<AlertEvent, { label: string; description
   "finding.created": { label: "Hallazgo nuevo", description: "Un escaneo encuentra un hallazgo que no existía." },
   "finding.resolved": { label: "Hallazgo resuelto", description: "Un hallazgo deja de aparecer en el escaneo." },
   "authorization.expiring": { label: "Autorización por vencer", description: "Faltan 30 días o menos para que venza la autorización firmada de un dominio." },
-  "scan.partial": { label: "Escaneo parcial", description: "Alguna fuente falló después de sus reintentos y el score puede estar incompleto." },
+  "scan.partial": { label: "Escaneo parcial", description: "Alguna fuente falló después de sus reintentos o hay reglas que las fuentes todavía no pueden revisar, así que el score puede estar incompleto." },
 };
 
 export const AUDIT_ACTOR_LABELS: Record<AuditActorType, string> = {
