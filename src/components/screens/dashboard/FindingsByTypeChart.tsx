@@ -17,13 +17,11 @@ export function FindingsByTypeChart({ series }: { series: DomainFindingSeries[] 
   const counts = series.map(({ domain, findings, coverage }) => ({
     domain,
     coverage,
-    values: CATEGORIES.map((category) =>
-      coverage === "complete"
-        ? findings.filter((finding) => finding.category === category).length
-        : null,
-    ),
+    // Cuenta los hallazgos abiertos registrados con cualquier cobertura: un primer escaneo en curso o caído ya puede
+    // tener hallazgos sin score, y hoy todo escaneo queda parcial. La leyenda y el aviso dicen la cobertura.
+    values: CATEGORIES.map((category) => findings.filter((finding) => finding.category === category).length),
   }));
-  const maxCount = Math.max(0, ...counts.flatMap(({ values }) => values.filter((value): value is number => value !== null)));
+  const maxCount = Math.max(0, ...counts.flatMap(({ values }) => values));
   const scaleMax = Math.max(1, maxCount);
   const ticks = maxCount === 0 ? [] : [...new Set([0, Math.ceil(scaleMax / 2), scaleMax])];
   const groupWidth = Math.max(160, counts.length * 20 + 36);
@@ -31,14 +29,9 @@ export function FindingsByTypeChart({ series }: { series: DomainFindingSeries[] 
   const plotHeight = HEIGHT - PADDING.top - PADDING.bottom;
   const gap = series.length > 8 ? 1 : 3;
   const barWidth = Math.min(18, (groupWidth - 42 - gap * Math.max(0, series.length - 1)) / Math.max(1, series.length));
-  const completeSeries = counts.filter((item) => item.coverage === "complete");
-  const total = completeSeries.reduce(
-    (sum, item) => sum + item.values.reduce<number>((categoryTotal, value) => categoryTotal + (value ?? 0), 0),
-    0,
-  );
-  const description = completeSeries.length
-    ? `${total} hallazgo(s) en ${completeSeries.length} dominio(s) con cobertura completa`
-    : "Sin conteos completos";
+  const incomplete = counts.some((item) => item.coverage !== "complete");
+  const total = counts.reduce((sum, item) => sum + item.values.reduce((categoryTotal, value) => categoryTotal + value, 0), 0);
+  const description = `${total} hallazgo(s) en ${counts.length} dominio(s)${incomplete ? ", no todos con cobertura completa" : ""}`;
 
   return (
     <Card title="Hallazgos abiertos por categoría y dominio" description={description}>
@@ -53,7 +46,7 @@ export function FindingsByTypeChart({ series }: { series: DomainFindingSeries[] 
                 <span className="max-w-56 truncate">{domain}</span>
                 {coverage !== "complete" && (
                   <span className="shrink-0 rounded-sm border border-lt-border px-1.5 py-0.5 text-[10px]">
-                    {coverage === "partial" ? "Parcial" : "Sin escaneo"}
+                    {coverage === "partial" ? "Parcial" : "Sin escaneo terminado"}
                   </span>
                 )}
               </li>
@@ -71,9 +64,7 @@ export function FindingsByTypeChart({ series }: { series: DomainFindingSeries[] 
               <title id="findings-chart-title">Hallazgos abiertos por categoría y dominio</title>
               <desc id="findings-chart-description">
                 {counts.map(({ domain, coverage, values }) =>
-                  coverage === "complete"
-                    ? `${domain}: ${CATEGORIES.map((category, index) => `${CATEGORY_LABELS[category]} ${values[index]}`).join(", ")}`
-                    : `${domain}: conteos no disponibles por ${coverage === "partial" ? "cobertura parcial" : "falta de escaneo"}`,
+                  `${domain}${coverage === "complete" ? "" : coverage === "partial" ? " (cobertura parcial)" : " (sin escaneo terminado)"}: ${CATEGORIES.map((category, index) => `${CATEGORY_LABELS[category]} ${values[index]}`).join(", ")}`,
                 ).join(". ")}
               </desc>
               {ticks.map((tick) => {
@@ -98,7 +89,6 @@ export function FindingsByTypeChart({ series }: { series: DomainFindingSeries[] 
                   <g key={category}>
                     {counts.map(({ domain, values }, domainIndex) => {
                       const value = values[categoryIndex];
-                      if (value === null) return null;
                       const barHeight = (value / scaleMax) * plotHeight;
                       const x = clusterStart + domainIndex * (barWidth + gap);
                       const y = PADDING.top + plotHeight - barHeight;
@@ -126,11 +116,13 @@ export function FindingsByTypeChart({ series }: { series: DomainFindingSeries[] 
               })}
             </svg>
           </div>
-          {completeSeries.length === 0 ? (
-            <p className="mt-3 text-sm text-lt-muted">No hay conteos completos; revisa la cobertura de cada dominio.</p>
-          ) : total === 0 ? (
-            <p className="mt-3 text-sm text-lt-muted">No se encontraron hallazgos abiertos en dominios con cobertura completa.</p>
-          ) : null}
+          {total === 0 && (
+            <p className="mt-3 text-sm text-lt-muted">
+              {incomplete
+                ? "No hay hallazgos abiertos registrados, pero sin cobertura completa eso no confirma que no existan."
+                : "No se encontraron hallazgos abiertos."}
+            </p>
+          )}
         </>
       )}
     </Card>
