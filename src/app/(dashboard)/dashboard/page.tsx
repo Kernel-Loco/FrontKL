@@ -34,9 +34,8 @@ export default async function DashboardPage() {
     })),
   ]);
   const partialDomains = visible.filter((_, index) => coverage[index] === "partial").map((domain) => domain.fqdn);
-  const critical = coverage.every((status) => status === "complete")
-    ? visible.reduce((sum, domain) => sum + domain.open_findings.critical, 0)
-    : null;
+  // Cuenta los críticos abiertos registrados con cualquier cobertura (hoy todo escaneo queda parcial); el hint lo avisa.
+  const critical = visible.reduce((sum, domain) => sum + domain.open_findings.critical, 0);
   const scoredFqdns = new Set(scored.map((domain) => domain.fqdn));
   const changes: Change[] = findings
     .filter((result) => scoredFqdns.has(result.domain))
@@ -56,13 +55,19 @@ export default async function DashboardPage() {
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <KpiTile label="Dominios monitoreados" value={visible.filter((d) => d.status === "verified").length} />
         <KpiTile label="Riesgo promedio" value={average ?? "—"} tone={average !== null ? BAND_TONE[scoreBand(average)] : undefined} />
-        <KpiTile label="Hallazgos críticos" value={critical ?? "—"} tone={critical !== null && critical > 0 ? "red" : undefined} />
+        <KpiTile
+          label="Hallazgos críticos"
+          value={critical}
+          tone={critical > 0 ? "red" : undefined}
+          hint={partialDomains.length > 0 ? "Cobertura parcial: puede no estar al día" : undefined}
+        />
         <KpiTile label="Escaneos en curso" value={running} />
       </div>
       {partialDomains.length > 0 && (
         <InlineAlert tone="warning">
-          <strong>Cobertura parcial.</strong> El último escaneo no pudo consultar o revisar todas las fuentes para {partialDomains.join(", ")}.
-          Sus conteos se muestran como no disponibles, no como cero.
+          <strong>Cobertura parcial.</strong> El último escaneo de {partialDomains.join(", ")} no revisó todas las reglas: alguna fuente
+          falló o hay reglas que las fuentes actuales todavía no pueden revisar. Los conteos muestran los hallazgos abiertos registrados
+          y pueden no estar al día.
         </InlineAlert>
       )}
       <FindingsByTypeChart series={findings.map(({ domain, items }, index) => ({

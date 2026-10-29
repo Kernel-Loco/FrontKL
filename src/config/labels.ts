@@ -36,6 +36,7 @@ export const SOURCE_LABELS: Record<FindingSource, string> = {
   dns: "DNS",
   whois: "WHOIS",
   shodan: "Shodan",
+  github: "GitHub",
   censys: "Censys",
   hibp: "HIBP API",
 };
