@@ -5,11 +5,27 @@ import { SeverityBadge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { INPUT, SELECT } from "@/components/ui/Field";
 import { TD, TH } from "@/components/ui/Card";
-import { CATEGORY_LABELS, SEVERITY_LABELS, SOURCE_LABELS } from "@/config/labels";
+import { DataExport } from "@/components/screens/shared/DataExport";
+import {
+  ASSET_TYPE_LABELS,
+  CATEGORY_LABELS,
+  FINDING_STATUS_LABELS,
+  RECURRENCE_LABELS,
+  SEVERITY_LABELS,
+  SOURCE_LABELS,
+} from "@/config/labels";
 import type { Category, DomainFinding, Severity } from "@/types";
 import { ExplanationPanel } from "./ExplanationPanel";
 
-export function FindingsExplorer({ findings, initialRule = "" }: { findings: DomainFinding[]; initialRule?: string }) {
+export function FindingsExplorer({
+  findings,
+  initialRule = "",
+  partialCoverage = false,
+}: {
+  findings: DomainFinding[];
+  initialRule?: string;
+  partialCoverage?: boolean;
+}) {
   const ids = { search: useId(), category: useId(), severity: useId(), rule: useId() };
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<Category | "">("");
@@ -30,6 +46,27 @@ export function FindingsExplorer({ findings, initialRule = "" }: { findings: Dom
         }, [findings, query, category, severity, rule]);
 
   const selected = visible.find((f) => f.id === selectedId) ?? visible[0];
+  const exportRows = visible.map((finding) => ({
+    id: finding.id,
+    title: finding.title,
+    asset: finding.asset,
+    asset_type: ASSET_TYPE_LABELS[finding.asset_type],
+    category: CATEGORY_LABELS[finding.category],
+    rule_code: finding.rule_code,
+    source: SOURCE_LABELS[finding.source],
+    severity: SEVERITY_LABELS[finding.severity],
+    base_severity: SEVERITY_LABELS[finding.base_severity],
+    status: FINDING_STATUS_LABELS[finding.status],
+    recurrence: RECURRENCE_LABELS[finding.recurrence],
+    cve_id: finding.cve_id,
+    cvss: finding.cvss,
+    epss: finding.epss,
+    in_kev: finding.in_kev,
+    evidence: finding.evidence,
+    caracteristicas: finding.caracteristicas,
+    detected_at: finding.detected_at,
+    last_scan_id: finding.last_scan_id,
+  }));
 
   return (
     <div className="space-y-5">
@@ -84,11 +121,20 @@ export function FindingsExplorer({ findings, initialRule = "" }: { findings: Dom
         </div>
       </div>
 
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-xs text-lt-muted">{visible.length} de {findings.length} hallazgos</p>
+        <DataExport filename="hallazgos" rows={exportRows} />
+      </div>
+
       <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
         <div className="overflow-hidden rounded-xl border border-lt-border bg-lt-surface">
           {visible.length === 0 ? (
-            <EmptyState title={findings.length === 0 ? "Sin hallazgos abiertos" : "Ningún hallazgo coincide"}>
-              {findings.length === 0 ? "Este dominio no tiene hallazgos abiertos en su último escaneo." : "Prueba con otra búsqueda o quita los filtros."}
+            <EmptyState title={findings.length === 0 ? partialCoverage ? "Resultados incompletos" : "Sin hallazgos abiertos" : "Ningún hallazgo coincide"}>
+              {findings.length === 0
+                ? partialCoverage
+                  ? "El último escaneo fue parcial; no se puede concluir que no haya más hallazgos."
+                  : "Este dominio no tiene hallazgos abiertos en su último escaneo."
+                : "Prueba con otra búsqueda o quita los filtros."}
             </EmptyState>
           ) : (
             <div className="overflow-x-auto">

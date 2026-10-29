@@ -4,11 +4,12 @@ import { checkSectionAccess } from "@/components/dashboard/SectionAccess";
 import { DomainTabs, domainTabs } from "@/components/screens/detalle/DomainTabs";
 import { FindingsExplorer } from "@/components/screens/hallazgos/FindingsExplorer";
 import { DomainPicker } from "@/components/screens/shared/DomainPicker";
+import { InlineAlert } from "@/components/ui/InlineAlert";
 import { scoredDomains } from "@/components/screens/shared/domainState";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { canAccessSection, SECTIONS } from "@/config/permissions";
-import { getDomainFindings, getDomains } from "@/services/queries";
+import { getDomainFindings, getDomainScore, getDomains } from "@/services/queries";
 
 export const metadata: Metadata = { title: SECTIONS.hallazgos.label };
 
@@ -33,7 +34,10 @@ export default async function HallazgosPage({ searchParams }: Props) {
     );
   }
 
-  const findings = await getDomainFindings(fqdn);
+  const [findings, score] = await Promise.all([
+    getDomainFindings(fqdn),
+    getDomainScore(fqdn),
+  ]);
   const initialRule = typeof regla === "string" && findings.items.some((finding) => finding.rule_code === regla)
     ? regla
     : "";
@@ -47,7 +51,17 @@ export default async function HallazgosPage({ searchParams }: Props) {
         actions={<DomainPicker domains={options} value={fqdn} />}
       />
       {canOpenDetail && <DomainTabs tabs={domainTabs(fqdn, findings.total, "hallazgos", true)} />}
-      <FindingsExplorer key={`${fqdn}-${initialRule}`} findings={findings.items} initialRule={initialRule} />
+      {score.partial_coverage && (
+        <InlineAlert tone="warning">
+          <strong>Cobertura parcial.</strong> El último escaneo no pudo consultar o revisar todas las fuentes. La lista muestra los hallazgos detectados, pero no permite concluir que los demás no existan.
+        </InlineAlert>
+      )}
+      <FindingsExplorer
+        key={`${fqdn}-${initialRule}`}
+        findings={findings.items}
+        initialRule={initialRule}
+        partialCoverage={score.partial_coverage}
+      />
     </div>
   );
 }

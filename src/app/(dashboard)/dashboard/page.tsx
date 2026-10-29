@@ -6,11 +6,12 @@ import { FindingsByTypeChart } from "@/components/screens/dashboard/FindingsByTy
 import { KpiTile } from "@/components/screens/dashboard/KpiTile";
 import { RecentChanges, type Change } from "@/components/screens/dashboard/RecentChanges";
 import { ScanButton } from "@/components/screens/shared/ScanButton";
+import { InlineAlert } from "@/components/ui/InlineAlert";
 import { scoredDomains } from "@/components/screens/shared/domainState";
 import { BAND_TONE } from "@/components/ui/tones";
 import { can, canAccessSection } from "@/config/permissions";
 import { scoreBand } from "@/lib/format";
-import { getDomainFindings, getDomains, getScans } from "@/services/queries";
+import { getDomainFindings, getDomainScore, getDomains, getScans } from "@/services/queries";
 
 export const metadata: Metadata = { title: "Dashboard" };
 
@@ -22,11 +23,20 @@ export default async function DashboardPage() {
   const visible = domains.items.filter((d) => d.status !== "removed");
   const scored = scoredDomains(visible);
   const average = scored.length ? Math.round(scored.reduce((sum, d) => sum + (d.score ?? 0), 0) / scored.length) : null;
-  const critical = visible.reduce((sum, d) => sum + d.open_findings.critical, 0);
   const running = scans.items.filter((s) => s.status === "queued" || s.status === "running").length;
 
   // El gráfico incluye todos los dominios activos; la lista de cambios conserva el alcance por score.
-  const findings = await Promise.all(visible.map((domain) => getDomainFindings(domain.fqdn)));
+  const [findings, coverage] = await Promise.all([
+    Promise.all(visible.map((domain) => getDomainFindings(domain.fqdn))),
+    Promise.all(visible.map(async (domain) => {
+      if (domain.score === null) return "unscanned" as const;
+      return (await getDomainScore(domain.fqdn)).partial_coverage ? "partial" as const : "complete" as const;
+    })),
+  ]);
+  const partialDomains = visible.filter((_, index) => coverage[index] === "partial").map((domain) => domain.fqdn);
+  const critical = coverage.every((status) => status === "complete")
+    ? visible.reduce((sum, domain) => sum + domain.open_findings.critical, 0)
+    : null;
   const scoredFqdns = new Set(scored.map((domain) => domain.fqdn));
   const changes: Change[] = findings
     .filter((result) => scoredFqdns.has(result.domain))
@@ -46,10 +56,20 @@ export default async function DashboardPage() {
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <KpiTile label="Dominios monitoreados" value={visible.filter((d) => d.status === "verified").length} />
         <KpiTile label="Riesgo promedio" value={average ?? "—"} tone={average !== null ? BAND_TONE[scoreBand(average)] : undefined} />
-        <KpiTile label="Hallazgos críticos" value={critical} tone={critical > 0 ? "red" : undefined} />
+        <KpiTile label="Hallazgos críticos" value={critical ?? "—"} tone={critical !== null && critical > 0 ? "red" : undefined} />
         <KpiTile label="Escaneos en curso" value={running} />
       </div>
-      <FindingsByTypeChart series={findings.map(({ domain, items }) => ({ domain, findings: items }))} />
+      {partialDomains.length > 0 && (
+        <InlineAlert tone="warning">
+          <strong>Cobertura parcial.</strong> El último escaneo no pudo consultar o revisar todas las fuentes para {partialDomains.join(", ")}.
+          Sus conteos se muestran como no disponibles, no como cero.
+        </InlineAlert>
+      )}
+      <FindingsByTypeChart series={findings.map(({ domain, items }, index) => ({
+        domain,
+        findings: items,
+        coverage: coverage[index] ?? "unscanned",
+      }))} />
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)]">
         <DomainsRiskTable domains={rows} canOpenDetail={canAccessSection(user.role, "detalle")} />
         <RecentChanges changes={changes} />
