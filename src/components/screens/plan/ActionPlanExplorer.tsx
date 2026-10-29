@@ -89,7 +89,8 @@ export function ActionPlanExplorer({ plan }: { plan: ActionPlan }) {
       >
         {plan.partial_coverage && (
           <InlineAlert tone="warning" className="mb-4">
-            El escaneo fue parcial; el impacto se estima con los hallazgos disponibles.
+            Cobertura parcial: alguna fuente falló o hay reglas que las fuentes actuales todavía no pueden revisar. El
+            impacto se estima con los hallazgos disponibles.
           </InlineAlert>
         )}
         {exportError && <InlineAlert tone="error" className="mb-4">{exportError}</InlineAlert>}
