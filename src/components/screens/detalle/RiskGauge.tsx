@@ -8,7 +8,7 @@ interface RiskGaugeProps {
   band: Band;
   /** Diferencia contra el score anterior; `null` si es el primero. */
   delta: number | null;
-  /** Por qué se calculó el score actual: un escaneo o un recálculo sin escaneo. */
+  /** Por qué se calculó el score actual: un escaneo, un recálculo sin escaneo o una corrección. */
   reason: ScoreReason;
   /** Por qué se calculó el score anterior; `null` si es el primero. */
   previousReason: ScoreReason | null;
@@ -48,7 +48,11 @@ export function RiskGauge({ score, band, delta, reason, previousReason }: RiskGa
       </Badge>
       {delta !== null && (
         <p className="mt-2 text-center text-xs text-lt-muted">
-          {delta === 0 ? `Igual que el ${previous}` : `${delta > 0 ? "+" : "−"}${Math.abs(delta)} vs. ${previous}`}
+          {reason === "correction"
+            ? `Antes decía ${score - delta}`
+            : delta === 0
+              ? `Igual que el ${previous}`
+              : `${delta > 0 ? "+" : "−"}${Math.abs(delta)} vs. ${previous}`}
           {reason !== "scan" && <span className="block">{SCORE_REASON_LABELS[reason]}</span>}
         </p>
       )}

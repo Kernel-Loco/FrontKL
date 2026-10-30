@@ -25,7 +25,7 @@ export interface ApiErrorBody {
 export type Band = "low" | "medium" | "high" | "critical";
 export type Category = "infrastructure" | "digital_identity" | "configuration" | "data_leaks";
 export type ScoreMethod = "rules" | "ml";
-export type ScoreReason = "scan" | "intel_update" | "rules_change";
+export type ScoreReason = "scan" | "intel_update" | "rules_change" | "correction";
 
 // ---------------------------------------------------------------- dominios (dominios.json)
 
