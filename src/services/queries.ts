@@ -5,6 +5,7 @@
 import { apiGet } from "@/lib/apiServer";
 import type {
   Asset,
+  ActionPlan,
   Domain,
   DomainFindings,
   DomainScore,
@@ -24,6 +25,8 @@ export const getDomainFindings = (fqdn: string) => apiGet<DomainFindings>(`/doma
 export const getDomainScore = (fqdn: string) => apiGet<DomainScore>(`/domains/${path(fqdn)}/score`);
 
 export const getScoreHistory = (fqdn: string) => apiGet<ScoreHistory>(`/domains/${path(fqdn)}/score/history`);
+
+export const getActionPlan = (fqdn: string) => apiGet<ActionPlan>(`/domains/${path(fqdn)}/action-plan`);
 
 /** Provisional: aún no está en el contrato #21. */
 export const getDomainAssets = (fqdn: string) => apiGet<ListResponse<Asset>>(`/domains/${path(fqdn)}/assets`);

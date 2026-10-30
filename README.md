@@ -35,7 +35,7 @@ Contraseña: `Lowtide-Demo-2026`. **Cómo pasar el MFA** (claves para la app aut
 
 La sesión expira a los 15 min sin actividad (aviso un minuto antes) y a las 8 h como máximo. El registro abierto y la recuperación por correo todavía no tienen backend: esas pantallas lo dicen al enviarlas.
 
-**Datos reales (RC-17):** Dashboard, Dominios y autorización, Detalle de dominio, Hallazgos (con «¿Por qué es crítico?») y el histórico leen de la API v1, y «Escanear» pide un escaneo real al orquestador (#22). Cada usuario ve solo los dominios de su empresa: `admin@olmardo.com` ve olmardo.com, el único que se escanea en vivo. Siguen simulados el alta de dominios y la verificación TXT (#26), los reportes, usuarios, llaves de API, webhooks, alertas y bitácora.
+**Datos reales (RC-17):** Dashboard, Dominios y autorización, Detalle de dominio, Hallazgos (con «¿Por qué es crítico?»), Histórico y Plan de acción leen de la API v1; «Escanear» pide un escaneo real al orquestador (#22), y el simulador calcula el score con acciones seleccionadas sin guardarlas (#70). Cada usuario ve solo los dominios de su empresa: `admin@olmardo.com` ve olmardo.com, el único que se escanea en vivo. Siguen simulados el alta de dominios y la verificación TXT (#26), los reportes, usuarios, llaves de API, webhooks, alertas y bitácora.
 
 ## Estructura
 
@@ -43,7 +43,7 @@ El portal se llama **LowTide**: el acceso (login, MFA, registro y recuperación)
 
 - `src/app/(auth)`: login con correo, MFA, registro y recuperación de contraseña.
 - `src/app/(dashboard)/dashboard`: el panel. Cada página llama primero a `checkSectionAccess()` (`src/components/dashboard/SectionAccess.tsx`) y después pide sus datos a `src/services/`.
-  - `page.tsx` Dashboard · `dominios/` Dominios y autorización · `detalle/` abre el dominio con más riesgo · `dominios/[fqdn]/` Detalle de dominio · `hallazgos/` · `historico/` Reportes e histórico · `alertas/` Políticas de alerta · `admin/` Resumen, `usuarios/`, `api/`, `webhooks/` y `bitacora/` · `perfil/`.
+  - `page.tsx` Dashboard · `dominios/` Dominios y autorización · `detalle/` abre el dominio con más riesgo · `dominios/[fqdn]/` Detalle de dominio · `hallazgos/` · `historico/` Reportes e histórico · `plan/` Plan de acción y simulador · `alertas/` Políticas de alerta · `admin/` Resumen, `usuarios/`, `api/`, `webhooks/` y `bitacora/` · `perfil/`.
 - `src/config/permissions.ts`: menú de cada rol (`ROLE_NAVIGATION`), secciones permitidas y acciones (`can()`, por ejemplo registrar dominios solo Admin).
 - `src/components/ui/`: piezas del tema oscuro (tarjetas, etiquetas, botones, campos, barras y modal). `tones.ts` tiene los colores de severidades y bandas.
 - `src/components/screens/<sección>/`: las pantallas, que reciben sus datos por props.

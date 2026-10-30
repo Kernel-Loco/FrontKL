@@ -3,4 +3,4 @@
 export type Severity = "critical" | "high" | "medium" | "low";
 
 /** Fuente OSINT que originó el hallazgo: `data_sources.code` de la base. */
-export type FindingSource = "ct_logs" | "dns" | "whois" | "shodan" | "censys" | "hibp";
+export type FindingSource = "ct_logs" | "dns" | "whois" | "shodan" | "github" | "censys" | "hibp";

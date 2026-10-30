@@ -30,11 +30,12 @@ export function DomainTabs({ tabs }: { tabs: Tab[] }) {
 }
 
 /** Pestañas que ve cada rol en un dominio. */
-export function domainTabs(fqdn: string, findingsCount: number, active: "resumen" | "hallazgos" | "historico", canSeeFindings: boolean): Tab[] {
+export function domainTabs(fqdn: string, findingsCount: number, active: "resumen" | "hallazgos" | "historico" | "plan", canSeeFindings: boolean): Tab[] {
   const q = `?dominio=${encodeURIComponent(fqdn)}`;
   return [
     { label: "Resumen", href: `/dashboard/dominios/${fqdn}`, active: active === "resumen" },
     ...(canSeeFindings ? [{ label: `Hallazgos (${findingsCount})`, href: `/dashboard/hallazgos${q}`, active: active === "hallazgos" }] : []),
     { label: "Histórico", href: `/dashboard/historico${q}`, active: active === "historico" },
+    { label: "Plan de acción", href: `/dashboard/plan${q}`, active: active === "plan" },
   ];
 }

@@ -153,6 +153,47 @@ export interface ScoreHistory extends ListResponse<ScoreHistoryPoint> {
   domain: string;
 }
 
+// ---------------------------------------------------------------- plan de acción y simulador (#42, #70)
+
+export interface PlanAction {
+  id: string;
+  rule_code: string;
+  category: Category;
+  recommendation: string;
+  finding_ids: string[];
+  finding_count: number;
+  score_after: number;
+  score_reduction: number;
+}
+
+/** `GET /api/v1/domains/{fqdn}/action-plan` */
+export interface ActionPlan {
+  domain: string;
+  score_before: number;
+  band_before: Band;
+  category_scores_before: Record<Category, number>;
+  method: ScoreMethod;
+  partial_coverage: boolean;
+  actions: PlanAction[];
+  total: number;
+}
+
+/** `POST /api/v1/domains/{fqdn}/action-plan/simulate` */
+export interface ActionPlanSimulation {
+  domain: string;
+  action_ids: string[];
+  score_before: number;
+  score_after: number;
+  score_reduction: number;
+  band_before: Band;
+  band_after: Band;
+  category_scores_before: Record<Category, number>;
+  category_scores_after: Record<Category, number>;
+  floor_message_after: string | null;
+  method: ScoreMethod;
+  partial_coverage: boolean;
+}
+
 // ---------------------------------------------------------------- explicación (explicacion.json)
 
 export interface ExplanationFactor {

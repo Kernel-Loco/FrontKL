@@ -13,6 +13,24 @@ interface ApiScan {
   sources: Scan["sources"];
 }
 
+/** `scans.stats` tal como lo deja el orquestador al terminar (#22, #23). */
+export interface ScanRunStats {
+  assets: number;
+  findings: number;
+  sources_ok: number;
+  sources_failed: number;
+  rules_without_coverage?: string[];
+}
+
+export type ScanProgress = ApiScan & { stats: ScanRunStats | null };
+
+const FINISHED: Scan["status"][] = ["completed", "partial", "failed"];
+
+export const isScanFinished = (status: Scan["status"]) => FINISHED.includes(status);
+
+/** Estado de un escaneo y de cada fuente, para seguirlo mientras corre. */
+export const getScan = (id: string) => apiClient.get<ScanProgress>(`/scans/${encodeURIComponent(id)}`);
+
 interface ScanRejection {
   accepted: false;
   detail: string;

@@ -8,9 +8,12 @@ import { ReportsCard } from "@/components/screens/historico/ReportsCard";
 import { ScoreChart } from "@/components/screens/historico/ScoreChart";
 import { DomainPicker } from "@/components/screens/shared/DomainPicker";
 import { ReportButton } from "@/components/screens/shared/ReportButton";
+import { DataExport } from "@/components/screens/shared/DataExport";
 import { scoredDomains } from "@/components/screens/shared/domainState";
 import { Card, TableWrap, TD, TH, TR } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { InlineAlert } from "@/components/ui/InlineAlert";
+import { BAND_LABELS, SCORE_METHOD_LABELS } from "@/config/labels";
 import { can, canAccessSection, SECTIONS } from "@/config/permissions";
 import { formatDate } from "@/lib/format";
 import { getDomainFindings, getDomains, getScoreHistory } from "@/services/queries";
@@ -54,6 +57,25 @@ export default async function HistoricoPage({ searchParams }: Props) {
   const [history, findings] = await Promise.all([getScoreHistory(fqdn), getDomainFindings(fqdn)]);
   const points = history.items;
   const newestFirst = points.map((p, i) => ({ point: p, change: i > 0 ? p.score - points[i - 1]!.score : 0, first: i === 0 })).reverse();
+  const hasPartialCoverage = points.some((point) => point.partial_coverage);
+  const exportRows = points.map((point) => ({
+    score_id: point.score_id,
+    domain: fqdn,
+    computed_at: point.computed_at,
+    score: point.score,
+    band: BAND_LABELS[point.band],
+    weighted: point.weighted,
+    floor: point.floor,
+    floor_applied: point.floor_applied,
+    critical_open: point.critical_open,
+    method: SCORE_METHOD_LABELS[point.method],
+    rule_set_version: point.rule_set_version,
+    reason: point.reason,
+    partial_coverage: point.partial_coverage,
+    new_findings: point.partial_coverage ? null : point.new_findings,
+    resolved_findings: point.partial_coverage ? null : point.resolved_findings,
+    categories: point.categories,
+  }));
   const canOpenDetail = canAccessSection(user.role, "detalle");
   const domainReports = orgReports.filter((r) => r.domain === fqdn || r.domain === null);
 
@@ -66,7 +88,21 @@ export default async function HistoricoPage({ searchParams }: Props) {
       />
       {canOpenDetail && <DomainTabs tabs={domainTabs(fqdn, findings.total, "historico", canAccessSection(user.role, "hallazgos"))} />}
 
-      <Card title="Riesgo global en el tiempo" action={`Últimos ${points.length} escaneos`}>
+      {hasPartialCoverage && (
+        <InlineAlert tone="warning">
+          <strong>Cobertura parcial.</strong> Algunos escaneos no pudieron consultar o revisar todas las fuentes. Sus conteos de hallazgos nuevos y resueltos se muestran como no disponibles.
+        </InlineAlert>
+      )}
+
+      <Card
+        title="Riesgo global en el tiempo"
+        action={(
+          <div className="flex flex-wrap items-center justify-end gap-3">
+            <span>Últimos {points.length} escaneos</span>
+            <DataExport filename={`historico-${fqdn}`} rows={exportRows} />
+          </div>
+        )}
+      >
         {points.length > 0 ? <ScoreChart points={points} /> : <EmptyState title="Sin escaneos todavía" />}
       </Card>
 
@@ -82,6 +118,7 @@ export default async function HistoricoPage({ searchParams }: Props) {
                     <th scope="col" className={TH}>Cambio</th>
                     <th scope="col" className={TH}>Nuevos</th>
                     <th scope="col" className={TH}>Resueltos</th>
+                    <th scope="col" className={TH}>Cobertura</th>
                     <th scope="col" className={TH}><span className="sr-only">Reporte</span></th>
                   </tr>
                 </thead>
@@ -91,8 +128,15 @@ export default async function HistoricoPage({ searchParams }: Props) {
                       <td className={`${TD} whitespace-nowrap`}>{formatDate(point.computed_at)}</td>
                       <td className={`${TD} font-semibold tabular-nums`}>{point.score}</td>
                       <td className={TD}>{first ? <span className="text-lt-faint">—</span> : <Delta value={change} />}</td>
-                      <td className={`${TD} tabular-nums`}>{point.new_findings}</td>
-                      <td className={`${TD} tabular-nums`}>{point.resolved_findings}</td>
+                      <td className={`${TD} tabular-nums`}>{point.partial_coverage ? "—" : point.new_findings}</td>
+                      <td className={`${TD} tabular-nums`}>{point.partial_coverage ? "—" : point.resolved_findings}</td>
+                      <td className={TD}>
+                        {point.partial_coverage ? (
+                          <span className="rounded-sm border border-lt-amber/30 bg-lt-amber/10 px-2 py-1 text-xs text-lt-amber">Parcial</span>
+                        ) : (
+                          <span className="text-xs text-lt-muted">Completa</span>
+                        )}
+                      </td>
                       <td className={`${TD} text-right`}>
                         {canReport && (
                           <ReportButton
