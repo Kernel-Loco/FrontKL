@@ -19,6 +19,7 @@ import type {
   ScanStatus,
   ScanTrigger,
   ScoreMethod,
+  ScoreReason,
   Severity,
   SourceRunStatus,
   TxtStatus,
@@ -60,6 +61,13 @@ export const CATEGORY_LABELS: Record<Category, string> = {
 export const SCORE_METHOD_LABELS: Record<ScoreMethod, string> = {
   rules: "Reglas",
   ml: "Modelo de ML",
+};
+
+export const SCORE_REASON_LABELS: Record<ScoreReason, string> = {
+  scan: "Escaneo",
+  intel_update: "Recálculo por información de amenazas nueva",
+  rules_change: "Recálculo por cambio de reglas",
+  correction: "Corrección del score guardado",
 };
 
 export const DOMAIN_STATUS_LABELS: Record<DomainStatus, string> = {

@@ -1,21 +1,26 @@
-import { BAND_LABELS } from "@/config/labels";
-import type { Band } from "@/types";
+import { BAND_LABELS, SCORE_REASON_LABELS } from "@/config/labels";
+import type { Band, ScoreReason } from "@/types";
 import { Badge } from "@/components/ui/Badge";
 import { BAND_TONE, SOLID_TONES } from "@/components/ui/tones";
 
 interface RiskGaugeProps {
   score: number;
   band: Band;
-  /** Diferencia contra el escaneo anterior; `null` si es el primero. */
+  /** Diferencia contra el score anterior; `null` si es el primero. */
   delta: number | null;
+  /** Por qué se calculó el score actual: un escaneo, un recálculo sin escaneo o una corrección. */
+  reason: ScoreReason;
+  /** Por qué se calculó el score anterior; `null` si es el primero. */
+  previousReason: ScoreReason | null;
 }
 
 const RADIUS = 52;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
 /** Anillo de 0 a 100 con el score global del dominio. */
-export function RiskGauge({ score, band, delta }: RiskGaugeProps) {
+export function RiskGauge({ score, band, delta, reason, previousReason }: RiskGaugeProps) {
   const tone = BAND_TONE[band];
+  const previous = previousReason === "scan" ? "escaneo anterior" : "cálculo anterior";
   return (
     <div className="flex flex-col items-center">
       <div className="relative h-40 w-40">
@@ -42,8 +47,13 @@ export function RiskGauge({ score, band, delta }: RiskGaugeProps) {
         Riesgo {BAND_LABELS[band]}
       </Badge>
       {delta !== null && (
-        <p className="mt-2 text-xs text-lt-muted">
-          {delta === 0 ? "Igual que el escaneo anterior" : `${delta > 0 ? "+" : "−"}${Math.abs(delta)} vs. escaneo anterior`}
+        <p className="mt-2 text-center text-xs text-lt-muted">
+          {reason === "correction"
+            ? `Antes decía ${score - delta}`
+            : delta === 0
+              ? `Igual que el ${previous}`
+              : `${delta > 0 ? "+" : "−"}${Math.abs(delta)} vs. ${previous}`}
+          {reason !== "scan" && <span className="block">{SCORE_REASON_LABELS[reason]}</span>}
         </p>
       )}
     </div>

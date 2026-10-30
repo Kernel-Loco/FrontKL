@@ -13,7 +13,7 @@ import { scoredDomains } from "@/components/screens/shared/domainState";
 import { Card, TableWrap, TD, TH, TR } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { InlineAlert } from "@/components/ui/InlineAlert";
-import { BAND_LABELS, SCORE_METHOD_LABELS } from "@/config/labels";
+import { BAND_LABELS, SCORE_METHOD_LABELS, SCORE_REASON_LABELS } from "@/config/labels";
 import { can, canAccessSection, SECTIONS } from "@/config/permissions";
 import { formatDate } from "@/lib/format";
 import { getDomainFindings, getDomains, getScoreHistory } from "@/services/queries";
@@ -56,6 +56,14 @@ export default async function HistoricoPage({ searchParams }: Props) {
 
   const [history, findings] = await Promise.all([getScoreHistory(fqdn), getDomainFindings(fqdn)]);
   const points = history.items;
+  const scanCount = points.filter((point) => point.reason === "scan").length;
+  const correctionCount = points.filter((point) => point.reason === "correction").length;
+  const recalcCount = points.length - scanCount - correctionCount;
+  const countParts = [
+    `${scanCount} ${scanCount === 1 ? "escaneo" : "escaneos"}`,
+    ...(recalcCount > 0 ? [`${recalcCount} ${recalcCount === 1 ? "recálculo" : "recálculos"}`] : []),
+    ...(correctionCount > 0 ? [`${correctionCount} ${correctionCount === 1 ? "corrección" : "correcciones"}`] : []),
+  ];
   const newestFirst = points.map((p, i) => ({ point: p, change: i > 0 ? p.score - points[i - 1]!.score : 0, first: i === 0 })).reverse();
   const hasPartialCoverage = points.some((point) => point.partial_coverage);
   const exportRows = points.map((point) => ({
@@ -72,8 +80,8 @@ export default async function HistoricoPage({ searchParams }: Props) {
     rule_set_version: point.rule_set_version,
     reason: point.reason,
     partial_coverage: point.partial_coverage,
-    new_findings: point.partial_coverage ? null : point.new_findings,
-    resolved_findings: point.partial_coverage ? null : point.resolved_findings,
+    new_findings: point.partial_coverage || point.reason !== "scan" ? null : point.new_findings,
+    resolved_findings: point.partial_coverage || point.reason !== "scan" ? null : point.resolved_findings,
     categories: point.categories,
   }));
   const canOpenDetail = canAccessSection(user.role, "detalle");
@@ -98,7 +106,9 @@ export default async function HistoricoPage({ searchParams }: Props) {
         title="Riesgo global en el tiempo"
         action={(
           <div className="flex flex-wrap items-center justify-end gap-3">
-            <span>Últimos {points.length} escaneos</span>
+            <span>
+              {countParts.length > 1 ? `${countParts.slice(0, -1).join(", ")} y ${countParts.at(-1)}` : countParts[0]}
+            </span>
             <DataExport filename={`historico-${fqdn}`} rows={exportRows} />
           </div>
         )}
@@ -125,11 +135,16 @@ export default async function HistoricoPage({ searchParams }: Props) {
                 <tbody>
                   {newestFirst.map(({ point, change, first }, i) => (
                     <tr key={point.score_id} className={`${TR} ${i === 0 ? "bg-lt-nav/50" : ""}`}>
-                      <td className={`${TD} whitespace-nowrap`}>{formatDate(point.computed_at)}</td>
+                      <td className={`${TD} whitespace-nowrap`}>
+                        {formatDate(point.computed_at)}
+                        {point.reason !== "scan" && (
+                          <span className="block whitespace-normal text-xs text-lt-muted">{SCORE_REASON_LABELS[point.reason]}</span>
+                        )}
+                      </td>
                       <td className={`${TD} font-semibold tabular-nums`}>{point.score}</td>
-                      <td className={TD}>{first ? <span className="text-lt-faint">—</span> : <Delta value={change} />}</td>
-                      <td className={`${TD} tabular-nums`}>{point.partial_coverage ? "—" : point.new_findings}</td>
-                      <td className={`${TD} tabular-nums`}>{point.partial_coverage ? "—" : point.resolved_findings}</td>
+                      <td className={TD}>{first || point.reason === "correction" ? <span className="text-lt-faint">—</span> : <Delta value={change} />}</td>
+                      <td className={`${TD} tabular-nums`}>{point.partial_coverage || point.reason !== "scan" ? "—" : point.new_findings}</td>
+                      <td className={`${TD} tabular-nums`}>{point.partial_coverage || point.reason !== "scan" ? "—" : point.resolved_findings}</td>
                       <td className={TD}>
                         {point.partial_coverage ? (
                           <span className="rounded-sm border border-lt-amber/30 bg-lt-amber/10 px-2 py-1 text-xs text-lt-amber">Parcial</span>
@@ -156,7 +171,7 @@ export default async function HistoricoPage({ searchParams }: Props) {
             </TableWrap>
           </Card>
           {points.length >= 2 ? (
-            <CompareScans points={points} />
+            <CompareScans key={fqdn} points={points} />
           ) : (
             <Card title="Comparar escaneos">
               <p className="text-sm text-lt-muted">Se necesitan al menos dos escaneos para comparar.</p>

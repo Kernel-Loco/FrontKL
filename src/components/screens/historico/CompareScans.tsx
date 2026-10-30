@@ -8,6 +8,11 @@ import { formatShortDate } from "@/lib/format";
 import type { Category, ScoreHistoryPoint } from "@/types";
 import { Delta } from "./Delta";
 
+function reasonSuffix(p: ScoreHistoryPoint) {
+  if (p.reason === "scan") return "";
+  return p.reason === "correction" ? " · corrección" : " · recálculo";
+}
+
 export function CompareScans({ points }: { points: ScoreHistoryPoint[] }) {
   const fromId = useId();
   const toId = useId();
@@ -15,6 +20,11 @@ export function CompareScans({ points }: { points: ScoreHistoryPoint[] }) {
   const [to, setTo] = useState(points.length - 1);
   const a = points[from]!;
   const b = points[to]!;
+  // Una corrección cambia el número guardado, no la exposición: si hay una
+  // entre las dos fechas, la diferencia no se pinta como subida o bajada.
+  const withCorrection = points
+    .slice(Math.min(from, to) + 1, Math.max(from, to) + 1)
+    .some((p) => p.reason === "correction");
 
   return (
     <Card title="Comparar escaneos">
@@ -26,7 +36,7 @@ export function CompareScans({ points }: { points: ScoreHistoryPoint[] }) {
           <select id={fromId} value={from} onChange={(e) => setFrom(Number(e.target.value))} className={SELECT}>
             {points.map((p, i) => (
               <option key={p.score_id} value={i}>
-                {formatShortDate(p.computed_at)}
+                {formatShortDate(p.computed_at)}{reasonSuffix(p)}
               </option>
             ))}
           </select>
@@ -38,7 +48,7 @@ export function CompareScans({ points }: { points: ScoreHistoryPoint[] }) {
           <select id={toId} value={to} onChange={(e) => setTo(Number(e.target.value))} className={SELECT}>
             {points.map((p, i) => (
               <option key={p.score_id} value={i}>
-                {formatShortDate(p.computed_at)}
+                {formatShortDate(p.computed_at)}{reasonSuffix(p)}
               </option>
             ))}
           </select>
@@ -48,18 +58,24 @@ export function CompareScans({ points }: { points: ScoreHistoryPoint[] }) {
         <li className="flex items-center justify-between py-3 text-sm">
           <span className="font-semibold text-lt-text">Riesgo global</span>
           <span className="flex items-center gap-2 tabular-nums text-lt-text">
-            {a.score} → {b.score} <Delta value={b.score - a.score} />
+            {a.score} → {b.score} {!withCorrection && <Delta value={b.score - a.score} />}
           </span>
         </li>
         {(Object.keys(CATEGORY_LABELS) as Category[]).map((c) => (
           <li key={c} className="flex items-center justify-between py-3 text-sm">
             <span className="text-lt-text">{CATEGORY_LABELS[c]}</span>
             <span className="flex items-center gap-2 tabular-nums text-lt-text">
-              {a.categories[c]} → {b.categories[c]} <Delta value={b.categories[c] - a.categories[c]} />
+              {a.categories[c]} → {b.categories[c]}{" "}
+              {!withCorrection && <Delta value={b.categories[c] - a.categories[c]} />}
             </span>
           </li>
         ))}
       </ul>
+      {withCorrection && (
+        <p className="mt-2 text-xs text-lt-muted">
+          Entre estas fechas hay una corrección del score guardado, así que la diferencia no es un cambio de exposición.
+        </p>
+      )}
     </Card>
   );
 }
