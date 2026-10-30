@@ -26,7 +26,7 @@ export function CompareScans({ points }: { points: ScoreHistoryPoint[] }) {
           <select id={fromId} value={from} onChange={(e) => setFrom(Number(e.target.value))} className={SELECT}>
             {points.map((p, i) => (
               <option key={p.score_id} value={i}>
-                {formatShortDate(p.computed_at)}
+                {formatShortDate(p.computed_at)}{p.reason === "scan" ? "" : " · recálculo"}
               </option>
             ))}
           </select>
@@ -38,7 +38,7 @@ export function CompareScans({ points }: { points: ScoreHistoryPoint[] }) {
           <select id={toId} value={to} onChange={(e) => setTo(Number(e.target.value))} className={SELECT}>
             {points.map((p, i) => (
               <option key={p.score_id} value={i}>
-                {formatShortDate(p.computed_at)}
+                {formatShortDate(p.computed_at)}{p.reason === "scan" ? "" : " · recálculo"}
               </option>
             ))}
           </select>
