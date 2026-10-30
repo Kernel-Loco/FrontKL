@@ -57,6 +57,13 @@ export default async function HistoricoPage({ searchParams }: Props) {
   const [history, findings] = await Promise.all([getScoreHistory(fqdn), getDomainFindings(fqdn)]);
   const points = history.items;
   const scanCount = points.filter((point) => point.reason === "scan").length;
+  const correctionCount = points.filter((point) => point.reason === "correction").length;
+  const recalcCount = points.length - scanCount - correctionCount;
+  const countParts = [
+    `${scanCount} ${scanCount === 1 ? "escaneo" : "escaneos"}`,
+    ...(recalcCount > 0 ? [`${recalcCount} ${recalcCount === 1 ? "recálculo" : "recálculos"}`] : []),
+    ...(correctionCount > 0 ? [`${correctionCount} ${correctionCount === 1 ? "corrección" : "correcciones"}`] : []),
+  ];
   const newestFirst = points.map((p, i) => ({ point: p, change: i > 0 ? p.score - points[i - 1]!.score : 0, first: i === 0 })).reverse();
   const hasPartialCoverage = points.some((point) => point.partial_coverage);
   const exportRows = points.map((point) => ({
@@ -100,8 +107,7 @@ export default async function HistoricoPage({ searchParams }: Props) {
         action={(
           <div className="flex flex-wrap items-center justify-end gap-3">
             <span>
-              {scanCount} {scanCount === 1 ? "escaneo" : "escaneos"}
-              {points.length > scanCount && ` y ${points.length - scanCount} ${points.length - scanCount === 1 ? "recálculo" : "recálculos"}`}
+              {countParts.length > 1 ? `${countParts.slice(0, -1).join(", ")} y ${countParts.at(-1)}` : countParts[0]}
             </span>
             <DataExport filename={`historico-${fqdn}`} rows={exportRows} />
           </div>
@@ -136,7 +142,7 @@ export default async function HistoricoPage({ searchParams }: Props) {
                         )}
                       </td>
                       <td className={`${TD} font-semibold tabular-nums`}>{point.score}</td>
-                      <td className={TD}>{first ? <span className="text-lt-faint">—</span> : <Delta value={change} />}</td>
+                      <td className={TD}>{first || point.reason === "correction" ? <span className="text-lt-faint">—</span> : <Delta value={change} />}</td>
                       <td className={`${TD} tabular-nums`}>{point.partial_coverage || point.reason !== "scan" ? "—" : point.new_findings}</td>
                       <td className={`${TD} tabular-nums`}>{point.partial_coverage || point.reason !== "scan" ? "—" : point.resolved_findings}</td>
                       <td className={TD}>
@@ -165,7 +171,7 @@ export default async function HistoricoPage({ searchParams }: Props) {
             </TableWrap>
           </Card>
           {points.length >= 2 ? (
-            <CompareScans points={points} />
+            <CompareScans key={fqdn} points={points} />
           ) : (
             <Card title="Comparar escaneos">
               <p className="text-sm text-lt-muted">Se necesitan al menos dos escaneos para comparar.</p>

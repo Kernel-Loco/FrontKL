@@ -67,6 +67,7 @@ export const SCORE_REASON_LABELS: Record<ScoreReason, string> = {
   scan: "Escaneo",
   intel_update: "Recálculo por información de amenazas nueva",
   rules_change: "Recálculo por cambio de reglas",
+  correction: "Corrección del score guardado",
 };
 
 export const DOMAIN_STATUS_LABELS: Record<DomainStatus, string> = {
