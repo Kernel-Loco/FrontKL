@@ -53,7 +53,7 @@ export default async function HallazgosPage({ searchParams }: Props) {
       {canOpenDetail && <DomainTabs tabs={domainTabs(fqdn, findings.total, "hallazgos", true)} />}
       {score.partial_coverage && (
         <InlineAlert tone="warning">
-          <strong>Cobertura parcial.</strong> El último escaneo no pudo consultar o revisar todas las fuentes. La lista muestra los hallazgos detectados, pero no permite concluir que los demás no existan.
+          <strong>Cobertura parcial.</strong> En el último escaneo alguna fuente falló o hay reglas que las fuentes actuales todavía no pueden revisar. La lista muestra los hallazgos detectados, pero no permite concluir que los demás no existan.
         </InlineAlert>
       )}
       <FindingsExplorer

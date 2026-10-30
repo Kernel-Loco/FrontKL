@@ -80,8 +80,8 @@ export default async function HistoricoPage({ searchParams }: Props) {
     rule_set_version: point.rule_set_version,
     reason: point.reason,
     partial_coverage: point.partial_coverage,
-    new_findings: point.partial_coverage || point.reason !== "scan" ? null : point.new_findings,
-    resolved_findings: point.partial_coverage || point.reason !== "scan" ? null : point.resolved_findings,
+    new_findings: point.reason !== "scan" ? null : point.new_findings,
+    resolved_findings: point.reason !== "scan" ? null : point.resolved_findings,
     categories: point.categories,
   }));
   const canOpenDetail = canAccessSection(user.role, "detalle");
@@ -98,7 +98,7 @@ export default async function HistoricoPage({ searchParams }: Props) {
 
       {hasPartialCoverage && (
         <InlineAlert tone="warning">
-          <strong>Cobertura parcial.</strong> Algunos escaneos no pudieron consultar o revisar todas las fuentes. Sus conteos de hallazgos nuevos y resueltos se muestran como no disponibles.
+          <strong>Cobertura parcial.</strong> En algunos escaneos alguna fuente falló o hay reglas que las fuentes actuales todavía no pueden revisar. Sus conteos de hallazgos nuevos y resueltos no cuentan lo de la fuente que falló ni lo de esas reglas.
         </InlineAlert>
       )}
 
@@ -143,8 +143,8 @@ export default async function HistoricoPage({ searchParams }: Props) {
                       </td>
                       <td className={`${TD} font-semibold tabular-nums`}>{point.score}</td>
                       <td className={TD}>{first || point.reason === "correction" ? <span className="text-lt-faint">—</span> : <Delta value={change} />}</td>
-                      <td className={`${TD} tabular-nums`}>{point.partial_coverage || point.reason !== "scan" ? "—" : point.new_findings}</td>
-                      <td className={`${TD} tabular-nums`}>{point.partial_coverage || point.reason !== "scan" ? "—" : point.resolved_findings}</td>
+                      <td className={`${TD} tabular-nums`}>{point.reason !== "scan" ? "—" : (point.new_findings ?? "—")}</td>
+                      <td className={`${TD} tabular-nums`}>{point.reason !== "scan" ? "—" : (point.resolved_findings ?? "—")}</td>
                       <td className={TD}>
                         {point.partial_coverage ? (
                           <span className="rounded-sm border border-lt-amber/30 bg-lt-amber/10 px-2 py-1 text-xs text-lt-amber">Parcial</span>
