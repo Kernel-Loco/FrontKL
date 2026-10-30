@@ -74,7 +74,13 @@ export default async function DomainDetailPage({ params }: Props) {
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)]">
             <Card title="Riesgo global">
               <div className="py-2">
-                <RiskGauge score={score.score} band={score.band} delta={delta} />
+                <RiskGauge
+                  score={score.score}
+                  band={score.band}
+                  delta={delta}
+                  reason={score.reason}
+                  previousReason={points.length >= 2 ? points[points.length - 2]!.reason : null}
+                />
               </div>
               {score.floor_applied && (
                 <InlineAlert tone="warning" className="mt-4">
