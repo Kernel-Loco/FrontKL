@@ -93,8 +93,8 @@ export default async function DomainDetailPage({ params }: Props) {
               <CategoryBars categories={score.categories} />
               {score.partial_coverage && (
                 <InlineAlert tone="warning" className="mt-5">
-                  Cobertura parcial: alguna fuente falló o hay reglas que las fuentes actuales todavía no pueden
-                  revisar. El score puede estar incompleto.
+                  Cobertura parcial: alguna fuente falló, revisó solo una parte de sus repos o IP, o hay reglas que
+                  las fuentes actuales todavía no pueden revisar. El score puede estar incompleto.
                 </InlineAlert>
               )}
             </Card>

@@ -98,7 +98,7 @@ export default async function HistoricoPage({ searchParams }: Props) {
 
       {hasPartialCoverage && (
         <InlineAlert tone="warning">
-          <strong>Cobertura parcial.</strong> En algunos escaneos alguna fuente falló o hay reglas que las fuentes actuales todavía no pueden revisar. Sus conteos de hallazgos nuevos y resueltos no cuentan lo de la fuente que falló ni lo de esas reglas.
+          <strong>Cobertura parcial.</strong> En algunos escaneos alguna fuente falló, revisó solo una parte de sus repos o IP, o hay reglas que las fuentes actuales todavía no pueden revisar. Sus conteos de hallazgos nuevos y resueltos solo cuentan lo que el escaneo sí revisó.
         </InlineAlert>
       )}
 
