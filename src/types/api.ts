@@ -143,9 +143,9 @@ export interface DomainScore extends ScoreBase {
 
 export interface ScoreHistoryPoint extends ScoreBase {
   categories: Record<Category, number>;
-  /** Propuesto: hallazgos que aparecieron y que se resolvieron en ese escaneo. */
-  new_findings: number;
-  resolved_findings: number;
+  /** Hallazgos que el escaneo abrió y que resolvió. 0 en un recálculo y null si su escaneo no los contó (antes de RC-55). */
+  new_findings: number | null;
+  resolved_findings: number | null;
 }
 
 /** `GET /api/v1/domains/{fqdn}/score/history`, del más viejo al más nuevo. */
