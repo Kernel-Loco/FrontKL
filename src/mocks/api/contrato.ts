@@ -24,7 +24,7 @@ export const mockDomains: ListResponse<Domain> = {
         "can_scan": true,
         "reasons": []
       },
-      "score": 68,
+      "score": 60,
       "band": "high",
       "open_findings": {
         "critical": 1,
@@ -34,35 +34,6 @@ export const mockDomains: ListResponse<Domain> = {
       },
       "last_scan_at": "2026-09-30T14:20:00-06:00",
       "next_scan_at": "2026-10-07T14:20:00-06:00"
-    },
-    {
-      "id": "40000000-0000-4000-8000-000000000002",
-      "fqdn": "acme-tienda.mx",
-      "status": "verified",
-      "authorization": {
-        "status": "valid",
-        "valid_from": "2026-09-01",
-        "valid_until": "2026-12-31",
-        "signer_email": "security@acme-demo.mx"
-      },
-      "txt": {
-        "status": "verified",
-        "checked_at": "2026-09-29T09:11:30-06:00"
-      },
-      "scan_eligibility": {
-        "can_scan": true,
-        "reasons": []
-      },
-      "score": 54,
-      "band": "medium",
-      "open_findings": {
-        "critical": 0,
-        "high": 0,
-        "medium": 1,
-        "low": 1
-      },
-      "last_scan_at": "2026-09-29T09:12:00-06:00",
-      "next_scan_at": "2026-10-06T09:12:00-06:00"
     },
     {
       "id": "40000000-0000-4000-8000-000000000003",
@@ -82,16 +53,45 @@ export const mockDomains: ListResponse<Domain> = {
         "can_scan": true,
         "reasons": []
       },
-      "score": 31,
+      "score": 0,
       "band": "low",
       "open_findings": {
         "critical": 0,
         "high": 0,
         "medium": 0,
-        "low": 2
+        "low": 0
       },
       "last_scan_at": "2026-09-27T18:45:00-06:00",
       "next_scan_at": "2026-10-04T18:45:00-06:00"
+    },
+    {
+      "id": "40000000-0000-4000-8000-000000000002",
+      "fqdn": "acme-tienda.mx",
+      "status": "verified",
+      "authorization": {
+        "status": "valid",
+        "valid_from": "2026-09-01",
+        "valid_until": "2026-12-31",
+        "signer_email": "security@acme-demo.mx"
+      },
+      "txt": {
+        "status": "verified",
+        "checked_at": "2026-09-29T09:11:30-06:00"
+      },
+      "scan_eligibility": {
+        "can_scan": true,
+        "reasons": []
+      },
+      "score": 0,
+      "band": "low",
+      "open_findings": {
+        "critical": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0
+      },
+      "last_scan_at": "2026-09-29T09:12:00-06:00",
+      "next_scan_at": "2026-10-06T09:12:00-06:00"
     },
     {
       "id": "40000000-0000-4000-8000-000000000004",
@@ -293,142 +293,48 @@ export const mockFindings: DomainFindings = {
 
 export const mockFindingsByDomain: Record<string, DomainFindings> = {
   [mockFindings.domain]: mockFindings,
-  "acme-tienda.mx": {
-    domain: "acme-tienda.mx",
-    items: [
-      {
-        id: "80000000-0000-4000-8000-000000000005",
-        title: "Falta una política DMARC para el correo de acme-tienda.mx",
-        asset: "acme-tienda.mx",
-        asset_type: "domain",
-        category: "configuration",
-        rule_code: "dmarc_missing",
-        source: "dns",
-        severity: "medium",
-        base_severity: "medium",
-        status: "open",
-        recurrence: "recurring",
-        cve_id: null,
-        cvss: null,
-        epss: null,
-        in_kev: false,
-        evidence: { record: "_dmarc.acme-tienda.mx", observed: "NXDOMAIN" },
-        caracteristicas: { tipo: "dmarc_faltante", antiguedad_dias: 14, exposicion: "publica", sensibilidad: "media" },
-        detected_at: "2026-09-29T09:13:10-06:00",
-        last_scan_id: "60000000-0000-4000-8000-000000000002"
-      },
-      {
-        id: "80000000-0000-4000-8000-000000000006",
-        title: "Se detectó un dominio similar a acme-tienda.mx",
-        asset: "acme-tienda-login.mx",
-        asset_type: "domain",
-        category: "digital_identity",
-        rule_code: "lookalike_domain",
-        source: "whois",
-        severity: "low",
-        base_severity: "medium",
-        status: "open",
-        recurrence: "new",
-        cve_id: null,
-        cvss: null,
-        epss: null,
-        in_kev: false,
-        evidence: { similarity: 0.92, registration_status: "active" },
-        caracteristicas: { tipo: "dominio_similar", antiguedad_dias: 0, exposicion: "publica", sensibilidad: "media" },
-        detected_at: "2026-09-29T09:14:02-06:00",
-        last_scan_id: "60000000-0000-4000-8000-000000000002"
-      }
-    ],
-    total: 2
-  },
-  "acme-portal.mx": {
-    domain: "acme-portal.mx",
-    items: [
-      {
-        id: "80000000-0000-4000-8000-000000000007",
-        title: "Falta un registro SPF en acme-portal.mx",
-        asset: "acme-portal.mx",
-        asset_type: "domain",
-        category: "configuration",
-        rule_code: "spf_missing",
-        source: "dns",
-        severity: "low",
-        base_severity: "low",
-        status: "open",
-        recurrence: "new",
-        cve_id: null,
-        cvss: null,
-        epss: null,
-        in_kev: false,
-        evidence: { record: "acme-portal.mx", observed: "NXDOMAIN" },
-        caracteristicas: { tipo: "spf_faltante", antiguedad_dias: 0, exposicion: "publica", sensibilidad: "baja" },
-        detected_at: "2026-09-27T18:46:18-06:00",
-        last_scan_id: "60000000-0000-4000-8000-000000000003"
-      },
-      {
-        id: "80000000-0000-4000-8000-000000000008",
-        title: "Una cuenta del portal aparece en una brecha pública",
-        asset: "acme-portal.mx",
-        asset_type: "domain",
-        category: "data_leaks",
-        rule_code: "breach_exposure",
-        source: "hibp",
-        severity: "low",
-        base_severity: "low",
-        status: "open",
-        recurrence: "new",
-        cve_id: null,
-        cvss: null,
-        epss: null,
-        in_kev: false,
-        evidence: { emails_exposed: 1, data_classes: ["Email addresses"], breach_name: "PortalBreach-2026" },
-        caracteristicas: { tipo: "correo_en_brecha", antiguedad_dias: 0, exposicion: "publica", sensibilidad: "baja" },
-        detected_at: "2026-09-27T18:47:06-06:00",
-        last_scan_id: "60000000-0000-4000-8000-000000000003"
-      }
-    ],
-    total: 2
-  }
+  "acme-tienda.mx": { domain: "acme-tienda.mx", items: [], total: 0 },
+  "acme-portal.mx": { domain: "acme-portal.mx", items: [], total: 0 }
 };
 
 /** docs/api_v1/score.json */
 export const mockScore: DomainScore = {
   "domain": "acme-demo.mx",
-  "score_id": "a0000000-0000-4000-8000-000000000001",
-  "score": 68,
+  "score_id": "a0000000-0000-4000-8000-000000000004",
+  "score": 60,
   "band": "high",
-  "weighted": 68,
+  "weighted": 28,
   "floor": 60,
-  "floor_applied": false,
+  "floor_applied": true,
   "critical_open": 1,
   "method": "rules",
   "rule_set_version": 1,
-  "reason": "scan",
+  "reason": "correction",
   "partial_coverage": false,
-  "computed_at": "2026-09-30T14:24:30-06:00",
+  "computed_at": "2026-10-29T20:16:09-06:00",
   "categories": [
     {
       "category": "infrastructure",
-      "score": 80,
-      "band": "critical",
+      "score": 45.0,
+      "band": "medium",
       "weight": 0.3
     },
     {
       "category": "digital_identity",
-      "score": 55,
-      "band": "medium",
+      "score": 0.0,
+      "band": "low",
       "weight": 0.2
     },
     {
       "category": "configuration",
-      "score": 30,
+      "score": 10.0,
       "band": "low",
       "weight": 0.2
     },
     {
       "category": "data_leaks",
-      "score": 90,
-      "band": "critical",
+      "score": 40.0,
+      "band": "medium",
       "weight": 0.3
     }
   ],
@@ -442,94 +348,6 @@ export const mockScore: DomainScore = {
 export const mockScoreHistory: ScoreHistory = {
   "domain": "acme-demo.mx",
   "items": [
-    {
-      "score_id": "a0000000-0000-4000-8000-0000000000a1",
-      "computed_at": "2026-09-02T10:35:00-06:00",
-      "score": 29,
-      "band": "low",
-      "weighted": 29,
-      "floor": 0,
-      "floor_applied": false,
-      "critical_open": 0,
-      "method": "rules",
-      "rule_set_version": 1,
-      "reason": "scan",
-      "partial_coverage": false,
-      "categories": {
-        "infrastructure": 50,
-        "digital_identity": 40,
-        "configuration": 30,
-        "data_leaks": 0
-      },
-      "new_findings": 2,
-      "resolved_findings": 0
-    },
-    {
-      "score_id": "a0000000-0000-4000-8000-0000000000a2",
-      "computed_at": "2026-09-09T14:24:00-06:00",
-      "score": 33,
-      "band": "low",
-      "weighted": 33,
-      "floor": 0,
-      "floor_applied": false,
-      "critical_open": 0,
-      "method": "rules",
-      "rule_set_version": 1,
-      "reason": "scan",
-      "partial_coverage": false,
-      "categories": {
-        "infrastructure": 60,
-        "digital_identity": 45,
-        "configuration": 30,
-        "data_leaks": 0
-      },
-      "new_findings": 1,
-      "resolved_findings": 0
-    },
-    {
-      "score_id": "a0000000-0000-4000-8000-0000000000a3",
-      "computed_at": "2026-09-16T14:24:00-06:00",
-      "score": 38,
-      "band": "low",
-      "weighted": 38,
-      "floor": 0,
-      "floor_applied": false,
-      "critical_open": 0,
-      "method": "rules",
-      "rule_set_version": 1,
-      "reason": "scan",
-      "partial_coverage": true,
-      "categories": {
-        "infrastructure": 70,
-        "digital_identity": 55,
-        "configuration": 30,
-        "data_leaks": 0
-      },
-      "new_findings": 1,
-      "resolved_findings": 1
-    },
-    {
-      "score_id": "a0000000-0000-4000-8000-0000000000a4",
-      "computed_at": "2026-09-23T14:24:00-06:00",
-      "score": 41,
-      "band": "medium",
-      "weighted": 41,
-      "floor": 0,
-      "floor_applied": false,
-      "critical_open": 0,
-      "method": "rules",
-      "rule_set_version": 1,
-      "reason": "scan",
-      "partial_coverage": false,
-      "categories": {
-        "infrastructure": 80,
-        "digital_identity": 55,
-        "configuration": 30,
-        "data_leaks": 0
-      },
-      "new_findings": 1,
-      "resolved_findings": 0
-    },
     {
       "score_id": "a0000000-0000-4000-8000-000000000001",
       "computed_at": "2026-09-30T14:24:30-06:00",
@@ -551,9 +369,31 @@ export const mockScoreHistory: ScoreHistory = {
       },
       "new_findings": 3,
       "resolved_findings": 0
+    },
+    {
+      "score_id": "a0000000-0000-4000-8000-000000000004",
+      "computed_at": "2026-10-29T20:16:09-06:00",
+      "score": 60,
+      "band": "high",
+      "weighted": 28,
+      "floor": 60,
+      "floor_applied": true,
+      "critical_open": 1,
+      "method": "rules",
+      "rule_set_version": 1,
+      "reason": "correction",
+      "partial_coverage": false,
+      "categories": {
+        "infrastructure": 45.0,
+        "digital_identity": 0.0,
+        "configuration": 10.0,
+        "data_leaks": 40.0
+      },
+      "new_findings": 0,
+      "resolved_findings": 0
     }
   ],
-  "total": 5
+  "total": 2
 };
 
 /** docs/api_v1/explicacion.json */
@@ -565,27 +405,15 @@ export const mockExplanation: FindingExplanation = {
   "base_severity": "critical",
   "category": "data_leaks",
   "rule_code": "breach_exposure",
-  "score_id": "a0000000-0000-4000-8000-000000000001",
-  "computed_at": "2026-09-30T14:24:30-06:00",
+  "score_id": "a0000000-0000-4000-8000-000000000004",
+  "computed_at": "2026-10-29T20:16:09-06:00",
   "method": "rules",
-  "penalty": 24.0,
+  "penalty": 40.0,
   "max_penalty": 40.0,
   "factors": [
     {
-      "label": "La brecha es de hace menos de 6 meses",
-      "points": 12
-    },
-    {
-      "label": "Incluye cuentas de administrador",
-      "points": 8
-    },
-    {
-      "label": "La brecha incluye contraseñas",
-      "points": 6
-    },
-    {
-      "label": "El hallazgo ya se había visto antes",
-      "points": -2
+      "label": "Severidad 100 x peso 1 (tope 40)",
+      "points": 40.0
     }
   ],
   "caracteristicas": {
@@ -595,7 +423,7 @@ export const mockExplanation: FindingExplanation = {
     "sensibilidad": "alta"
   },
   "summary": "Es crítico porque alguien de fuera puede usar ya esas contraseñas para entrar a cuentas de la empresa, sin pasos extra.",
-  "recommendation": "Fuerza el cambio de contraseña de las cuentas afectadas y activa MFA en todas ellas.",
+  "recommendation": "Pide a todo el personal que cambie ya la contraseña y las preguntas de seguridad de las cuentas que abrió con su correo de trabajo y de cualquier cuenta donde repita esa contraseña, sobre todo la de la empresa, y que cierre las sesiones abiertas. Activa la verificación en dos pasos en las cuentas de la empresa y, si quieres saber qué correos aparecen, consulta la búsqueda por dominio de Have I Been Pwned, que te pide verificar el dominio en ese servicio.",
   "confidence": null,
   "shap": null
 };
