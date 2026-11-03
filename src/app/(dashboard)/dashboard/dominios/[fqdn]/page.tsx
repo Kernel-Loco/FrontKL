@@ -9,6 +9,7 @@ import { DomainTabs, domainTabs } from "@/components/screens/detalle/DomainTabs"
 import { RiskGauge } from "@/components/screens/detalle/RiskGauge";
 import { ReportButton } from "@/components/screens/shared/ReportButton";
 import { ScanButton } from "@/components/screens/shared/ScanButton";
+import { failedScanAt } from "@/components/screens/shared/domainState";
 import { TEXT_LINK } from "@/components/ui/ActionButton";
 import { SeverityBadge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
@@ -17,7 +18,8 @@ import { InlineAlert } from "@/components/ui/InlineAlert";
 import { CATEGORY_LABELS, SCAN_BLOCK_REASON_LABELS } from "@/config/labels";
 import { can, canAccessSection } from "@/config/permissions";
 import { formatDate, formatDateTime } from "@/lib/format";
-import { getDomainAssets, getDomainFindings, getDomains, getDomainScore, getScoreHistory } from "@/services/queries";
+import { ServiceError } from "@/services/errors";
+import { getDomainAssets, getDomainFindings, getDomains, getDomainScore, getScans, getScoreHistory } from "@/services/queries";
 
 type Props = { params: Promise<{ fqdn: string }> };
 
@@ -35,7 +37,16 @@ export default async function DomainDetailPage({ params }: Props) {
   if (!domain) notFound();
 
   const canSeeFindings = canAccessSection(user.role, "hallazgos");
-  const [findings, history, assets] = await Promise.all([getDomainFindings(fqdn), getScoreHistory(fqdn), getDomainAssets(fqdn)]);
+  const [findings, history, assets, scans] = await Promise.all([
+    getDomainFindings(fqdn),
+    getScoreHistory(fqdn),
+    getDomainAssets(fqdn),
+    // Si /scans falla, el detalle sigue con la fecha del dominio.
+    getScans().catch((error: unknown) => {
+      if (error instanceof ServiceError) return null;
+      throw error;
+    }),
+  ]);
   const score = domain.score !== null ? await getDomainScore(fqdn) : null;
   const points = history.items;
   const delta = points.length >= 2 ? points[points.length - 1]!.score - points[points.length - 2]!.score : null;
@@ -43,12 +54,65 @@ export default async function DomainDetailPage({ params }: Props) {
   const blocked = domain.scan_eligibility.can_scan ? undefined : domain.scan_eligibility.reasons.map((r) => SCAN_BLOCK_REASON_LABELS[r]).join(" · ");
   const today = new Date().toISOString().slice(0, 10);
 
+  // /scans trae los últimos 50 de la empresa, del más nuevo al más viejo; un dominio tiene a lo más un escaneo activo.
+  const ownScans = scans?.items.filter((s) => s.domain === fqdn) ?? [];
+  const running = ownScans[0]?.status === "queued" || ownScans[0]?.status === "running";
+  const failedAt = failedScanAt(domain, ownScans.find((s) => s.finished_at));
+  // Si el escaneo fallido también calculó el riesgo (misma fecha), no hay un riesgo anterior que nombrar.
+  const riskAt = domain.last_scan_at && (!failedAt || Date.parse(domain.last_scan_at) < Date.parse(failedAt)) ? domain.last_scan_at : null;
   const subtitle = [
-    domain.last_scan_at ? `Último escaneo: ${formatDateTime(domain.last_scan_at)}` : "Sin escaneos todavía",
+    running ? "Escaneo en curso" : null,
+    failedAt ? `Último escaneo: ${formatDateTime(failedAt)}, falló` : null,
+    riskAt
+      ? `${failedAt ? "Último con riesgo" : "Último escaneo"}: ${formatDateTime(riskAt)}`
+      : failedAt
+        ? null
+        : domain.score === null
+          ? "Sin riesgo calculado todavía"
+          : "Sin fecha de escaneo",
     domain.authorization.valid_until ? `Autorizado hasta ${formatDate(domain.authorization.valid_until)}` : null,
   ]
     .filter(Boolean)
     .join(" · ");
+  const pendingNote = [
+    running
+      ? "Hay un escaneo en curso: el riesgo se calcula al cerrarlo."
+      : failedAt
+        ? "El último escaneo falló antes de calcular el riesgo."
+        : "El riesgo se calcula al cerrar un escaneo; uno que se cae antes no lo calcula.",
+    top.length > 0 ? "Abajo están los hallazgos que alcanzaron a registrar las fuentes." : "",
+    "Solo se puede escanear con autorización vigente y registro TXT verificado.",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  const topFindings = (
+    <Card
+      title="Hallazgos más críticos"
+      padded={false}
+      action={
+        canSeeFindings && findings.total > 0 ? (
+          <Link href={`/dashboard/hallazgos?dominio=${encodeURIComponent(fqdn)}`} className={TEXT_LINK}>
+            Ver los {findings.total} hallazgos
+          </Link>
+        ) : undefined
+      }
+    >
+      {top.length === 0 ? (
+        <EmptyState title="Sin hallazgos abiertos" />
+      ) : (
+        <ul>
+          {top.map((f) => (
+            <li key={f.id} className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-lt-border px-5 py-3.5 first:border-t-0">
+              <span className="min-w-0 flex-1 text-sm text-lt-text">{f.title}</span>
+              <span className="w-36 text-xs text-lt-muted">{CATEGORY_LABELS[f.category]}</span>
+              <SeverityBadge severity={f.severity} />
+            </li>
+          ))}
+        </ul>
+      )}
+    </Card>
+  );
 
   return (
     <div className="space-y-6">
@@ -65,7 +129,7 @@ export default async function DomainDetailPage({ params }: Props) {
           </>
         }
       />
-      <DomainTabs tabs={domainTabs(fqdn, findings.total, "resumen", canSeeFindings)} />
+      <DomainTabs tabs={domainTabs(fqdn, findings.total, "resumen", canSeeFindings, domain.score !== null)} />
 
       {blocked && <InlineAlert tone="warning">Este dominio no se puede escanear ni exportar: {blocked}.</InlineAlert>}
 
@@ -99,38 +163,15 @@ export default async function DomainDetailPage({ params }: Props) {
               )}
             </Card>
           </div>
-          <Card
-            title="Hallazgos más críticos"
-            padded={false}
-            action={
-              canSeeFindings && findings.total > 0 ? (
-                <Link href={`/dashboard/hallazgos?dominio=${encodeURIComponent(fqdn)}`} className={TEXT_LINK}>
-                  Ver los {findings.total} hallazgos
-                </Link>
-              ) : undefined
-            }
-          >
-            {top.length === 0 ? (
-              <EmptyState title="Sin hallazgos abiertos" />
-            ) : (
-              <ul>
-                {top.map((f) => (
-                  <li key={f.id} className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-lt-border px-5 py-3.5 first:border-t-0">
-                    <span className="min-w-0 flex-1 text-sm text-lt-text">{f.title}</span>
-                    <span className="w-36 text-xs text-lt-muted">{CATEGORY_LABELS[f.category]}</span>
-                    <SeverityBadge severity={f.severity} />
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Card>
+          {topFindings}
         </>
       ) : (
-        <Card>
-          <EmptyState title="Este dominio aún no tiene score">
-            El score aparece después del primer escaneo, que solo se puede hacer con autorización vigente y registro TXT verificado.
-          </EmptyState>
-        </Card>
+        <>
+          <Card>
+            <EmptyState title="Riesgo sin calcular">{pendingNote}</EmptyState>
+          </Card>
+          {top.length > 0 && topFindings}
+        </>
       )}
 
       <AssetsCard assets={assets.items} />

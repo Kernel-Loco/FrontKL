@@ -20,6 +20,8 @@ export interface ScanRunStats {
   sources_ok: number;
   sources_failed: number;
   rules_without_coverage?: string[];
+  /** Solo si el escaneo se cayó (dado por abandonado o tumbado por un error inesperado); puede venir sin los demás campos. */
+  error?: string;
 }
 
 export type ScanProgress = ApiScan & { stats: ScanRunStats | null };

@@ -35,7 +35,16 @@ function progressResult(scan: ScanProgress): Result {
   }
   const stats = scan.stats;
   const found = stats ? ` ${stats.findings} hallazgos y ${stats.assets} activos.` : "";
-  if (scan.status === "failed") return { tone: "error", message: `El escaneo de ${scan.domain} falló: ninguna fuente respondió.` };
+  if (scan.status === "failed") {
+    // Un cierre normal sin ninguna fuente bien (caídas o sin cupo) deja sources_ok en 0. Uno que se cayó deja `error` y no
+    // calcula el riesgo, aunque alguna fuente haya respondido.
+    const message = stats?.error
+      ? `El escaneo de ${scan.domain} falló antes de terminar y no calculó el riesgo.`
+      : stats?.sources_ok === 0
+        ? `El escaneo de ${scan.domain} falló: ninguna fuente dio resultados.`
+        : `El escaneo de ${scan.domain} falló.`;
+    return { tone: "error", message };
+  }
   if (scan.status === "partial") {
     return { tone: "warning", message: `Escaneo de ${scan.domain} terminado con cobertura parcial.${found} Los datos ya están al día.` };
   }

@@ -8,7 +8,7 @@ const TD = "px-3 py-3.5 align-middle text-sm text-lt-text first:pl-5 last:pr-5";
 import { SOLID_TONES } from "@/components/ui/tones";
 import { formatDate } from "@/lib/format";
 import type { Domain } from "@/types";
-import { domainState } from "../shared/domainState";
+import { domainState, hasResults } from "../shared/domainState";
 
 interface RegisteredDomainsTableProps {
   domains: Domain[];
@@ -48,7 +48,7 @@ export function RegisteredDomainsTable({ domains, canOpenDetail }: RegisteredDom
                   </Badge>
                 </td>
                 <td className={`${TD} text-right`}>
-                  {canOpenDetail && d.score !== null && (
+                  {canOpenDetail && hasResults(d) && (
                     <Link href={`/dashboard/dominios/${d.fqdn}`} className={`${TEXT_LINK} text-[13px]`}>
                       Ver<span className="sr-only"> {d.fqdn}</span>
                     </Link>

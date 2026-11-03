@@ -6,10 +6,19 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { BAND_TONE } from "@/components/ui/tones";
 import { formatDateTime } from "@/lib/format";
-import type { Domain } from "@/types";
-import { domainState } from "../shared/domainState";
+import type { Domain, Scan } from "@/types";
+import { domainState, failedScanAt, hasResults } from "../shared/domainState";
 
-export function DomainsRiskTable({ domains, canOpenDetail }: { domains: Domain[]; canOpenDetail: boolean }) {
+/** `lastScans`: último escaneo terminado de cada dominio entre los 50 de /scans, para marcar uno que falló. */
+export function DomainsRiskTable({
+  domains,
+  lastScans,
+  canOpenDetail,
+}: {
+  domains: Domain[];
+  lastScans: Map<string, Scan>;
+  canOpenDetail: boolean;
+}) {
   return (
     <Card title="Dominios" padded={false}>
       {domains.length === 0 ? (
@@ -28,7 +37,9 @@ export function DomainsRiskTable({ domains, canOpenDetail }: { domains: Domain[]
             </thead>
             <tbody>
               {domains.map((d) => {
+                // Sin score, el estado dice por qué; si ya está autorizado, falta que un escaneo calcule el riesgo.
                 const state = domainState(d);
+                const failedAt = failedScanAt(d, lastScans.get(d.fqdn));
                 return (
                   <tr key={d.id} className={TR}>
                     <td className={`${TD} font-mono text-[13px]`}>{d.fqdn}</td>
@@ -42,10 +53,20 @@ export function DomainsRiskTable({ domains, canOpenDetail }: { domains: Domain[]
                         <span className="text-lt-faint">—</span>
                       )}
                     </td>
-                    <td className={TD}>{d.band ? <BandBadge band={d.band} /> : <Badge tone={state.tone}>{state.label}</Badge>}</td>
-                    <td className={`${TD} text-lt-muted`}>{d.last_scan_at ? formatDateTime(d.last_scan_at) : "—"}</td>
+                    <td className={TD}>
+                      {d.band ? (
+                        <BandBadge band={d.band} />
+                      ) : state.label === "Autorizado" ? (
+                        <Badge tone="gray">Sin calcular</Badge>
+                      ) : (
+                        <Badge tone={state.tone}>{state.label}</Badge>
+                      )}
+                    </td>
+                    <td className={`${TD} text-lt-muted`}>
+                      {failedAt ? `${formatDateTime(failedAt)}, falló` : d.last_scan_at ? formatDateTime(d.last_scan_at) : "—"}
+                    </td>
                     <td className={`${TD} text-right`}>
-                      {canOpenDetail && d.score !== null ? (
+                      {canOpenDetail && hasResults(d) ? (
                         <Link href={`/dashboard/dominios/${d.fqdn}`} className={`${TEXT_LINK} text-sm`}>
                           Ver detalle<span className="sr-only"> de {d.fqdn}</span>
                         </Link>

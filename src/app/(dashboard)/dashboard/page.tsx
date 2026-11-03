@@ -4,7 +4,7 @@ import { checkSectionAccess } from "@/components/dashboard/SectionAccess";
 import { DomainsRiskTable } from "@/components/screens/dashboard/DomainsRiskTable";
 import { FindingsByTypeChart } from "@/components/screens/dashboard/FindingsByTypeChart";
 import { KpiTile } from "@/components/screens/dashboard/KpiTile";
-import { RecentChanges, type Change } from "@/components/screens/dashboard/RecentChanges";
+import { RecentChanges, type Change, type ScanSummary } from "@/components/screens/dashboard/RecentChanges";
 import { ScanButton } from "@/components/screens/shared/ScanButton";
 import { InlineAlert } from "@/components/ui/InlineAlert";
 import { scoredDomains } from "@/components/screens/shared/domainState";
@@ -12,6 +12,7 @@ import { BAND_TONE } from "@/components/ui/tones";
 import { can, canAccessSection } from "@/config/permissions";
 import { scoreBand } from "@/lib/format";
 import { getDomainFindings, getDomainScore, getDomains, getScans } from "@/services/queries";
+import type { Scan } from "@/types";
 
 export const metadata: Metadata = { title: "Dashboard" };
 
@@ -25,7 +26,7 @@ export default async function DashboardPage() {
   const average = scored.length ? Math.round(scored.reduce((sum, d) => sum + (d.score ?? 0), 0) / scored.length) : null;
   const running = scans.items.filter((s) => s.status === "queued" || s.status === "running").length;
 
-  // El gráfico incluye todos los dominios activos; la lista de cambios conserva el alcance por score.
+  // El gráfico incluye todos los dominios activos; el panel de cambios, los que tienen score o un escaneo terminado.
   const [findings, coverage] = await Promise.all([
     Promise.all(visible.map((domain) => getDomainFindings(domain.fqdn))),
     Promise.all(visible.map(async (domain) => {
@@ -36,11 +37,35 @@ export default async function DashboardPage() {
   const partialDomains = visible.filter((_, index) => coverage[index] === "partial").map((domain) => domain.fqdn);
   // Cuenta los críticos abiertos registrados con cualquier cobertura (hoy todo escaneo queda parcial); el hint lo avisa.
   const critical = visible.reduce((sum, domain) => sum + domain.open_findings.critical, 0);
-  const scoredFqdns = new Set(scored.map((domain) => domain.fqdn));
-  const changes: Change[] = findings
-    .filter((result) => scoredFqdns.has(result.domain))
-    .flatMap((f) => f.items.filter((item) => item.recurrence === "new").map((finding) => ({ domain: f.domain, finding })))
-    .slice(0, 5);
+  // Último escaneo terminado de cada dominio, también si falló: /scans viene del más nuevo al más viejo (los últimos 50 de la empresa).
+  const lastScans = new Map<string, Scan>();
+  for (const scan of scans.items) {
+    if (scan.finished_at && !lastScans.has(scan.domain)) lastScans.set(scan.domain, scan);
+  }
+  // Los dominios con score y los que no tienen score pero sí un escaneo terminado (un primer escaneo que se cayó).
+  const summaries: ScanSummary[] = [...scored, ...visible.filter((d) => d.score === null)].flatMap((domain): ScanSummary[] => {
+    const scan = lastScans.get(domain.fqdn);
+    if (scan?.finished_at) {
+      // Un escaneo fallido guarda 0 y 0 aunque no revisó nada: sin conteos.
+      const failed = scan.status === "failed";
+      return [{
+        domain: domain.fqdn,
+        finishedAt: scan.finished_at,
+        status: scan.status,
+        newFindings: failed ? null : scan.stats?.new_findings ?? null,
+        resolvedFindings: failed ? null : scan.stats?.resolved_findings ?? null,
+      }];
+    }
+    if (domain.score === null) return [];
+    // Con score pero fuera de esos 50: queda la fecha del dominio, si la hay, sin conteos.
+    return [{ domain: domain.fqdn, finishedAt: domain.last_scan_at, status: null, newFindings: null, resolvedFindings: null }];
+  });
+  // Los resueltos no se listan: /findings solo trae abiertos.
+  const summaryFqdns = new Set(summaries.map((s) => s.domain));
+  const newFindings: Change[] = findings
+    .filter((result) => summaryFqdns.has(result.domain))
+    .flatMap((f) => f.items.filter((item) => item.recurrence === "new").map((finding) => ({ domain: f.domain, finding })));
+  const changes = newFindings.slice(0, 5);
 
   // Primero los que tienen score (de mayor a menor riesgo), luego los demás.
   const rows = [...scored, ...visible.filter((d) => d.score === null)];
@@ -76,8 +101,8 @@ export default async function DashboardPage() {
         coverage: coverage[index] ?? "unscanned",
       }))} />
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)]">
-        <DomainsRiskTable domains={rows} canOpenDetail={canAccessSection(user.role, "detalle")} />
-        <RecentChanges changes={changes} />
+        <DomainsRiskTable domains={rows} lastScans={lastScans} canOpenDetail={canAccessSection(user.role, "detalle")} />
+        <RecentChanges summaries={summaries} changes={changes} more={newFindings.length - changes.length} />
       </div>
     </div>
   );
