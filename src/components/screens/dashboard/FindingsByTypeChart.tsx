@@ -18,7 +18,8 @@ export function FindingsByTypeChart({ series }: { series: DomainFindingSeries[] 
     domain,
     coverage,
     // Cuenta los hallazgos abiertos registrados con cualquier cobertura: un primer escaneo en curso o caído ya puede
-    // tener hallazgos sin score, y hoy todo escaneo queda parcial. La leyenda y el aviso dicen la cobertura.
+    // tener hallazgos sin score, y hoy todo escaneo queda parcial. La leyenda, la descripción y el aviso dicen qué dominios
+    // no tienen cobertura completa.
     values: CATEGORIES.map((category) => findings.filter((finding) => finding.category === category).length),
   }));
   const maxCount = Math.max(0, ...counts.flatMap(({ values }) => values));
@@ -29,9 +30,14 @@ export function FindingsByTypeChart({ series }: { series: DomainFindingSeries[] 
   const plotHeight = HEIGHT - PADDING.top - PADDING.bottom;
   const gap = series.length > 8 ? 1 : 3;
   const barWidth = Math.min(18, (groupWidth - 42 - gap * Math.max(0, series.length - 1)) / Math.max(1, series.length));
-  const incomplete = counts.some((item) => item.coverage !== "complete");
+  const partial = counts.filter((item) => item.coverage === "partial").length;
+  const unscored = counts.filter((item) => item.coverage === "unscanned").length;
+  const incomplete = partial + unscored > 0;
   const total = counts.reduce((sum, item) => sum + item.values.reduce((categoryTotal, value) => categoryTotal + value, 0), 0);
-  const description = `${total} hallazgo(s) en ${counts.length} dominio(s)${incomplete ? ", no todos con cobertura completa" : ""}`;
+  const gaps = [partial > 0 ? `${partial} con cobertura parcial` : "", unscored > 0 ? `${unscored} con riesgo sin calcular` : ""]
+    .filter(Boolean)
+    .join(" y ");
+  const description = `${total} hallazgo(s) en ${counts.length} dominio(s)${incomplete ? `, ${gaps}` : ""}`;
 
   return (
     <Card title="Hallazgos abiertos por categoría y dominio" description={description}>
@@ -119,7 +125,7 @@ export function FindingsByTypeChart({ series }: { series: DomainFindingSeries[] 
           {total === 0 && (
             <p className="mt-3 text-sm text-lt-muted">
               {incomplete
-                ? "No hay hallazgos abiertos registrados, pero sin cobertura completa eso no confirma que no existan."
+                ? "No hay hallazgos abiertos registrados, pero con cobertura parcial o riesgo sin calcular eso no confirma que no existan."
                 : "No se encontraron hallazgos abiertos."}
             </p>
           )}

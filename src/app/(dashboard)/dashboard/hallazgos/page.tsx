@@ -5,7 +5,7 @@ import { DomainTabs, domainTabs } from "@/components/screens/detalle/DomainTabs"
 import { FindingsExplorer } from "@/components/screens/hallazgos/FindingsExplorer";
 import { DomainPicker } from "@/components/screens/shared/DomainPicker";
 import { InlineAlert } from "@/components/ui/InlineAlert";
-import { scoredDomains } from "@/components/screens/shared/domainState";
+import { resultDomains } from "@/components/screens/shared/domainState";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { canAccessSection, SECTIONS } from "@/config/permissions";
@@ -19,7 +19,8 @@ export default async function HallazgosPage({ searchParams }: Props) {
   const { user, forbidden } = await checkSectionAccess("hallazgos");
   if (forbidden) return forbidden;
 
-  const options = scoredDomains((await getDomains()).items).map((d) => d.fqdn);
+  const domains = resultDomains((await getDomains()).items);
+  const options = domains.map((d) => d.fqdn);
   const { dominio, regla } = await searchParams;
   const fqdn = typeof dominio === "string" && options.includes(dominio) ? dominio : options[0];
 
@@ -28,15 +29,17 @@ export default async function HallazgosPage({ searchParams }: Props) {
       <div className="space-y-8">
         <PageHeader title="Hallazgos" />
         <Card>
-          <EmptyState title="Todavía no hay dominios escaneados">Los hallazgos aparecen después del primer escaneo.</EmptyState>
+          <EmptyState title="Todavía no hay hallazgos registrados">Los hallazgos aparecen cuando un escaneo los registra.</EmptyState>
         </Card>
       </div>
     );
   }
 
+  // Un dominio sin score solo entra con hallazgos de un primer escaneo en curso o caído: no hay score que pedir.
+  const hasScore = domains.some((d) => d.fqdn === fqdn && d.score !== null);
   const [findings, score] = await Promise.all([
     getDomainFindings(fqdn),
-    getDomainScore(fqdn),
+    hasScore ? getDomainScore(fqdn) : null,
   ]);
   const initialRule = typeof regla === "string" && findings.items.some((finding) => finding.rule_code === regla)
     ? regla
@@ -50,8 +53,13 @@ export default async function HallazgosPage({ searchParams }: Props) {
         title="Hallazgos"
         actions={<DomainPicker domains={options} value={fqdn} />}
       />
-      {canOpenDetail && <DomainTabs tabs={domainTabs(fqdn, findings.total, "hallazgos", true)} />}
-      {score.partial_coverage && (
+      {canOpenDetail && <DomainTabs tabs={domainTabs(fqdn, findings.total, "hallazgos", true, hasScore)} />}
+      {!score && (
+        <InlineAlert tone="warning">
+          <strong>Riesgo sin calcular.</strong> Ningún escaneo de este dominio ha calculado su riesgo todavía: sigue en curso o falló. La lista muestra lo que alcanzaron a registrar las fuentes, pero no permite concluir que los demás no existan.
+        </InlineAlert>
+      )}
+      {score?.partial_coverage && (
         <InlineAlert tone="warning">
           <strong>Cobertura parcial.</strong> En el último escaneo alguna fuente falló, revisó solo una parte de sus repos o IP, o hay reglas que las fuentes actuales todavía no pueden revisar. La lista muestra los hallazgos detectados, pero no permite concluir que los demás no existan.
         </InlineAlert>
@@ -60,7 +68,8 @@ export default async function HallazgosPage({ searchParams }: Props) {
         key={`${fqdn}-${initialRule}`}
         findings={findings.items}
         initialRule={initialRule}
-        partialCoverage={score.partial_coverage}
+        partialCoverage={score?.partial_coverage ?? false}
+        unscored={!score}
       />
     </div>
   );

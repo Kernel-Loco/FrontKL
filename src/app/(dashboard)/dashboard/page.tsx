@@ -101,7 +101,7 @@ export default async function DashboardPage() {
         coverage: coverage[index] ?? "unscanned",
       }))} />
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)]">
-        <DomainsRiskTable domains={rows} canOpenDetail={canAccessSection(user.role, "detalle")} />
+        <DomainsRiskTable domains={rows} lastScans={lastScans} canOpenDetail={canAccessSection(user.role, "detalle")} />
         <RecentChanges summaries={summaries} changes={changes} more={newFindings.length - changes.length} />
       </div>
     </div>
