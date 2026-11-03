@@ -7,3 +7,9 @@ updates:
     target-branch: dev
     schedule:
       interval: weekly
+    ignore:
+      # eslint-config-next usa typescript-eslint, que pide typescript '>=4.8.4 <6.1.0'.
+      # Con TypeScript 7, que no trae la API de JavaScript, npm run lint falla.
+      # Quitar cuando typescript-eslint acepte typescript 6.1 o más, incluida la 7.
+      - dependency-name: typescript
+        versions: [">=6.1.0"]

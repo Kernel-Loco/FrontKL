@@ -8,7 +8,7 @@ El backend (base de datos, API y recolectores OSINT) está en [BackKL](https://g
 
 ## Requisitos
 
-- Node.js 20.9 o más reciente, que es lo que pide Next 16 (el equipo usa Node 22). Con Node 18 no arranca.
+- Node.js 20 desde la 20.19, 22 desde la 22.13 o 24 en adelante. Las series 21 y 23 no sirven. El equipo usa Node 22, así que revisa que sea 22.13 o más reciente. Next 16 pide 20.9, pero `npm run lint` usa ESLint 10, que pide esas versiones. Con Node 18 no arranca.
 - Internet la primera vez que se compila, para descargar las fuentes Inter y Montserrat de Google Fonts.
 
 ## Arranque

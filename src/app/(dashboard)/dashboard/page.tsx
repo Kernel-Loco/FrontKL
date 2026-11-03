@@ -65,9 +65,9 @@ export default async function DashboardPage() {
       </div>
       {partialDomains.length > 0 && (
         <InlineAlert tone="warning">
-          <strong>Cobertura parcial.</strong> El último escaneo de {partialDomains.join(", ")} no revisó todas las reglas: alguna fuente
-          falló o hay reglas que las fuentes actuales todavía no pueden revisar. Los conteos muestran los hallazgos abiertos registrados
-          y pueden no estar al día.
+          <strong>Cobertura parcial.</strong> El último escaneo de {partialDomains.join(", ")} no revisó todo: alguna fuente falló,
+          revisó solo una parte de sus repos o IP, o hay reglas que las fuentes actuales todavía no pueden revisar. Los conteos muestran
+          los hallazgos abiertos registrados y pueden no estar al día.
         </InlineAlert>
       )}
       <FindingsByTypeChart series={findings.map(({ domain, items }, index) => ({
