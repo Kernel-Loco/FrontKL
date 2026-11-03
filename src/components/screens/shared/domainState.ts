@@ -1,5 +1,5 @@
 // Estado de un dominio para mostrarlo en tablas: autorizado, por validar, vencido, etc.
-import type { Domain } from "@/types";
+import type { Domain, Scan } from "@/types";
 import type { Tone } from "@/components/ui/tones";
 
 export interface DomainState {
@@ -20,4 +20,23 @@ export function domainState(domain: Domain): DomainState {
 /** Dominios con score, de mayor a menor riesgo. */
 export function scoredDomains(domains: Domain[]): Domain[] {
   return domains.filter((d) => d.score !== null).sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+}
+
+/** Tiene score o hallazgos abiertos: un primer escaneo en curso o caído ya puede guardar hallazgos sin score. */
+export function hasResults(domain: Domain): boolean {
+  return domain.score !== null || Object.values(domain.open_findings).some((count) => count > 0);
+}
+
+/** Dominios con score (de mayor a menor riesgo) y luego los que solo tienen hallazgos abiertos. */
+export function resultDomains(domains: Domain[]): Domain[] {
+  return [...scoredDomains(domains), ...domains.filter((d) => d.score === null && hasResults(d))];
+}
+
+/**
+ * Fecha del último escaneo terminado si falló y no es anterior al último que calculó el riesgo; si no, null.
+ * Un cierre normal con todas las fuentes caídas guarda el fallo y el riesgo con la misma fecha.
+ */
+export function failedScanAt(domain: Domain, scan: Scan | undefined): string | null {
+  if (scan?.status !== "failed" || !scan.finished_at) return null;
+  return !domain.last_scan_at || Date.parse(scan.finished_at) >= Date.parse(domain.last_scan_at) ? scan.finished_at : null;
 }

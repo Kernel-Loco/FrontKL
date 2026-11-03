@@ -21,10 +21,13 @@ export function FindingsExplorer({
   findings,
   initialRule = "",
   partialCoverage = false,
+  unscored = false,
 }: {
   findings: DomainFinding[];
   initialRule?: string;
   partialCoverage?: boolean;
+  /** Dominio sin score: ningún escaneo calculó su riesgo. */
+  unscored?: boolean;
 }) {
   const ids = { search: useId(), category: useId(), severity: useId(), rule: useId() };
   const [query, setQuery] = useState("");
@@ -129,11 +132,13 @@ export function FindingsExplorer({
       <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
         <div className="overflow-hidden rounded-xl border border-lt-border bg-lt-surface">
           {visible.length === 0 ? (
-            <EmptyState title={findings.length === 0 ? partialCoverage ? "Resultados incompletos" : "Sin hallazgos abiertos" : "Ningún hallazgo coincide"}>
+            <EmptyState title={findings.length === 0 ? unscored ? "Riesgo sin calcular" : partialCoverage ? "Resultados incompletos" : "Sin hallazgos abiertos" : "Ningún hallazgo coincide"}>
               {findings.length === 0
-                ? partialCoverage
-                  ? "El último escaneo fue parcial; no se puede concluir que no haya más hallazgos."
-                  : "Este dominio no tiene hallazgos abiertos en su último escaneo."
+                ? unscored
+                  ? "Ningún escaneo de este dominio ha calculado su riesgo todavía; no se puede concluir que no haya hallazgos."
+                  : partialCoverage
+                    ? "El último escaneo fue parcial; no se puede concluir que no haya más hallazgos."
+                    : "Este dominio no tiene hallazgos abiertos en su último escaneo."
                 : "Prueba con otra búsqueda o quita los filtros."}
             </EmptyState>
           ) : (
