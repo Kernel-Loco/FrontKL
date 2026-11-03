@@ -46,7 +46,7 @@ export function FindingsByTypeChart({ series }: { series: DomainFindingSeries[] 
                 <span className="max-w-56 truncate">{domain}</span>
                 {coverage !== "complete" && (
                   <span className="shrink-0 rounded-sm border border-lt-border px-1.5 py-0.5 text-[10px]">
-                    {coverage === "partial" ? "Parcial" : "Sin escaneo terminado"}
+                    {coverage === "partial" ? "Parcial" : "Riesgo sin calcular"}
                   </span>
                 )}
               </li>
@@ -64,7 +64,7 @@ export function FindingsByTypeChart({ series }: { series: DomainFindingSeries[] 
               <title id="findings-chart-title">Hallazgos abiertos por categoría y dominio</title>
               <desc id="findings-chart-description">
                 {counts.map(({ domain, coverage, values }) =>
-                  `${domain}${coverage === "complete" ? "" : coverage === "partial" ? " (cobertura parcial)" : " (sin escaneo terminado)"}: ${CATEGORIES.map((category, index) => `${CATEGORY_LABELS[category]} ${values[index]}`).join(", ")}`,
+                  `${domain}${coverage === "complete" ? "" : coverage === "partial" ? " (cobertura parcial)" : " (riesgo sin calcular)"}: ${CATEGORIES.map((category, index) => `${CATEGORY_LABELS[category]} ${values[index]}`).join(", ")}`,
                 ).join(". ")}
               </desc>
               {ticks.map((tick) => {

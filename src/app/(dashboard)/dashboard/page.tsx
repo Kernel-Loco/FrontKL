@@ -26,7 +26,7 @@ export default async function DashboardPage() {
   const average = scored.length ? Math.round(scored.reduce((sum, d) => sum + (d.score ?? 0), 0) / scored.length) : null;
   const running = scans.items.filter((s) => s.status === "queued" || s.status === "running").length;
 
-  // El gráfico incluye todos los dominios activos; la lista de cambios conserva el alcance por score.
+  // El gráfico incluye todos los dominios activos; el panel de cambios, los que tienen score o un escaneo terminado.
   const [findings, coverage] = await Promise.all([
     Promise.all(visible.map((domain) => getDomainFindings(domain.fqdn))),
     Promise.all(visible.map(async (domain) => {
@@ -37,13 +37,13 @@ export default async function DashboardPage() {
   const partialDomains = visible.filter((_, index) => coverage[index] === "partial").map((domain) => domain.fqdn);
   // Cuenta los críticos abiertos registrados con cualquier cobertura (hoy todo escaneo queda parcial); el hint lo avisa.
   const critical = visible.reduce((sum, domain) => sum + domain.open_findings.critical, 0);
-  const scoredFqdns = new Set(scored.map((domain) => domain.fqdn));
   // Último escaneo terminado de cada dominio, también si falló: /scans viene del más nuevo al más viejo (los últimos 50 de la empresa).
   const lastScans = new Map<string, Scan>();
   for (const scan of scans.items) {
     if (scan.finished_at && !lastScans.has(scan.domain)) lastScans.set(scan.domain, scan);
   }
-  const summaries: ScanSummary[] = scored.flatMap((domain): ScanSummary[] => {
+  // Los dominios con score y los que no tienen score pero sí un escaneo terminado (un primer escaneo que se cayó).
+  const summaries: ScanSummary[] = [...scored, ...visible.filter((d) => d.score === null)].flatMap((domain): ScanSummary[] => {
     const scan = lastScans.get(domain.fqdn);
     if (scan?.finished_at) {
       // Un escaneo fallido guarda 0 y 0 aunque no revisó nada: sin conteos.
@@ -56,15 +56,14 @@ export default async function DashboardPage() {
         resolvedFindings: failed ? null : scan.stats?.resolved_findings ?? null,
       }];
     }
-    // Fuera de esos 50: queda la fecha del dominio, sin conteos.
-    if (domain.last_scan_at) {
-      return [{ domain: domain.fqdn, finishedAt: domain.last_scan_at, status: null, newFindings: null, resolvedFindings: null }];
-    }
-    return [];
+    if (domain.score === null) return [];
+    // Con score pero fuera de esos 50: queda la fecha del dominio, si la hay, sin conteos.
+    return [{ domain: domain.fqdn, finishedAt: domain.last_scan_at, status: null, newFindings: null, resolvedFindings: null }];
   });
   // Los resueltos no se listan: /findings solo trae abiertos.
+  const summaryFqdns = new Set(summaries.map((s) => s.domain));
   const newFindings: Change[] = findings
-    .filter((result) => scoredFqdns.has(result.domain))
+    .filter((result) => summaryFqdns.has(result.domain))
     .flatMap((f) => f.items.filter((item) => item.recurrence === "new").map((finding) => ({ domain: f.domain, finding })));
   const changes = newFindings.slice(0, 5);
 

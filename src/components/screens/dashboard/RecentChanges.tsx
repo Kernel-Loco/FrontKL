@@ -8,10 +8,13 @@ export interface Change {
   finding: DomainFinding;
 }
 
-/** Último escaneo terminado de un dominio. Conteos en `null` cuando el escaneo no los guardó, falló o no está en /scans. */
+/**
+ * Último escaneo terminado de un dominio. Conteos en `null` cuando el escaneo no los guardó, falló o no está en /scans.
+ * `finishedAt` en `null` cuando el dominio tiene score pero no hay fecha de escaneo.
+ */
 export interface ScanSummary {
   domain: string;
-  finishedAt: string;
+  finishedAt: string | null;
   status: ScanStatus | null;
   newFindings: number | null;
   resolvedFindings: number | null;
@@ -29,13 +32,13 @@ export function RecentChanges({ summaries, changes, more }: { summaries: ScanSum
     <Card title="Cambios desde el último escaneo">
       <div className="space-y-4">
         {summaries.length === 0 ? (
-          <p className="text-sm text-lt-muted">Ningún dominio con score tiene un escaneo terminado.</p>
+          <p className="text-sm text-lt-muted">Ningún dominio activo tiene un escaneo terminado.</p>
         ) : (
           <ul className="space-y-2">
             {summaries.map((s) => (
               <li key={s.domain} className="text-sm">
                 <span className="font-mono text-lt-text">{s.domain}</span>
-                <span className="text-lt-muted"> · {formatDateTime(s.finishedAt)}</span>
+                <span className="text-lt-muted"> · {s.finishedAt ? formatDateTime(s.finishedAt) : "sin fecha de escaneo"}</span>
                 <p className="mt-0.5 text-xs text-lt-muted">
                   <span className="tabular-nums">{count(s.newFindings, "nuevo", "nuevos")}</span> ·{" "}
                   <span className="tabular-nums">{count(s.resolvedFindings, "resuelto", "resueltos")}</span>
