@@ -20,6 +20,9 @@ const COMMON_PASSWORDS = new Set([
   "iloveyou1234",
   "adminadmin123",
   "cirdan123456",
+  "lowtide123456",
+  "lowtide12345",
+  "lowtidelowtide",
 ]);
 
 const LABELS: Record<StrengthScore, string> = {
