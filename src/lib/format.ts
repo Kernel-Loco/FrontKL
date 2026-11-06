@@ -1,16 +1,18 @@
 import type { Band } from "@/types";
 
 const LOCALE = "es-MX";
+// Zona fija: el servidor y el navegador deben mostrar la misma hora (si no, hay errores de hidratación).
+const TIME_ZONE = "America/Monterrey";
 
-const dateTimeFormat = new Intl.DateTimeFormat(LOCALE, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
-const dateFormat = new Intl.DateTimeFormat(LOCALE, { day: "2-digit", month: "short", year: "numeric" });
+const dateTimeFormat = new Intl.DateTimeFormat(LOCALE, { timeZone: TIME_ZONE, day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZoneName: "short" });
+const dateFormat = new Intl.DateTimeFormat(LOCALE, { timeZone: TIME_ZONE, day: "2-digit", month: "short", year: "numeric" });
 const relativeFormat = new Intl.RelativeTimeFormat(LOCALE, { numeric: "auto" });
 
-/** Día, mes y hora de 24 h ("30 sep, 14:20"). */
+/** Día, mes, año, hora de 24 h y zona ("30 sep 2026, 14:20 GMT-6"). */
 export function formatDateTime(iso: string): string {
   const parts = dateTimeFormat.formatToParts(new Date(iso));
   const get = (type: Intl.DateTimeFormatPartTypes) => parts.find((p) => p.type === type)?.value ?? "";
-  return `${get("day")} ${get("month").replace(".", "")}, ${get("hour")}:${get("minute")}`;
+  return `${get("day")} ${get("month").replace(".", "")} ${get("year")}, ${get("hour")}:${get("minute")} ${get("timeZoneName")}`;
 }
 
 export function formatRelative(iso: string, now = Date.now()): string {
@@ -43,12 +45,12 @@ export function scoreBand(score: number): Band {
 
 /** Fecha sin hora, para vigencias y periodos ("2026-12-31" → "31 dic 2026"). */
 export function formatDate(isoDate: string): string {
-  return dateFormat.format(new Date(isoDate.length === 10 ? `${isoDate}T12:00:00` : isoDate)).replace(/\./g, "").replace(/ de /g, " ");
+  return dateFormat.format(new Date(isoDate.length === 10 ? `${isoDate}T12:00:00Z` : isoDate)).replace(/\./g, "").replace(/ de /g, " ");
 }
 
-const shortDateFormat = new Intl.DateTimeFormat(LOCALE, { day: "numeric", month: "short" });
+const shortDateFormat = new Intl.DateTimeFormat(LOCALE, { timeZone: TIME_ZONE, day: "numeric", month: "short" });
 
 /** Día y mes, para ejes y listas ("2026-09-30T…" → "30 sep"). */
 export function formatShortDate(iso: string): string {
-  return shortDateFormat.format(new Date(iso.length === 10 ? `${iso}T12:00:00` : iso)).replace(".", "");
+  return shortDateFormat.format(new Date(iso.length === 10 ? `${iso}T12:00:00Z` : iso)).replace(".", "");
 }
