@@ -18,6 +18,16 @@ export interface ApiUser {
   organization_name: string;
   mfa_enabled: boolean;
   last_login_at: string | null;
+  /** Segundos de inactividad que tolera el servidor (15 min hoy). Opcional hasta que /auth/me lo devuelva. */
+  idle_timeout_seconds?: number;
+  /** Segundos que faltan para el tope absoluto de la sesión (8 h desde el inicio). */
+  absolute_expires_in_seconds?: number;
+}
+
+/** Vencimientos de la sesión según el servidor, medidos al momento de recibirlos. */
+export interface SessionLimits {
+  idle_timeout_seconds: number;
+  absolute_expires_in_seconds: number;
 }
 
 /** Usuario en el portal: como ApiUser, con el rol en español. */
@@ -29,6 +39,8 @@ export interface User {
   organization_name: string;
   mfa_enabled: boolean;
   last_login_at: string | null;
+  /** Ausente si la API aún no informa los vencimientos: el portal usa su configuración local. */
+  session_limits?: SessionLimits;
 }
 
 export interface Session {

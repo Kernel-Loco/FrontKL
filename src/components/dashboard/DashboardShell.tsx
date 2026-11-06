@@ -96,7 +96,7 @@ export function DashboardShell({ user, badges, children }: DashboardShellProps) 
           </a>
         </footer>
       </div>
-      <IdleTimeout />
+      <IdleTimeout limits={user.session_limits} />
     </div>
   );
 }

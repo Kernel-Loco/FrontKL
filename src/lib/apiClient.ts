@@ -1,6 +1,7 @@
 // Cliente HTTP para la API de FastAPI. En el navegador llama a /api/v1 del propio portal
 // (Next lo reenvía, ver next.config.ts) para que la cookie de sesión viaje sola.
 
+import { API_ACTIVITY_EVENT } from "@/config/session";
 import { parseRetryAfter, statusFromFetchFailure, withTimeout } from "./http";
 
 const API_URL = "/api/v1";
@@ -71,6 +72,7 @@ async function request<T>(method: string, path: string, { body, headers, ...init
     throw await apiErrorFromResponse(response);
   }
 
+  if (typeof window !== "undefined" && isSessionProtected(path)) window.dispatchEvent(new Event(API_ACTIVITY_EVENT));
   if (response.status === 204) return undefined as T;
   return (await response.json()) as T;
 }
