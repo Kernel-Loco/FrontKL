@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Globe, TriangleAlert } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import type { Domain, TxtVerification } from "@/types";
+import { HibpVerificationGuide } from "./HibpVerificationGuide";
 import { RegisterDomainForm } from "./RegisterDomainForm";
 import { RegisteredDomainsTable } from "./RegisteredDomainsTable";
 import { TxtVerificationList } from "./TxtVerificationList";
@@ -20,12 +21,15 @@ export function DomainsAdmin({ domains: initialDomains, txt: initialTxt }: Domai
 
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)]">
-      <RegisterDomainForm
-        onRegistered={(domain, record) => {
-          setDomains((current) => [...current, domain]);
-          setTxt((current) => [...current, record]);
-        }}
-      />
+      <div className="space-y-6">
+        <RegisterDomainForm
+          onRegistered={(domain, record) => {
+            setDomains((current) => [...current, domain]);
+            setTxt((current) => [...current, record]);
+          }}
+        />
+        <HibpVerificationGuide />
+      </div>
       <Card
         title="Dominios registrados"
         icon={<Globe aria-hidden="true" className="h-4 w-4" />}
