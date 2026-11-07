@@ -171,7 +171,7 @@ export default async function HistoricoPage({ searchParams }: Props) {
             </TableWrap>
           </Card>
           {points.length >= 2 ? (
-            <CompareScans key={fqdn} points={points} />
+            <CompareScans key={fqdn} domain={fqdn} points={points} />
           ) : (
             <Card title="Comparar escaneos">
               <p className="text-sm text-lt-muted">Se necesitan al menos dos escaneos para comparar.</p>
