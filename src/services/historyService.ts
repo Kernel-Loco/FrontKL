@@ -1,8 +1,8 @@
-import { apiClient, ApiError, apiErrorFromResponse } from "@/lib/apiClient";
-import { statusFromFetchFailure, withTimeout } from "@/lib/http";
+import { apiClient } from "@/lib/apiClient";
 import type { ScoreComparison } from "@/types";
+import { downloadExport, type ExportFormat } from "./exportService";
 
-export type ComparisonExportFormat = "csv" | "json";
+export type ComparisonExportFormat = ExportFormat;
 
 function compareQuery(fromScoreId: string, toScoreId: string) {
   return `desde=${encodeURIComponent(fromScoreId)}&hasta=${encodeURIComponent(toScoreId)}`;
@@ -17,25 +17,16 @@ export function compareScores(domain: string, fromScoreId: string, toScoreId: st
 }
 
 /** Descarga la comparación desde la API: CSV con BOM y celdas escapadas, o JSON. */
-export async function downloadComparison(
+export function downloadComparison(
   domain: string,
   fromScoreId: string,
   toScoreId: string,
   format: ComparisonExportFormat,
+  signal?: AbortSignal,
 ): Promise<Blob> {
-  let response: Response;
-  try {
-    response = await fetch(
-      `/api/v1/domains/${encodeURIComponent(domain)}/score/compare/export?formato=${format}&${compareQuery(fromScoreId, toScoreId)}`,
-      {
-        credentials: "same-origin",
-        headers: { Accept: format === "csv" ? "text/csv" : "application/json" },
-        signal: withTimeout(),
-      },
-    );
-  } catch (error) {
-    throw new ApiError(statusFromFetchFailure(error), "Sin conexión con el servicio.");
-  }
-  if (!response.ok) throw await apiErrorFromResponse(response);
-  return response.blob();
+  return downloadExport(
+    `/domains/${encodeURIComponent(domain)}/score/compare/export?${compareQuery(fromScoreId, toScoreId)}`,
+    format,
+    signal,
+  );
 }

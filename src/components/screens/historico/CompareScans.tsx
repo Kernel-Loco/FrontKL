@@ -1,15 +1,15 @@
 "use client";
 
 import { useEffect, useId, useState } from "react";
-import { Braces, FileSpreadsheet } from "lucide-react";
 import { ActionButton } from "@/components/ui/ActionButton";
 import { Card } from "@/components/ui/Card";
 import { SELECT } from "@/components/ui/Field";
 import { InlineAlert } from "@/components/ui/InlineAlert";
+import { ApiExport } from "@/components/screens/shared/ApiExport";
 import { CATEGORY_LABELS, SEVERITY_LABELS } from "@/config/labels";
 import { formatShortDate } from "@/lib/format";
 import { getErrorMessage } from "@/services/errors";
-import { compareScores, downloadComparison, type ComparisonExportFormat } from "@/services/historyService";
+import { compareScores, downloadComparison } from "@/services/historyService";
 import type { Category, ComparisonChange, ComparisonItem, ScoreComparison, ScoreHistoryPoint } from "@/types";
 import { Delta } from "./Delta";
 
@@ -23,15 +23,6 @@ const CHANGE_LABELS: Record<ComparisonChange, string> = {
   gone: "Ya no están",
   kept: "Siguen",
 };
-
-function saveBlob(blob: Blob, filename: string) {
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filename;
-  link.click();
-  URL.revokeObjectURL(url);
-}
 
 function severityText(item: ComparisonItem) {
   const from = item.severity_from ? SEVERITY_LABELS[item.severity_from] : null;
@@ -51,40 +42,47 @@ function FindingRow({ item }: { item: ComparisonItem }) {
   );
 }
 
-function FindingComparison({ domain, fromScoreId, toScoreId }: { domain: string; fromScoreId: string; toScoreId: string }) {
-  const key = `${fromScoreId}|${toScoreId}`;
-  const [state, setState] = useState<{ key: string; data?: ScoreComparison; error?: string } | null>(null);
-  const [exporting, setExporting] = useState<ComparisonExportFormat | null>(null);
-  const [exportError, setExportError] = useState<string | null>(null);
+/** Se monta con key por pareja: cambiar Desde o Hasta reinicia la carga, la descarga y sus errores. */
+function FindingComparison({
+  domain,
+  fromScoreId,
+  toScoreId,
+  withCorrection,
+}: {
+  domain: string;
+  fromScoreId: string;
+  toScoreId: string;
+  /** La pareja incluye una corrección del score guardado: sus fotos de hallazgos no se comparan como nuevos o resueltos. */
+  withCorrection: boolean;
+}) {
+  const [state, setState] = useState<{ attempt: number; data?: ScoreComparison; error?: string } | null>(null);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     const controller = new AbortController();
     compareScores(domain, fromScoreId, toScoreId, controller.signal)
-      .then((data) => setState({ key, data }))
+      .then((data) => setState({ attempt, data }))
       .catch((error: unknown) => {
         if (error instanceof DOMException && error.name === "AbortError") return;
-        setState({ key, error: getErrorMessage(error) });
+        setState({ attempt, error: getErrorMessage(error, { apiMessageOn403: true }) });
       });
     return () => controller.abort();
-  }, [domain, fromScoreId, toScoreId, key]);
+  }, [domain, fromScoreId, toScoreId, attempt]);
 
-  const current = state?.key === key ? state : null;
+  const current = state?.attempt === attempt ? state : null;
   const data = current?.data;
 
-  const exportComparison = async (format: ComparisonExportFormat) => {
-    setExporting(format);
-    setExportError(null);
-    try {
-      saveBlob(await downloadComparison(domain, fromScoreId, toScoreId, format), `${domain}-comparacion.${format}`);
-    } catch (error) {
-      setExportError(getErrorMessage(error));
-    } finally {
-      setExporting(null);
-    }
-  };
-
   if (!current) return <p className="mt-4 text-sm text-lt-muted" role="status">Comparando hallazgos…</p>;
-  if (current.error) return <InlineAlert tone="error" className="mt-4">{current.error}</InlineAlert>;
+  if (current.error) {
+    return (
+      <div className="mt-4 space-y-2">
+        <InlineAlert tone="error">{current.error}</InlineAlert>
+        <ActionButton variant="secondary" size="sm" onClick={() => setAttempt((n) => n + 1)}>
+          Reintentar
+        </ActionButton>
+      </div>
+    );
+  }
   if (!data) return null;
 
   const groups: { change: ComparisonChange; items: ComparisonItem[] }[] = [
@@ -96,45 +94,47 @@ function FindingComparison({ domain, fromScoreId, toScoreId }: { domain: string;
 
   return (
     <section className="mt-5 border-t border-lt-border pt-4" aria-label="Hallazgos entre los dos escaneos">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className="flex flex-wrap items-start justify-between gap-2">
         <h3 className="text-sm font-semibold text-lt-text">Hallazgo por hallazgo</h3>
-        <span className="flex gap-1" aria-label="Exportar comparación">
-          <ActionButton variant="ghost" size="sm" disabled={data.total === 0} loading={exporting === "csv"}
-            onClick={() => exportComparison("csv")} title="Exportar CSV" aria-label="Exportar comparación en CSV">
-            <FileSpreadsheet aria-hidden="true" className="h-4 w-4" /> CSV
-          </ActionButton>
-          <ActionButton variant="ghost" size="sm" disabled={data.total === 0} loading={exporting === "json"}
-            onClick={() => exportComparison("json")} title="Exportar JSON" aria-label="Exportar comparación en JSON">
-            <Braces aria-hidden="true" className="h-4 w-4" /> JSON
-          </ActionButton>
-        </span>
+        <ApiExport filename={`${domain}-comparacion`} label="Exportar comparación" variant="ghost"
+          disabled={data.total === 0}
+          download={(format, signal) => downloadComparison(domain, fromScoreId, toScoreId, format, signal)} />
       </div>
-      <p className="mt-1 text-xs text-lt-muted">
-        {data.summary.new} {data.summary.new === 1 ? "nuevo" : "nuevos"}, {data.summary.gone} que ya no{" "}
-        {data.summary.gone === 1 ? "está" : "están"} y {data.summary.kept} que{" "}
-        {data.summary.kept === 1 ? "sigue" : "siguen"}
-        {data.summary.severity_changed > 0 && ` (${data.summary.severity_changed} con otra criticidad)`}.
-      </p>
-      {exportError && <InlineAlert tone="error" className="mt-3">{exportError}</InlineAlert>}
-      {groups.map(({ change, items }) => items.length > 0 && (
-        <div key={change} className="mt-3">
-          <h4 className="text-xs font-medium uppercase tracking-wide text-lt-muted">
-            {change === "kept" ? "Siguen con otra criticidad" : CHANGE_LABELS[change]} ({items.length})
-          </h4>
-          <ul className="divide-y divide-lt-border">
-            {items.map((item) => <FindingRow key={item.finding_id} item={item} />)}
-          </ul>
-        </div>
-      ))}
-      {keptSame > 0 && (
-        <p className="mt-3 text-xs text-lt-muted">
-          {keptSame} {keptSame === 1 ? "hallazgo sigue" : "hallazgos siguen"} igual.
+      {withCorrection ? (
+        <p className="mt-1 text-xs text-lt-muted">
+          Entre estas fechas hay una corrección del score guardado, así que los hallazgos de cada fecha no se
+          pueden comparar como nuevos o que ya no están. Para ver qué cambió, elige dos escaneos sin una corrección
+          entre ellos. La exportación trae los {data.total} {data.total === 1 ? "hallazgo" : "hallazgos"} de las dos fechas.
         </p>
-      )}
-      {data.summary.gone > 0 && (
-        <p className="mt-2 text-xs text-lt-muted">
-          Un hallazgo que ya no está pudo resolverse o marcarse como falso positivo. La exportación trae su estado de hoy.
-        </p>
+      ) : (
+        <>
+          <p className="mt-1 text-xs text-lt-muted">
+            {data.summary.new} {data.summary.new === 1 ? "nuevo" : "nuevos"}, {data.summary.gone} que ya no{" "}
+            {data.summary.gone === 1 ? "está" : "están"} y {data.summary.kept} que{" "}
+            {data.summary.kept === 1 ? "sigue" : "siguen"}
+            {data.summary.severity_changed > 0 && ` (${data.summary.severity_changed} con otra criticidad)`}.
+          </p>
+          {groups.map(({ change, items }) => items.length > 0 && (
+            <div key={change} className="mt-3">
+              <h4 className="text-xs font-medium uppercase tracking-wide text-lt-muted">
+                {change === "kept" ? "Siguen con otra criticidad" : CHANGE_LABELS[change]} ({items.length})
+              </h4>
+              <ul className="divide-y divide-lt-border">
+                {items.map((item) => <FindingRow key={item.finding_id} item={item} />)}
+              </ul>
+            </div>
+          ))}
+          {keptSame > 0 && (
+            <p className="mt-3 text-xs text-lt-muted">
+              {keptSame} {keptSame === 1 ? "hallazgo sigue" : "hallazgos siguen"} igual.
+            </p>
+          )}
+          {data.summary.gone > 0 && (
+            <p className="mt-2 text-xs text-lt-muted">
+              Un hallazgo que ya no está pudo resolverse o marcarse como falso positivo. La exportación trae su estado de hoy.
+            </p>
+          )}
+        </>
       )}
     </section>
   );
@@ -203,7 +203,8 @@ export function CompareScans({ domain, points }: { domain: string; points: Score
           Entre estas fechas hay una corrección del score guardado, así que la diferencia no es un cambio de exposición.
         </p>
       )}
-      <FindingComparison domain={domain} fromScoreId={a.score_id} toScoreId={b.score_id} />
+      <FindingComparison key={`${a.score_id}|${b.score_id}`} domain={domain} fromScoreId={a.score_id}
+        toScoreId={b.score_id} withCorrection={withCorrection} />
     </Card>
   );
 }

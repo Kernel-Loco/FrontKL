@@ -27,6 +27,12 @@ export class ServiceError extends Error {
   }
 }
 
+/** El mensaje vino del { detail: "..." } de FastAPI, no del statusText. */
+function hasApiDetail(error: ApiError) {
+  const detail = error.detail;
+  return typeof detail === "object" && detail !== null && "detail" in detail && detail.detail === error.message;
+}
+
 const GENERIC_MESSAGE = "No pudimos completar la solicitud. Intenta de nuevo en unos momentos.";
 
 /** Mensaje propio para los casos de falla de la API; undefined si el status no tiene uno. */
@@ -43,11 +49,13 @@ export function messageForStatus(status: number, retryAfter?: number): string | 
   return undefined;
 }
 
-export function getErrorMessage(error: unknown): string {
+/** `apiMessageOn403`: el 403 muestra el detail de la API (p. ej. dominio sin autorización vigente, #24) en vez del de rol. */
+export function getErrorMessage(error: unknown, { apiMessageOn403 = false }: { apiMessageOn403?: boolean } = {}): string {
   if (error instanceof ServiceError) return error.message;
   if (error instanceof ApiError) {
     // 401 de /auth (credenciales o código incorrectos) trae su propio mensaje; sin él es sesión vencida.
     if (error.status === 401 && error.message) return error.message;
+    if (apiMessageOn403 && error.status === 403 && hasApiDetail(error)) return error.message;
     const own = messageForStatus(error.status, error.retryAfter);
     if (own) return own;
     // Los demás 4xx de FastAPI ya traen un mensaje en español apto para mostrar.
