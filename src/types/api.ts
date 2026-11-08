@@ -153,6 +153,45 @@ export interface ScoreHistory extends ListResponse<ScoreHistoryPoint> {
   domain: string;
 }
 
+// ---------------------------------------------------------------- comparación de dos scores (#24, RC-57)
+
+/** new: está en `hasta` y no en `desde`. gone: al revés. kept: está en los dos. */
+export type ComparisonChange = "new" | "gone" | "kept";
+
+export interface ComparisonPoint {
+  score_id: string;
+  scan_id: string;
+  score: number;
+  reason: ScoreReason;
+  partial_coverage: boolean;
+  computed_at: string;
+}
+
+export interface ComparisonItem {
+  finding_id: string;
+  change: ComparisonChange;
+  severity_changed: boolean;
+  title: string;
+  rule_code: string;
+  category: Category;
+  asset: string;
+  asset_type: AssetType;
+  severity_from: Severity | null;
+  severity_to: Severity | null;
+  penalty_from: number | null;
+  penalty_to: number | null;
+  /** Estado de hoy. `gone` no dice por qué ya no está. */
+  status_now: FindingStatus;
+}
+
+/** `GET /api/v1/domains/{fqdn}/score/compare?desde=<score_id>&hasta=<score_id>`. 403 sin autorización vigente. */
+export interface ScoreComparison extends ListResponse<ComparisonItem> {
+  domain: string;
+  from: ComparisonPoint;
+  to: ComparisonPoint;
+  summary: Record<ComparisonChange, number> & { severity_changed: number };
+}
+
 // ---------------------------------------------------------------- plan de acción y simulador (#42, #70)
 
 export interface PlanAction {

@@ -5,24 +5,20 @@ import { SeverityBadge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { INPUT, SELECT } from "@/components/ui/Field";
 import { TD, TH } from "@/components/ui/Card";
-import { DataExport } from "@/components/screens/shared/DataExport";
-import {
-  ASSET_TYPE_LABELS,
-  CATEGORY_LABELS,
-  FINDING_STATUS_LABELS,
-  RECURRENCE_LABELS,
-  SEVERITY_LABELS,
-  SOURCE_LABELS,
-} from "@/config/labels";
+import { ApiExport } from "@/components/screens/shared/ApiExport";
+import { CATEGORY_LABELS, SEVERITY_LABELS, SOURCE_LABELS } from "@/config/labels";
+import { downloadFindings } from "@/services/exportService";
 import type { Category, DomainFinding, Severity } from "@/types";
 import { ExplanationPanel } from "./ExplanationPanel";
 
 export function FindingsExplorer({
+  domain,
   findings,
   initialRule = "",
   partialCoverage = false,
   unscored = false,
 }: {
+  domain: string;
   findings: DomainFinding[];
   initialRule?: string;
   partialCoverage?: boolean;
@@ -49,27 +45,6 @@ export function FindingsExplorer({
         }, [findings, query, category, severity, rule]);
 
   const selected = visible.find((f) => f.id === selectedId) ?? visible[0];
-  const exportRows = visible.map((finding) => ({
-    id: finding.id,
-    title: finding.title,
-    asset: finding.asset,
-    asset_type: ASSET_TYPE_LABELS[finding.asset_type],
-    category: CATEGORY_LABELS[finding.category],
-    rule_code: finding.rule_code,
-    source: SOURCE_LABELS[finding.source],
-    severity: SEVERITY_LABELS[finding.severity],
-    base_severity: SEVERITY_LABELS[finding.base_severity],
-    status: FINDING_STATUS_LABELS[finding.status],
-    recurrence: RECURRENCE_LABELS[finding.recurrence],
-    cve_id: finding.cve_id,
-    cvss: finding.cvss,
-    epss: finding.epss,
-    in_kev: finding.in_kev,
-    evidence: finding.evidence,
-    caracteristicas: finding.caracteristicas,
-    detected_at: finding.detected_at,
-    last_scan_id: finding.last_scan_id,
-  }));
 
   return (
     <div className="space-y-5">
@@ -125,8 +100,13 @@ export function FindingsExplorer({
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-xs text-lt-muted">{visible.length} de {findings.length} hallazgos</p>
-        <DataExport filename="hallazgos" rows={exportRows} />
+        <p className="text-xs text-lt-muted">
+          {visible.length} de {findings.length} hallazgos
+          {visible.length < findings.length && " · la exportación trae todos, sin los filtros"}
+        </p>
+        {/* La API arma el archivo (#24): todos los hallazgos abiertos del dominio, sin los filtros, y 403 sin autorización vigente. */}
+        <ApiExport filename={`${domain}-hallazgos`} label="Exportar hallazgos" disabled={findings.length === 0}
+          download={(format, signal) => downloadFindings(domain, format, signal)} />
       </div>
 
       <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
