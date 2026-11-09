@@ -59,7 +59,7 @@ export function IntegrationsManager({ initial }: { initial: Integration[] }) {
 
   return (
     <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)]">
-      <Card title="Nueva integración" description="Lowtide envía cada evento firmado con HMAC." icon={<Webhook aria-hidden="true" className="h-4 w-4" />}>
+      <Card title="Nueva integración" description="LowTide envía cada evento firmado con HMAC." icon={<Webhook aria-hidden="true" className="h-4 w-4" />}>
         <form onSubmit={onCreate} noValidate className="space-y-4">
           <Field label="Tipo" htmlFor="int-kind">
             <select id="int-kind" value={kind} onChange={(e) => setKind(e.target.value as IntegrationKind)} className={SELECT}>

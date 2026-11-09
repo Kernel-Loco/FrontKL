@@ -14,7 +14,7 @@ export default async function AlertasPage() {
 
   return (
     <div className="space-y-8">
-      <PageHeader title={SECTIONS.alertas.label} description="Cuándo avisa Lowtide y con qué umbral de riesgo." />
+      <PageHeader title={SECTIONS.alertas.label} description="Cuándo avisa LowTide y con qué umbral de riesgo." />
       <AvisoSimulado acciones={["updateAlertPolicies"]} datos={["getAlertPolicies"]} />
       <AlertPoliciesForm initial={await getAlertPolicies()} />
     </div>

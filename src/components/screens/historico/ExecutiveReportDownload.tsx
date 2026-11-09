@@ -99,7 +99,7 @@ export function ExecutiveReportDownload({ report, data }: { report: Report; data
       const pageHeight = doc.internal.pageSize.getHeight();
       const periodLabel = `${formatDate(start)} - ${formatDate(end)}`;
 
-      doc.setProperties({ title: "Resumen ejecutivo de riesgo - Lowtide", subject: periodLabel, creator: "Lowtide" });
+      doc.setProperties({ title: "Resumen ejecutivo de riesgo - LowTide", subject: periodLabel, creator: "LowTide" });
       doc.setFont("helvetica", "bold");
       doc.setFontSize(18);
       doc.setTextColor(28, 34, 48);
@@ -240,7 +240,7 @@ export function ExecutiveReportDownload({ report, data }: { report: Report; data
         doc.setFont("helvetica", "normal");
         doc.setFontSize(7);
         doc.setTextColor(112, 123, 142);
-        doc.text(`Lowtide - Confidencial - ${page} / ${pageCount}`, pageWidth - MARGIN, pageHeight - 8, { align: "right" });
+        doc.text(`LowTide - Confidencial - ${page} / ${pageCount}`, pageWidth - MARGIN, pageHeight - 8, { align: "right" });
       }
 
       doc.save(`lowtide-resumen-ejecutivo-${start}-${end}.pdf`);
