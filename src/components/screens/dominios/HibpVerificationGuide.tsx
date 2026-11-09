@@ -2,14 +2,15 @@ import { ExternalLink, ShieldCheck } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 
 const HIBP_DASHBOARD = "https://haveibeenpwned.com/Dashboard";
+const HIBP_VERIFICATION_HELP = "https://support.haveibeenpwned.com/hc/en-au/articles/15543011690767-How-do-I-verify-my-domain";
 
 /** Guía para que el socio verifique su dominio en HIBP, requisito de la búsqueda de fugas por dominio. */
 export function HibpVerificationGuide() {
   return (
     <Card title="Cómo verificar el dominio en HIBP" icon={<ShieldCheck aria-hidden="true" className="h-4 w-4" />}>
       <p className="text-sm text-lt-muted">
-        Para ver las fugas de datos de un dominio, Have I Been Pwned (HIBP) pide demostrar que el dominio es de quien lo consulta. Esta verificación es aparte
-        del registro TXT de Lowtide y se hace en el sitio de HIBP.
+        Para buscar fugas de datos, Have I Been Pwned (HIBP) pide demostrar que controlas el dominio. Haz esta verificación en HIBP: es independiente del
+        registro TXT que solicita Lowtide. Cada dominio se verifica por separado; verificar el dominio raíz no incluye sus subdominios.
       </p>
       <ol className="mt-4 list-decimal space-y-2 pl-5 text-sm text-lt-text marker:text-lt-muted">
         <li>
@@ -24,10 +25,14 @@ export function HibpVerificationGuide() {
           Elige uno de los métodos que ofrece HIBP para comprobar que controlas el dominio, como un correo a una dirección del dominio, una etiqueta
           meta, un archivo en la raíz del sitio o un registro TXT en el DNS.
         </li>
-        <li>Cuando HIBP marque el dominio como verificado, ya se pueden consultar sus fugas.</li>
+        <li>Completa la verificación y espera la confirmación de HIBP; los cambios DNS pueden tardar hasta 48 horas en propagarse.</li>
       </ol>
       <p className="mt-4 text-xs text-lt-muted">
-        Los métodos disponibles y los planes de HIBP para dominios grandes pueden cambiar; revisa las instrucciones vigentes en su sitio.
+        Consulta los pasos vigentes en la{" "}
+        <a href={HIBP_VERIFICATION_HELP} target="_blank" rel="noopener noreferrer" className="text-lt-indigo-soft underline underline-offset-2">
+          guía oficial de verificación de HIBP
+        </a>
+        .
       </p>
     </Card>
   );

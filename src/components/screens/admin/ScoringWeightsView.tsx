@@ -2,13 +2,15 @@ import { Scale } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Card, TableWrap, TR } from "@/components/ui/Card";
 import { BAND_LABELS, CATEGORY_LABELS, SEVERITY_LABELS } from "@/config/labels";
-import { formatDateTime, formatPercent } from "@/lib/format";
+import { formatDateTime } from "@/lib/format";
 import type { Category, ScoringWeights } from "@/types";
+import { ScoringWeightsEditor } from "./ScoringWeightsEditor";
 
 const TH = "px-3 py-3 text-left text-xs font-medium text-lt-muted first:pl-5 last:pr-5";
 const TD = "px-3 py-3 align-middle text-sm text-lt-text first:pl-5 last:pr-5";
+const PERCENT_FORMAT = new Intl.NumberFormat("es-MX", { maximumFractionDigits: 2 });
 
-/** Pesos, bandas, piso y reglas del juego activo (solo lectura; cambiarlo crea un juego nuevo, #32). */
+/** Muestra el juego activo y permite crear una nueva versión de sus pesos (#32). */
 export function ScoringWeightsView({ weights }: { weights: ScoringWeights }) {
   const categories = Object.keys(CATEGORY_LABELS) as Category[];
 
@@ -32,7 +34,7 @@ export function ScoringWeightsView({ weights }: { weights: ScoringWeights }) {
               <li key={category}>
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-lt-text">{CATEGORY_LABELS[category]}</span>
-                  <span className="font-semibold tabular-nums text-lt-text">{formatPercent(weights.category_weights[category])}</span>
+                  <span className="font-semibold tabular-nums text-lt-text">{PERCENT_FORMAT.format(weights.category_weights[category] * 100)} %</span>
                 </div>
                 <div className="mt-1.5 h-1.5 rounded-full bg-lt-raised" aria-hidden="true">
                   <div className="h-full rounded-full bg-lt-indigo" style={{ width: `${weights.category_weights[category] * 100}%` }} />
@@ -40,6 +42,7 @@ export function ScoringWeightsView({ weights }: { weights: ScoringWeights }) {
               </li>
             ))}
           </ul>
+          <ScoringWeightsEditor initialWeights={weights.category_weights} />
         </Card>
 
         <Card title="Bandas de riesgo" description="El nivel que corresponde a cada rango del score.">

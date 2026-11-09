@@ -294,6 +294,14 @@ export interface ScoringWeights {
   rules: ScoringRule[];
 }
 
+/** `PUT /api/v1/scoring/weights` */
+export interface ScoringWeightsUpdateResult {
+  rule_set_version: number;
+  category_weights: Record<Category, number>;
+  recalculated_domains: number;
+  unchanged: boolean;
+}
+
 // ---------------------------------------------------------------- Provisional: activos (tabla assets)
 
 /** `GET /api/v1/domains/{fqdn}/assets` */
