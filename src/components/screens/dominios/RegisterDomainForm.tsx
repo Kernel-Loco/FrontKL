@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { CHECKBOX, Field, INPUT } from "@/components/ui/Field";
 import { InlineAlert } from "@/components/ui/InlineAlert";
+import { mensajeDeExito } from "@/config/simulado";
 import { registerDomain } from "@/services/domainService";
 import { getErrorMessage } from "@/services/errors";
 import type { Category, Domain, TxtVerification } from "@/types";
@@ -66,7 +67,7 @@ export function RegisterDomainForm({ onRegistered }: { onRegistered: (domain: Do
       formRef.current?.reset();
       setLetter(null);
       setScope(SCOPES.map((s) => s.id));
-      setResult({ tone: "success", message: `${domain.fqdn} quedó registrado. Para activarlo, publica el registro TXT que aparece en «Verificación TXT».` });
+      setResult({ tone: "success", message: mensajeDeExito("registerDomain", `${domain.fqdn} quedó registrado. Para activarlo, publica el registro TXT que aparece en «Verificación TXT».`) });
     } catch (error) {
       setResult({ tone: "error", message: getErrorMessage(error) });
     } finally {

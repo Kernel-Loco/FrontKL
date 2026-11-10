@@ -10,6 +10,7 @@ import { RiskGauge } from "@/components/screens/detalle/RiskGauge";
 import { ReportButton } from "@/components/screens/shared/ReportButton";
 import { ScanButton } from "@/components/screens/shared/ScanButton";
 import { failedScanAt } from "@/components/screens/shared/domainState";
+import { AvisoSimulado } from "@/components/ui/AvisoSimulado";
 import { TEXT_LINK } from "@/components/ui/ActionButton";
 import { SeverityBadge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
@@ -130,6 +131,7 @@ export default async function DomainDetailPage({ params }: Props) {
         }
       />
       <DomainTabs tabs={domainTabs(fqdn, findings.total, "resumen", canSeeFindings, domain.score !== null)} />
+      {can(user.role, "request_report") && <AvisoSimulado acciones={["requestReport"]} solo="«Exportar PDF»" />}
 
       {blocked && <InlineAlert tone="warning">Este dominio no se puede escanear ni exportar: {blocked}.</InlineAlert>}
 

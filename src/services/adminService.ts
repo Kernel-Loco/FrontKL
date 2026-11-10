@@ -1,5 +1,6 @@
 // Llaves de API, webhooks y bitácora (provisional: aún no está en el contrato #21). Solo Admin.
 // Se usa desde el servidor (listas) y desde componentes de cliente (crear, revocar, activar).
+import { PREFIJO_FALSO } from "@/config/simulado";
 import { mockDelay } from "@/lib/mock";
 import { mockAuditLog, mockSettings } from "@/mocks/api/provisional";
 import type { ApiKey, ApiKeyCreated, ApiKeyRequest, AuditEntry, Integration, IntegrationRequest, ListResponse } from "@/types";
@@ -26,11 +27,11 @@ export async function createApiKey(request: ApiKeyRequest): Promise<ApiKeyCreate
   const now = new Date();
   const expires = new Date(now.getTime() + request.expires_in_days * 86_400_000);
   return {
-    secret: `lt_live_${random}`,
+    secret: `${PREFIJO_FALSO}${random}`,
     api_key: {
       id: crypto.randomUUID(),
       name: request.name.trim(),
-      key_prefix: `lt_live_${random.slice(0, 4)}`,
+      key_prefix: `${PREFIJO_FALSO}${random.slice(0, 4)}`,
       scopes: request.scopes,
       created_at: now.toISOString(),
       expires_at: expires.toISOString(),

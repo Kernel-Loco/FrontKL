@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { FileDown } from "lucide-react";
 import { ActionButton } from "@/components/ui/ActionButton";
+import { mensajeDeExito } from "@/config/simulado";
 import { getErrorMessage } from "@/services/errors";
 import { requestReport } from "@/services/reportService";
 import type { ReportFormat } from "@/types";
@@ -38,7 +39,7 @@ export function ReportButton({
     setMessage(null);
     try {
       await requestReport({ domain, period_start: periodStart, period_end: periodEnd, format });
-      setMessage("Reporte en preparación. Aparecerá en Reportes e histórico.");
+      setMessage(mensajeDeExito("requestReport", "Reporte en preparación. Aparecerá en Reportes e histórico."));
     } catch (error) {
       setMessage(getErrorMessage(error));
     } finally {

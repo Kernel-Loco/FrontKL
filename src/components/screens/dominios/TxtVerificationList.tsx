@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Check, Hourglass, RefreshCw, ShieldCheck } from "lucide-react";
 import { ActionButton } from "@/components/ui/ActionButton";
 import { Badge } from "@/components/ui/Badge";
+import { mensajeDeExito } from "@/config/simulado";
 import { formatRelative } from "@/lib/format";
 import { verifyTxt } from "@/services/domainService";
 import { getErrorMessage } from "@/services/errors";
@@ -30,7 +31,7 @@ export function TxtVerificationList({ items, onChange }: { items: TxtVerificatio
     try {
       const result = await verifyTxt(fqdn);
       onChange(result);
-      setMessage(result.status === "verified" ? `${fqdn}: registro TXT verificado.` : `${fqdn}: todavía no encontramos el registro TXT.`);
+      setMessage(mensajeDeExito("verifyTxt", result.status === "verified" ? `${fqdn}: registro TXT verificado.` : `${fqdn}: todavía no encontramos el registro TXT.`));
     } catch (error) {
       setMessage(getErrorMessage(error));
     } finally {

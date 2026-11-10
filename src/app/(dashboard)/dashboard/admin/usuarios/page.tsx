@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { checkSectionAccess } from "@/components/dashboard/SectionAccess";
 import { UsersManager } from "@/components/screens/admin/UsersManager";
+import { AvisoSimulado } from "@/components/ui/AvisoSimulado";
 import { SECTIONS } from "@/config/permissions";
 import { getUsers } from "@/services/userService";
 
@@ -14,6 +15,7 @@ export default async function UsuariosPage() {
   return (
     <div className="space-y-8">
       <PageHeader title={SECTIONS.usuarios.label} description="Quién entra a Lowtide y qué puede hacer cada rol." />
+      <AvisoSimulado acciones={["inviteUser", "changeUserRole"]} datos={["getUsers"]} />
       <UsersManager initial={(await getUsers()).items} currentUserEmail={user.email} />
     </div>
   );

@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/Card";
 import { CHECKBOX, Field, INPUT, SELECT } from "@/components/ui/Field";
 import { InlineAlert } from "@/components/ui/InlineAlert";
 import { ALERT_EVENT_LABELS, INTEGRATION_KIND_LABELS } from "@/config/labels";
+import { mensajeDeExito } from "@/config/simulado";
 import { createIntegration, setIntegrationEnabled } from "@/services/adminService";
 import { getErrorMessage } from "@/services/errors";
 import type { AlertEvent, Integration, IntegrationKind } from "@/types";
@@ -36,7 +37,7 @@ export function IntegrationsManager({ initial }: { initial: Integration[] }) {
       const created = await createIntegration({ kind, name: String(data.get("name") ?? ""), endpoint: String(data.get("endpoint") ?? "").trim(), events });
       setItems((current) => [...current, created]);
       form.reset();
-      setResult({ tone: "success", message: `«${created.name}» quedó activa. Enviaremos un evento de prueba.` });
+      setResult({ tone: "success", message: mensajeDeExito("createIntegration", `«${created.name}» quedó activa. Enviaremos un evento de prueba.`) });
     } catch (error) {
       setResult({ tone: "error", message: getErrorMessage(error) });
     } finally {

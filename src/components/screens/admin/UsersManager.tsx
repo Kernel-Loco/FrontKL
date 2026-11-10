@@ -9,6 +9,7 @@ import { Field, INPUT, SELECT } from "@/components/ui/Field";
 import { InlineAlert } from "@/components/ui/InlineAlert";
 import { Modal } from "@/components/ui/Modal";
 import { ROLE_DESCRIPTIONS, ROLE_LABELS } from "@/config/permissions";
+import { mensajeDeExito } from "@/config/simulado";
 import { formatDateTime } from "@/lib/format";
 import { getErrorMessage } from "@/services/errors";
 import { changeUserRole, inviteUser } from "@/services/userService";
@@ -28,7 +29,7 @@ export function UsersManager({ initial, currentUserEmail }: { initial: OrgUser[]
     try {
       const updated = await changeUserRole(user.id, role);
       setUsers((current) => current.map((u) => (u.id === updated.id ? updated : u)));
-      setMessage({ tone: "success", text: `${user.full_name} ahora es ${ROLE_LABELS[role]}.` });
+      setMessage({ tone: "success", text: mensajeDeExito("changeUserRole", `${user.full_name} ahora es ${ROLE_LABELS[role]}.`) });
     } catch (error) {
       setMessage({ tone: "error", text: getErrorMessage(error) });
     } finally {
@@ -52,7 +53,7 @@ export function UsersManager({ initial, currentUserEmail }: { initial: OrgUser[]
       const user = await inviteUser({ full_name, email, role });
       setUsers((current) => [...current, user]);
       setInviteOpen(false);
-      setMessage({ tone: "success", text: `Enviamos la invitación a ${email}. Deberá activar MFA al entrar.` });
+      setMessage({ tone: "success", text: mensajeDeExito("inviteUser", `Enviamos la invitación a ${email}. Deberá activar MFA al entrar.`) });
     } catch (error) {
       setInviteError(getErrorMessage(error));
     } finally {
