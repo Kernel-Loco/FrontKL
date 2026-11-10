@@ -10,7 +10,7 @@
     "revisar:simulado": "node scripts/revisar-simulado.mjs"
   },
   "dependencies": {
-    "@hookform/resolvers": "^7.0.0",
+    "@hookform/resolvers": "^7.0.3",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.9",
     "lucide-react": "^1.66.0",
