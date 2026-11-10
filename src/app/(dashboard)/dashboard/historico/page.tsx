@@ -10,6 +10,7 @@ import { DomainPicker } from "@/components/screens/shared/DomainPicker";
 import { ReportButton } from "@/components/screens/shared/ReportButton";
 import { DataExport } from "@/components/screens/shared/DataExport";
 import { scoredDomains } from "@/components/screens/shared/domainState";
+import { AvisoSimulado } from "@/components/ui/AvisoSimulado";
 import { Card, TableWrap, TD, TH, TR } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { InlineAlert } from "@/components/ui/InlineAlert";
@@ -49,6 +50,7 @@ export default async function HistoricoPage({ searchParams }: Props) {
     return (
       <div className="space-y-8">
         <PageHeader title="Histórico de escaneos" />
+        <AvisoSimulado datos={["getReports"]} datosDe="la tarjeta Reportes" />
         <ReportsCard reports={orgReports} reportData={reportData} />
       </div>
     );
@@ -94,6 +96,7 @@ export default async function HistoricoPage({ searchParams }: Props) {
         title="Histórico de escaneos"
         actions={<DomainPicker domains={options} value={fqdn} />}
       />
+      <AvisoSimulado acciones={canReport ? ["requestReport"] : []} datos={["getReports"]} solo="«Generar reporte»" datosDe="la tarjeta Reportes" />
       {canOpenDetail && <DomainTabs tabs={domainTabs(fqdn, findings.total, "historico", canAccessSection(user.role, "hallazgos"))} />}
 
       {hasPartialCoverage && (

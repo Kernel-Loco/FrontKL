@@ -35,7 +35,7 @@ Contraseña: `Lowtide-Demo-2026`. **Cómo pasar el MFA** (claves para la app aut
 
 La sesión expira a los 15 min sin actividad (aviso un minuto antes) y a las 8 h como máximo. El registro abierto y la recuperación por correo todavía no tienen backend: esas pantallas lo dicen al enviarlas.
 
-**Datos reales (RC-17):** Dashboard, Dominios y autorización, Detalle de dominio, Hallazgos (con «¿Por qué es crítico?»), Histórico y Plan de acción leen de la API v1; «Escanear» pide un escaneo real al orquestador (#22), y el simulador calcula el score con acciones seleccionadas sin guardarlas (#70). Cada usuario ve solo los dominios de su empresa: `admin@olmardo.com` ve olmardo.com, el único que se escanea en vivo. Siguen simulados el alta de dominios y la verificación TXT (#26), los reportes, usuarios, llaves de API, webhooks, alertas y bitácora.
+**Datos reales (RC-17):** Dashboard, Dominios y autorización, Detalle de dominio, Hallazgos (con «¿Por qué es crítico?»), Histórico y Plan de acción leen de la API v1; «Escanear» pide un escaneo real al orquestador (#22), y el simulador calcula el score con acciones seleccionadas sin guardarlas (#70). Cada usuario ve solo los dominios de su empresa: `admin@olmardo.com` ve olmardo.com, el único que se escanea en vivo. Siguen simulados el alta de dominios y la verificación TXT (#26), los reportes, usuarios, llaves de API, webhooks, alertas y bitácora. Esas pantallas muestran arriba el aviso «Simulado: esto no se guarda» y sus mensajes de éxito empiezan con «Simulado» (#190). La lista de funciones simuladas está en `src/config/simulado.ts`: al conectar una, bórrala de ahí y el aviso desaparece. `npm run revisar:simulado` revisa que la lista esté completa.
 
 ## Estructura
 

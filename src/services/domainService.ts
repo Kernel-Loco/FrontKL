@@ -2,6 +2,7 @@
 // están en queries.ts. La explicación ya viene de FastAPI; el alta de dominios y la verificación
 // TXT siguen simuladas hasta #26.
 import { apiClient } from "@/lib/apiClient";
+import { PREFIJO_FALSO } from "@/config/simulado";
 import { mockDelay } from "@/lib/mock";
 import { mockDomains } from "@/mocks/api/contrato";
 import { mockTxtVerifications } from "@/mocks/api/provisional";
@@ -43,7 +44,7 @@ export async function registerDomain(
     last_scan_at: null,
     next_scan_at: null,
   };
-  return { domain, txt: { fqdn, status: "missing", expected_value: `cirdan-verification=${token}`, checked_at: null } };
+  return { domain, txt: { fqdn, status: "missing", expected_value: `cirdan-verification=${PREFIJO_FALSO}${token}`, checked_at: null } };
 }
 
 /** Vuelve a consultar el registro TXT de un dominio (solo Admin). */

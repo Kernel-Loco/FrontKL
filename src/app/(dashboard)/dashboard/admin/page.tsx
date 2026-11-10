@@ -8,6 +8,7 @@ import { KpiTile } from "@/components/screens/dashboard/KpiTile";
 import { domainState } from "@/components/screens/shared/domainState";
 import { TEXT_LINK } from "@/components/ui/ActionButton";
 import { Badge } from "@/components/ui/Badge";
+import { AvisoSimulado } from "@/components/ui/AvisoSimulado";
 import { Card } from "@/components/ui/Card";
 import { ROLE_LABELS, SECTIONS } from "@/config/permissions";
 import { ROLES } from "@/types";
@@ -29,6 +30,7 @@ export default async function AdminOverviewPage() {
   return (
     <div className="space-y-8">
       <PageHeader title="Administración" description="Estado de la organización: usuarios, dominios, accesos e integraciones." />
+      <AvisoSimulado datos={["getUsers", "getApiKeys", "getIntegrations", "getAuditLog"]} datosDe="usuarios, llaves de API, integraciones y actividad reciente" />
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <KpiTile label="Usuarios activos" value={users.items.filter((u) => u.is_active).length} hint={`${users.total} en total`} />
         <KpiTile label="Dominios" value={domains.items.filter((d) => d.status !== "removed").length} hint={`${attention.length} requieren atención`} />
