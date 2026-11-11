@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState, useSyncExternalStore } from "react";
+import Link from "next/link";
 import { Menu } from "lucide-react";
 import type { User } from "@/types";
 import { IdleTimeout } from "../IdleTimeout";
@@ -87,6 +88,10 @@ export function DashboardShell({ user, badges, children }: DashboardShellProps) 
           {children}
         </main>
         <footer className="mx-auto w-full max-w-7xl px-4 pb-6 text-xs text-lt-muted md:px-10">
+          <Link href="/seguridad" className={FOOTER_LINK}>
+            Seguridad
+          </Link>
+          {" · "}
           <a href={DBIP_URL} lang="en" target="_blank" rel="noopener noreferrer" className={FOOTER_LINK}>
             IP Geolocation by DB-IP{NEW_TAB}
           </a>
