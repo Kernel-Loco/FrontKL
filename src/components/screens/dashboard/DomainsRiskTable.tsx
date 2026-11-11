@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { TEXT_LINK } from "@/components/ui/ActionButton";
-import { Badge, BandBadge } from "@/components/ui/Badge";
+import { Badge, BandBadge, GradeBadge } from "@/components/ui/Badge";
 import { Card, TableWrap, TD, TH, TR } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ProgressBar } from "@/components/ui/ProgressBar";
@@ -9,14 +9,19 @@ import { formatDateTime } from "@/lib/format";
 import type { Domain, Scan } from "@/types";
 import { domainState, failedScanAt, hasResults } from "../shared/domainState";
 
-/** `lastScans`: último escaneo terminado de cada dominio entre los 50 de /scans, para marcar uno que falló. */
+/**
+ * `lastScans`: último escaneo terminado de cada dominio entre los 50 de /scans, para marcar uno que falló.
+ * `partialDomains`: dominios cuyo score salió con cobertura parcial; su letra lleva el mismo aviso.
+ */
 export function DomainsRiskTable({
   domains,
   lastScans,
+  partialDomains,
   canOpenDetail,
 }: {
   domains: Domain[];
   lastScans: Map<string, Scan>;
+  partialDomains: Set<string>;
   canOpenDetail: boolean;
 }) {
   return (
@@ -48,6 +53,7 @@ export function DomainsRiskTable({
                         <div className="flex items-center gap-3">
                           <span className="w-7 font-semibold tabular-nums">{d.score}</span>
                           <ProgressBar value={d.score} tone={BAND_TONE[d.band]} className="w-28" />
+                          {d.grade && <GradeBadge grade={d.grade} band={d.band} partial={partialDomains.has(d.fqdn)} />}
                         </div>
                       ) : (
                         <span className="text-lt-faint">—</span>

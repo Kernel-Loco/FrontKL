@@ -6,6 +6,7 @@ import { checkSectionAccess } from "@/components/dashboard/SectionAccess";
 import { AssetsCard } from "@/components/screens/detalle/AssetsCard";
 import { CategoryBars } from "@/components/screens/detalle/CategoryBars";
 import { DomainTabs, domainTabs } from "@/components/screens/detalle/DomainTabs";
+import { KriPanel } from "@/components/screens/detalle/KriPanel";
 import { RiskGauge } from "@/components/screens/detalle/RiskGauge";
 import { ReportButton } from "@/components/screens/shared/ReportButton";
 import { ScanButton } from "@/components/screens/shared/ScanButton";
@@ -137,12 +138,15 @@ export default async function DomainDetailPage({ params }: Props) {
 
       {score ? (
         <>
+          <KriPanel kris={score.kris} subcategories={score.subcategories} mapVersion={score.kri_map_version} />
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)]">
             <Card title="Riesgo global">
               <div className="py-2">
                 <RiskGauge
                   score={score.score}
                   band={score.band}
+                  grade={score.grade}
+                  partial={score.partial_coverage}
                   delta={delta}
                   reason={score.reason}
                   previousReason={points.length >= 2 ? points[points.length - 2]!.reason : null}
@@ -156,11 +160,11 @@ export default async function DomainDetailPage({ params }: Props) {
               )}
             </Card>
             <Card title="Riesgo por categoría" action="Ponderación configurable">
-              <CategoryBars categories={score.categories} />
+              <CategoryBars categories={score.categories} subcategories={score.subcategories} kris={score.kris} />
               {score.partial_coverage && (
                 <InlineAlert tone="warning" className="mt-5">
                   Cobertura parcial: alguna fuente falló, revisó solo una parte de sus repos o IP, o hay reglas que
-                  las fuentes actuales todavía no pueden revisar. El score puede estar incompleto.
+                  las fuentes actuales todavía no pueden revisar. El score y su letra pueden estar incompletos.
                 </InlineAlert>
               )}
             </Card>

@@ -40,6 +40,7 @@ export async function registerDomain(
     scan_eligibility: { can_scan: false, reasons: ["txt_not_verified"] },
     score: null,
     band: null,
+    grade: null,
     open_findings: { critical: 0, high: 0, medium: 0, low: 0 },
     last_scan_at: null,
     next_scan_at: null,

@@ -17,7 +17,7 @@ import { InlineAlert } from "@/components/ui/InlineAlert";
 import { BAND_LABELS, SCORE_METHOD_LABELS, SCORE_REASON_LABELS } from "@/config/labels";
 import { can, canAccessSection, SECTIONS } from "@/config/permissions";
 import { formatDate } from "@/lib/format";
-import { getDomainFindings, getDomains, getScoreHistory } from "@/services/queries";
+import { getDomainFindings, getDomains, getDomainScore, getScoreHistory } from "@/services/queries";
 import { getReports } from "@/services/reportService";
 
 export const metadata: Metadata = { title: SECTIONS.historico.label };
@@ -36,14 +36,23 @@ export default async function HistoricoPage({ searchParams }: Props) {
   const canReport = can(user.role, "request_report");
   // Los reportes siguen simulados: solo se muestran los de los dominios de tu empresa.
   const orgReports = reports.items.filter((r) => r.domain === null || domains.some((d) => d.fqdn === r.domain));
+  // Score, banda, letra y cobertura del PDF salen juntos del score de cada dominio, para que el aviso parcial sea el de esa
+  // misma letra. Si ese score no responde, quedan los de /domains con el aviso: el PDF no afirma una cobertura que no leyó.
+  const reportDomain = async ({ fqdn, score, band, grade, last_scan_at, open_findings }: (typeof domains)[number]) => {
+    if (score === null) return { fqdn, score, band, grade, partial_coverage: false, last_scan_at, open_findings };
+    const current = await getDomainScore(fqdn).catch(() => null);
+    return current
+      ? { fqdn, score: current.score, band: current.band, grade: current.grade, partial_coverage: current.partial_coverage, last_scan_at, open_findings }
+      : { fqdn, score, band, grade, partial_coverage: true, last_scan_at, open_findings };
+  };
   const reportData = canReport
-    ? {
-        domains: domains.map(({ fqdn, score, band, last_scan_at, open_findings }) => ({ fqdn, score, band, last_scan_at, open_findings })),
-        findings: (await Promise.all(domains.map(async (domain) => {
+    ? await Promise.all([
+        Promise.all(domains.map(reportDomain)),
+        Promise.all(domains.map(async (domain) => {
           const result = await getDomainFindings(domain.fqdn);
           return result.items.map((finding) => ({ domain: domain.fqdn, finding }));
-        }))).flat(),
-      }
+        })),
+      ]).then(([reportDomains, findings]) => ({ domains: reportDomains, findings: findings.flat() }))
     : undefined;
 
   if (!fqdn) {
