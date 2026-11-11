@@ -28,7 +28,7 @@ export default async function DominiosPage() {
         <Card
           title="Dominios registrados"
           icon={<Globe aria-hidden="true" className="h-4 w-4" />}
-          action={`${domains.length} dominios en inventario`}
+          action={`${domains.length} ${domains.length === 1 ? "dominio" : "dominios"} en inventario`}
         >
           <div className="-mx-5">
             <RegisteredDomainsTable domains={domains} canOpenDetail={canAccessSection(user.role, "detalle")} />

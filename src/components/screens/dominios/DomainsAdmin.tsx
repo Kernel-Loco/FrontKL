@@ -20,7 +20,7 @@ export function DomainsAdmin({ domains: initialDomains, txt: initialTxt }: Domai
   const [txt, setTxt] = useState(initialTxt);
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)]">
+    <div className="grid gap-6 2xl:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)]">
       <div className="space-y-6">
         <RegisterDomainForm
           onRegistered={(domain, record) => {

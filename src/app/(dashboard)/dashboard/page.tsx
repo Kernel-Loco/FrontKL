@@ -102,7 +102,7 @@ export default async function DashboardPage() {
         // El mismo estado que la tabla Dominios: sin score por falta de autorización, por vencido o por no tener escaneo.
         stateLabel: visible[index] ? unscoredLabel(visible[index]) : "Sin calcular",
       }))} />
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)]">
+      <div className="grid gap-6 2xl:grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)]">
         <DomainsRiskTable domains={rows} lastScans={lastScans} partialDomains={new Set(partialDomains)} canOpenDetail={canAccessSection(user.role, "detalle")} />
         <RecentChanges summaries={summaries} changes={changes} more={newFindings.length - changes.length} />
       </div>
