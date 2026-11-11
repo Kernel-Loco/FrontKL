@@ -72,8 +72,8 @@ export function FindingsByTypeChart({ series }: { series: DomainFindingSeries[] 
             >
               <title id="findings-chart-title">Hallazgos abiertos por categoría y dominio</title>
               <desc id="findings-chart-description">
-                {counts.map(({ domain, coverage, values }) =>
-                  `${domain}${coverage === "complete" ? "" : coverage === "partial" ? " (cobertura parcial)" : " (riesgo sin calcular)"}: ${CATEGORIES.map((category, index) => `${CATEGORY_LABELS[category]} ${values[index]}`).join(", ")}`,
+                {counts.map(({ domain, coverage, stateLabel, values }) =>
+                  `${domain}${coverage === "complete" ? "" : coverage === "partial" ? " (cobertura parcial)" : ` (${stateLabel.toLowerCase()})`}: ${CATEGORIES.map((category, index) => `${CATEGORY_LABELS[category]} ${values[index]}`).join(", ")}`,
                 ).join(". ")}
               </desc>
               {ticks.map((tick) => {
@@ -128,7 +128,7 @@ export function FindingsByTypeChart({ series }: { series: DomainFindingSeries[] 
           {total === 0 && (
             <p className="mt-3 text-sm text-lt-muted">
               {incomplete
-                ? "No hay hallazgos abiertos registrados, pero con cobertura parcial o riesgo sin calcular eso no confirma que no existan."
+                ? "No hay hallazgos abiertos registrados, pero con cobertura parcial o dominios sin score eso no confirma que no existan."
                 : "No se encontraron hallazgos abiertos."}
             </p>
           )}
