@@ -61,7 +61,7 @@ export function SignUpForm() {
         {...register("confirmPassword")}
       />
       <p className="text-xs text-slate-500">
-        Tu cuenta se creará con rol <strong className="font-semibold text-lt-ink">Analista</strong>. Un Admin puede
+        Tu cuenta se creará con rol <strong className="font-semibold text-lt-ink">Analista</strong>. Un Administrador puede
         asignarte otro rol.
       </p>
       {formError && <Notice tone="error">{formError}</Notice>}

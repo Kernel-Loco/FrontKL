@@ -46,7 +46,7 @@ export function TxtVerificationList({ items, onChange }: { items: TxtVerificatio
       <div className="flex items-center justify-between gap-3">
         <h3 className="text-[15px] font-semibold text-lt-text">Verificación TXT</h3>
         <Badge tone="indigo">
-          <ShieldCheck aria-hidden="true" className="h-3 w-3" /> Solo Admin
+          <ShieldCheck aria-hidden="true" className="h-3 w-3" /> Solo Administrador
         </Badge>
       </div>
       <ul className="mt-3 divide-y divide-lt-border">

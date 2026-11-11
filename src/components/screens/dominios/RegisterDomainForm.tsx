@@ -84,7 +84,7 @@ export function RegisterDomainForm({ onRegistered }: { onRegistered: (domain: Do
       icon={<Globe aria-hidden="true" className="h-4 w-4" />}
       action={
         <Badge tone="indigo">
-          <ShieldCheck aria-hidden="true" className="h-3 w-3" /> Solo Admin
+          <ShieldCheck aria-hidden="true" className="h-3 w-3" /> Solo Administrador
         </Badge>
       }
     >
