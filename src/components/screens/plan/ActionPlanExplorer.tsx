@@ -10,6 +10,7 @@ import { CHECKBOX } from "@/components/ui/Field";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { InlineAlert } from "@/components/ui/InlineAlert";
 import { CATEGORY_LABELS } from "@/config/labels";
+import { cantidad } from "@/lib/format";
 import { getErrorMessage } from "@/services/errors";
 import { downloadActionPlan, simulateActionPlan, type PlanExportFormat } from "@/services/planService";
 import type { ActionPlan, ActionPlanSimulation } from "@/types";
@@ -76,7 +77,7 @@ export function ActionPlanExplorer({ plan, canOpenFindings }: { plan: ActionPlan
     <div className="grid min-w-0 items-start gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.65fr)]">
       <Card
         title="Acciones recomendadas"
-        description={`${plan.total} acciones para ${plan.domain}`}
+        description={`${cantidad(plan.total, "acción", "acciones")} para ${plan.domain}`}
         action={(
           <span className="flex gap-1">
             <ActionButton variant="ghost" size="sm" loading={exporting === "csv"} onClick={() => exportPlan("csv")}>

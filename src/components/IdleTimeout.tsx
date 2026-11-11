@@ -66,7 +66,8 @@ export function IdleTimeout({ limits }: { limits?: SessionLimits }) {
     void getCurrentUser()
       .then((user) => {
         if (!user) {
-          void endSession("/login?notice=expired");
+          // El servidor ya no reconoce la sesión y no dice por qué: el mismo aviso que /auth/expirada.
+          void endSession("/login?notice=ended");
           return;
         }
         const now = Date.now();

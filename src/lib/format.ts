@@ -23,6 +23,12 @@ export function formatRelative(iso: string, now = Date.now()): string {
   return relativeFormat.format(Math.round(hours / 24), "day");
 }
 
+/** Número con su sustantivo en singular o plural: cantidad(1, "dominio") da "1 dominio" y
+ * cantidad(3, "acción", "acciones") da "3 acciones". */
+export function cantidad(n: number, singular: string, plural = `${singular}s`): string {
+  return `${n} ${n === 1 ? singular : plural}`;
+}
+
 export function formatPercent(ratio: number): string {
   return `${Math.round(ratio * 100)} %`;
 }

@@ -40,3 +40,12 @@ export function failedScanAt(domain: Domain, scan: Scan | undefined): string | n
   if (scan?.status !== "failed" || !scan.finished_at) return null;
   return !domain.last_scan_at || Date.parse(scan.finished_at) >= Date.parse(domain.last_scan_at) ? scan.finished_at : null;
 }
+
+/**
+ * Hora del último escaneo terminado sin fallo: cuándo terminó, si /scans lo trae. Si el último terminado falló, vale
+ * last_scan_at, para no mostrar la hora del fallido sin decir que falló. Un fallido más nuevo lo marca failedScanAt.
+ */
+export function lastScanAt(domain: Domain, scan: Scan | undefined): string | null {
+  if (scan?.status === "failed") return domain.last_scan_at;
+  return scan?.finished_at ?? domain.last_scan_at;
+}

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Globe, TriangleAlert } from "lucide-react";
 import { Card } from "@/components/ui/Card";
+import { cantidad } from "@/lib/format";
 import type { Domain, TxtVerification } from "@/types";
 import { HibpVerificationGuide } from "./HibpVerificationGuide";
 import { RegisterDomainForm } from "./RegisterDomainForm";
@@ -20,7 +21,9 @@ export function DomainsAdmin({ domains: initialDomains, txt: initialTxt }: Domai
   const [txt, setTxt] = useState(initialTxt);
 
   return (
-    <div className="grid gap-6 2xl:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)]">
+    // Una sola columna a todo ancho: en dos, desde 1536 px el inventario queda en unos 650 px y la tabla
+    // (correo y 'Ver' sin cortes) pide unos 720, con scroll y 'Ver' fuera de vista.
+    <div className="grid gap-6">
       <div className="space-y-6">
         <RegisterDomainForm
           onRegistered={(domain, record) => {
@@ -33,7 +36,7 @@ export function DomainsAdmin({ domains: initialDomains, txt: initialTxt }: Domai
       <Card
         title="Dominios registrados"
         icon={<Globe aria-hidden="true" className="h-4 w-4" />}
-        action={`${domains.length} dominios en inventario`}
+        action={`${cantidad(domains.length, "dominio")} en inventario`}
       >
         <div className="-mx-5">
           <RegisteredDomainsTable domains={domains} canOpenDetail />

@@ -7,6 +7,7 @@ import { INPUT, SELECT } from "@/components/ui/Field";
 import { TD, TH } from "@/components/ui/Card";
 import { ApiExport } from "@/components/screens/shared/ApiExport";
 import { CATEGORY_LABELS, SEVERITY_LABELS, SOURCE_LABELS } from "@/config/labels";
+import { cantidad } from "@/lib/format";
 import { downloadFindings } from "@/services/exportService";
 import type { Category, DomainFinding, Severity } from "@/types";
 import { ExplanationPanel } from "./ExplanationPanel";
@@ -101,7 +102,7 @@ export function FindingsExplorer({
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-xs text-lt-muted">
-          {visible.length} de {findings.length} hallazgos
+          {visible.length} de {cantidad(findings.length, "hallazgo")}
           {visible.length < findings.length && " · la exportación trae todos, sin los filtros"}
         </p>
         {/* La API arma el archivo (#24): todos los hallazgos abiertos del dominio, sin los filtros, y 403 sin autorización vigente. */}

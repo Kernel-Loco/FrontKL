@@ -95,7 +95,7 @@ export default async function DomainDetailPage({ params }: Props) {
       action={
         canSeeFindings && findings.total > 0 ? (
           <Link href={`/dashboard/hallazgos?dominio=${encodeURIComponent(fqdn)}`} className={TEXT_LINK}>
-            Ver los {findings.total} hallazgos
+            {findings.total === 1 ? "Ver el hallazgo" : `Ver los ${findings.total} hallazgos`}
           </Link>
         ) : undefined
       }
