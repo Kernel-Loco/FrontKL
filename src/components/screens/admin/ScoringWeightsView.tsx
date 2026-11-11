@@ -1,6 +1,7 @@
 import { Scale } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Card, TableWrap, TR } from "@/components/ui/Card";
+import { BAND_TONE } from "@/components/ui/tones";
 import { BAND_LABELS, CATEGORY_LABELS, SEVERITY_LABELS } from "@/config/labels";
 import { formatDateTime } from "@/lib/format";
 import type { Category, ScoringWeights } from "@/types";
@@ -49,7 +50,7 @@ export function ScoringWeightsView({ weights }: { weights: ScoringWeights }) {
           <ul className="divide-y divide-lt-border">
             {weights.bands.map((b) => (
               <li key={b.band} className="flex items-center justify-between py-2.5 text-sm">
-                <Badge tone={b.band === "critical" ? "red" : b.band === "high" ? "orange" : b.band === "medium" ? "amber" : "green"}>
+                <Badge tone={BAND_TONE[b.band]}>
                   {BAND_LABELS[b.band]}
                 </Badge>
                 <span className="tabular-nums text-lt-muted">
