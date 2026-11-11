@@ -9,7 +9,7 @@ import { Field, INPUT, SELECT } from "@/components/ui/Field";
 import { InlineAlert } from "@/components/ui/InlineAlert";
 import { Modal } from "@/components/ui/Modal";
 import { ROLE_DESCRIPTIONS, ROLE_LABELS } from "@/config/permissions";
-import { mensajeDeExito } from "@/config/simulado";
+import { esSimulada, mensajeDeExito } from "@/config/simulado";
 import { formatDateTime } from "@/lib/format";
 import { getErrorMessage } from "@/services/errors";
 import { changeUserRole, inviteUser } from "@/services/userService";
@@ -53,7 +53,7 @@ export function UsersManager({ initial, currentUserEmail }: { initial: OrgUser[]
       const user = await inviteUser({ full_name, email, role });
       setUsers((current) => [...current, user]);
       setInviteOpen(false);
-      setMessage({ tone: "success", text: mensajeDeExito("inviteUser", `Enviamos la invitación a ${email}. Deberá activar MFA al entrar.`) });
+      setMessage({ tone: "success", text: esSimulada("inviteUser") ? `Simulado. ${email} quedó en la lista, sin correo de invitación.` : `Enviamos la invitación a ${email}. Deberá activar MFA al entrar.` });
     } catch (error) {
       setInviteError(getErrorMessage(error));
     } finally {
@@ -134,7 +134,7 @@ export function UsersManager({ initial, currentUserEmail }: { initial: OrgUser[]
         </ul>
       </Card>
 
-      <Modal open={inviteOpen} onClose={() => setInviteOpen(false)} title="Invitar usuario" description="Recibirá un correo para crear su contraseña y activar MFA.">
+      <Modal open={inviteOpen} onClose={() => setInviteOpen(false)} title="Invitar usuario" description={esSimulada("inviteUser") ? "Simulado: todavía no se envía ningún correo." : "Recibirá un correo para crear su contraseña y activar MFA."}>
         <form onSubmit={onInvite} noValidate className="space-y-4">
           <Field label="Nombre completo" htmlFor="invite-name">
             <input id="invite-name" name="full_name" className={INPUT} autoComplete="off" />
