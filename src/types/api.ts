@@ -23,6 +23,8 @@ export interface ApiErrorBody {
 // ---------------------------------------------------------------- score y criterio (#29)
 
 export type Band = "low" | "medium" | "high" | "critical";
+/** Letra del score final (#114): A 0–19, B 20–39, C 40–59, D 60–79, F 80–100. No hay E. La da la API. */
+export type Grade = "A" | "B" | "C" | "D" | "F";
 export type Category = "infrastructure" | "digital_identity" | "configuration" | "data_leaks";
 export type ScoreMethod = "rules" | "ml";
 export type ScoreReason = "scan" | "intel_update" | "rules_change" | "correction";
@@ -63,6 +65,7 @@ export interface Domain {
   scan_eligibility: { can_scan: boolean; reasons: ScanBlockReason[] };
   score: number | null;
   band: Band | null;
+  grade: Grade | null;
   open_findings: SeverityCounts;
   last_scan_at: string | null;
   next_scan_at: string | null;
@@ -115,12 +118,17 @@ interface ScoreBase {
   score_id: string;
   score: number;
   band: Band;
+  /** Con `partial_coverage` lleva el mismo aviso que el score. */
+  grade: Grade;
   weighted: number;
   floor: number;
   /** El piso por hallazgos críticos subió el score: el portal muestra el aviso. */
   floor_applied: boolean;
+  floor_message: string | null;
   critical_open: number;
   method: ScoreMethod;
+  model_version: string | null;
+  model_fallback_reason: string | null;
   rule_set_version: number;
   reason: ScoreReason;
   partial_coverage: boolean;
@@ -134,10 +142,45 @@ export interface CategoryScore {
   weight: number;
 }
 
+/** Hallazgos vigentes y aportes de una subcategoría (#114). `other` junta las reglas que el mapa no conoce. */
+export interface SubcategoryScore {
+  category: Category;
+  subcategory: string;
+  name: string;
+  findings: number;
+  penalty: number;
+}
+
+/**
+ * ok: sus fuentes corrieron completas. partial: hay datos, pero no de todo. no_coverage: alguna fuente no
+ * respondió o nada se revisó. no_source_yet: aún no tiene fuente. Con los dos últimos los conteos van en null.
+ */
+export type KriStatus = "ok" | "partial" | "no_coverage" | "no_source_yet";
+
+/** Indicador clave de riesgo (#114). Los KRI no cubren todo el score. */
+export interface Kri {
+  kri: string;
+  name: string;
+  status: KriStatus;
+  subcategories: string[];
+  sources: string[];
+  sources_failed: string[];
+  sources_not_run: string[];
+  sources_partial: string[];
+  rules_without_coverage: string[];
+  findings: number | null;
+  max_severity: Severity | null;
+  penalty: number | null;
+}
+
 /** `GET /api/v1/domains/{fqdn}/score` */
 export interface DomainScore extends ScoreBase {
   domain: string;
   categories: CategoryScore[];
+  subcategories: SubcategoryScore[];
+  kris: Kri[];
+  kri_map_version: number;
+  /** El umbral compara el score de 0 a 100, nunca la letra. */
   alert: { threshold: number; triggered: boolean };
 }
 
@@ -289,6 +332,7 @@ export interface ScoringWeights {
   validated_by: string | null;
   category_weights: Record<Category, number>;
   bands: { band: Band; from: number; to: number }[];
+  grades: { grade: Grade; from: number; to: number }[];
   floor: { one_critical: number; two_or_more_critical: number; counts_statuses: FindingStatus[] };
   alert_threshold_default: number;
   rules: ScoringRule[];
