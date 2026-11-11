@@ -6,6 +6,8 @@ interface DomainFindingSeries {
   domain: string;
   findings: DomainFinding[];
   coverage: "complete" | "partial" | "unscanned";
+  /** Para un dominio sin score: lo mismo que dice la tabla Dominios (Sin autorización, Vencido, Sin calcular...). */
+  stateLabel: string;
 }
 
 const CATEGORIES = Object.keys(CATEGORY_LABELS) as Category[];
@@ -14,9 +16,10 @@ const HEIGHT = 270;
 const PADDING = { top: 18, right: 14, bottom: 58, left: 34 };
 
 export function FindingsByTypeChart({ series }: { series: DomainFindingSeries[] }) {
-  const counts = series.map(({ domain, findings, coverage }) => ({
+  const counts = series.map(({ domain, findings, coverage, stateLabel }) => ({
     domain,
     coverage,
+    stateLabel,
     // Cuenta los hallazgos abiertos registrados con cualquier cobertura: un primer escaneo en curso o caído ya puede
     // tener hallazgos sin score, y hoy todo escaneo queda parcial. La leyenda, la descripción y el aviso dicen qué dominios
     // no tienen cobertura completa.
@@ -34,10 +37,10 @@ export function FindingsByTypeChart({ series }: { series: DomainFindingSeries[] 
   const unscored = counts.filter((item) => item.coverage === "unscanned").length;
   const incomplete = partial + unscored > 0;
   const total = counts.reduce((sum, item) => sum + item.values.reduce((categoryTotal, value) => categoryTotal + value, 0), 0);
-  const gaps = [partial > 0 ? `${partial} con cobertura parcial` : "", unscored > 0 ? `${unscored} con riesgo sin calcular` : ""]
+  const gaps = [partial > 0 ? `${partial} con cobertura parcial` : "", unscored > 0 ? `${unscored} sin score` : ""]
     .filter(Boolean)
     .join(" y ");
-  const description = `${total} hallazgo(s) en ${counts.length} dominio(s)${incomplete ? `, ${gaps}` : ""}`;
+  const description = `${total} ${total === 1 ? "hallazgo" : "hallazgos"} en ${counts.length} ${counts.length === 1 ? "dominio" : "dominios"}${incomplete ? `, ${gaps}` : ""}`;
 
   return (
     <Card title="Hallazgos abiertos por categoría y dominio" description={description}>
@@ -46,13 +49,13 @@ export function FindingsByTypeChart({ series }: { series: DomainFindingSeries[] 
       ) : (
         <>
           <ul aria-label="Dominios" className="mb-4 flex flex-wrap gap-x-4 gap-y-2">
-            {counts.map(({ domain, coverage }, index) => (
+            {counts.map(({ domain, coverage, stateLabel }, index) => (
               <li key={domain} className="flex min-w-0 items-center gap-2 text-xs text-lt-muted">
                 <span aria-hidden="true" className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ backgroundColor: BLUE_PALETTE[index % BLUE_PALETTE.length] }} />
                 <span className="max-w-56 truncate">{domain}</span>
                 {coverage !== "complete" && (
                   <span className="shrink-0 rounded-sm border border-lt-border px-1.5 py-0.5 text-[10px]">
-                    {coverage === "partial" ? "Parcial" : "Riesgo sin calcular"}
+                    {coverage === "partial" ? "Parcial" : stateLabel}
                   </span>
                 )}
               </li>
