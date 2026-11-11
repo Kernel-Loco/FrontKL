@@ -36,23 +36,23 @@ export default async function HistoricoPage({ searchParams }: Props) {
   const canReport = can(user.role, "request_report");
   // Los reportes siguen simulados: solo se muestran los de los dominios de tu empresa.
   const orgReports = reports.items.filter((r) => r.domain === null || domains.some((d) => d.fqdn === r.domain));
+  // Score, banda, letra y cobertura del PDF salen juntos del score de cada dominio, para que el aviso parcial sea el de esa
+  // misma letra. Si ese score no responde, quedan los de /domains con el aviso: el PDF no afirma una cobertura que no leyó.
+  const reportDomain = async ({ fqdn, score, band, grade, last_scan_at, open_findings }: (typeof domains)[number]) => {
+    if (score === null) return { fqdn, score, band, grade, partial_coverage: false, last_scan_at, open_findings };
+    const current = await getDomainScore(fqdn).catch(() => null);
+    return current
+      ? { fqdn, score: current.score, band: current.band, grade: current.grade, partial_coverage: current.partial_coverage, last_scan_at, open_findings }
+      : { fqdn, score, band, grade, partial_coverage: true, last_scan_at, open_findings };
+  };
   const reportData = canReport
-    ? {
-        // La cobertura parcial sale del score de cada dominio, como en el dashboard: la letra lleva el mismo aviso.
-        domains: await Promise.all(domains.map(async ({ fqdn, score, band, grade, last_scan_at, open_findings }) => ({
-          fqdn,
-          score,
-          band,
-          grade,
-          partial_coverage: score !== null && (await getDomainScore(fqdn)).partial_coverage,
-          last_scan_at,
-          open_findings,
-        }))),
-        findings: (await Promise.all(domains.map(async (domain) => {
+    ? await Promise.all([
+        Promise.all(domains.map(reportDomain)),
+        Promise.all(domains.map(async (domain) => {
           const result = await getDomainFindings(domain.fqdn);
           return result.items.map((finding) => ({ domain: domain.fqdn, finding }));
-        }))).flat(),
-      }
+        })),
+      ]).then(([reportDomains, findings]) => ({ domains: reportDomains, findings: findings.flat() }))
     : undefined;
 
   if (!fqdn) {

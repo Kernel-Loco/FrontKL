@@ -1,12 +1,13 @@
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
-import { SEVERITY_TONE, SOLID_TONES, type Tone } from "@/components/ui/tones";
-import { SEVERITY_LABELS } from "@/config/labels";
-import { kriNote, kriView, type KriTone } from "@/lib/riesgo";
+import { kriTone, SOLID_TONES } from "@/components/ui/tones";
+import { SEVERITY_LABELS, SOURCE_LABELS } from "@/config/labels";
+import { kriNote, kriView } from "@/lib/riesgo";
 import type { Kri, SubcategoryScore } from "@/types";
 
-/** Sin datos completos va en gris: nunca en el color de sin riesgo. */
-const toneOf = (tone: KriTone): Tone => (tone === "clean" ? "green" : tone === "unknown" ? "gray" : SEVERITY_TONE[tone]);
+/** Las fuentes de los KRI incluyen api_docs, que no es fuente de hallazgos. */
+const KRI_SOURCE_LABELS: Record<string, string> = { ...SOURCE_LABELS, api_docs: "Documentación de APIs" };
+const sourceName = (code: string) => KRI_SOURCE_LABELS[code] ?? code;
 
 /** Los 5 KRI encima de las 4 categorías (#114), con el color de su severidad más alta. */
 export function KriPanel({ kris, subcategories, mapVersion }: { kris: Kri[]; subcategories: SubcategoryScore[]; mapVersion: number }) {
@@ -14,8 +15,8 @@ export function KriPanel({ kris, subcategories, mapVersion }: { kris: Kri[]; sub
     <Card title="Indicadores clave de riesgo (KRI)" description={kriNote(subcategories, kris)} action={`Mapa v${mapVersion}`}>
       <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         {kris.map((kri) => {
-          const view = kriView(kri);
-          const tone = toneOf(view.tone);
+          const view = kriView(kri, sourceName);
+          const tone = kriTone(view.tone);
           return (
             <li key={kri.kri} className="overflow-hidden rounded-lg border border-lt-border bg-lt-raised/40">
               <div aria-hidden="true" className={`h-1 ${SOLID_TONES[tone].bg}`} />

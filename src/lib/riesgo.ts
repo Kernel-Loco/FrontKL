@@ -58,18 +58,29 @@ export interface KriView {
 
 const count = (n: number) => `${n} hallazgo${n === 1 ? "" : "s"}`;
 
-function missing(kri: Kri): string | null {
+/** Nombre de una fuente para el usuario. El panel pasa el de src/config/labels.ts; sin él, el código. */
+export type SourceName = (code: string) => string;
+
+function missing(kri: Kri, sourceName: SourceName): string | null {
+  const names = (codes: string[]) => codes.map(sourceName).join(", ");
   const parts = [
-    kri.sources_failed.length ? `No respondió: ${kri.sources_failed.join(", ")}` : null,
-    kri.sources_not_run.length ? `No corrió: ${kri.sources_not_run.join(", ")}` : null,
-    kri.sources_partial.length ? `Revisó solo una parte: ${kri.sources_partial.join(", ")}` : null,
+    kri.sources_failed.length ? `No respondió: ${names(kri.sources_failed)}` : null,
+    kri.sources_not_run.length ? `No corrió: ${names(kri.sources_not_run)}` : null,
+    kri.sources_partial.length ? `Revisó solo una parte: ${names(kri.sources_partial)}` : null,
     kri.rules_without_coverage.length ? `Reglas sin cobertura: ${kri.rules_without_coverage.join(", ")}` : null,
   ].filter(Boolean);
   return parts.length ? parts.join(". ") : null;
 }
 
+/** Estado de cobertura más bajo de los KRI que juntan una subcategoría; null si ningún KRI la junta. */
+export function subcategoryCoverage(subcategory: string, kris: Kri[]): KriStatus | null {
+  const order: KriStatus[] = ["no_coverage", "no_source_yet", "partial", "ok"];
+  const statuses = kris.filter((k) => k.subcategories.includes(subcategory)).map((k) => k.status);
+  return statuses.length ? order.find((s) => statuses.includes(s))! : null;
+}
+
 /** Cómo se pinta un KRI. Sin cobertura, sin fuente o parcial nunca sale como sin riesgo ni en cero. */
-export function kriView(kri: Kri): KriView {
+export function kriView(kri: Kri, sourceName: SourceName = (code) => code): KriView {
   switch (kri.status) {
     case "no_coverage":
       return {
@@ -77,7 +88,7 @@ export function kriView(kri: Kri): KriView {
         value: "—",
         tone: "unknown",
         warning: "Alguna fuente no respondió o no se pudo revisar nada: no quiere decir que no haya riesgo.",
-        detail: missing(kri),
+        detail: missing(kri, sourceName),
       };
     case "no_source_yet":
       return {
@@ -90,10 +101,11 @@ export function kriView(kri: Kri): KriView {
     case "partial":
       return {
         status: KRI_STATUS_LABELS.partial,
-        value: kri.findings === null ? "—" : count(kri.findings),
+        // Un cero con cobertura parcial no quiere decir que no haya nada: va sin número.
+        value: kri.findings ? count(kri.findings) : "—",
         tone: kri.max_severity ?? "unknown",
         warning: "No se revisó todo: lo que no aparece aquí puede faltar por revisar.",
-        detail: missing(kri),
+        detail: missing(kri, sourceName),
       };
     case "ok":
       if (kri.findings === null) return { status: null, value: "—", tone: "unknown", warning: null, detail: null };

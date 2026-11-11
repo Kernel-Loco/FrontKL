@@ -1,5 +1,5 @@
 import { BAND_LABELS, SEVERITY_LABELS } from "@/config/labels";
-import { gradeText, PARTIAL_GRADE_NOTE } from "@/lib/riesgo";
+import { gradeText } from "@/lib/riesgo";
 import type { Band, Grade, Severity } from "@/types";
 import { BAND_TONE, BADGE_TONES, SEVERITY_BADGE, SOLID_TONES, type Tone } from "./tones";
 
@@ -34,7 +34,7 @@ export function SeverityBadge({ severity }: { severity: Severity }) {
  */
 export function GradeBadge({ grade, band, partial = false }: { grade: Grade; band: Band; partial?: boolean }) {
   return (
-    <span className="inline-flex items-center gap-1.5" title={partial ? PARTIAL_GRADE_NOTE : undefined}>
+    <span className="inline-flex items-center gap-1.5">
       <Badge tone={BAND_TONE[band]} className="min-w-6 justify-center font-bold tabular-nums">
         <span aria-hidden="true">{grade}</span>
         <span className="sr-only">{gradeText(grade, partial)}</span>

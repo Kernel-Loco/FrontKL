@@ -160,7 +160,7 @@ export default async function DomainDetailPage({ params }: Props) {
               )}
             </Card>
             <Card title="Riesgo por categoría" action="Ponderación configurable">
-              <CategoryBars categories={score.categories} subcategories={score.subcategories} />
+              <CategoryBars categories={score.categories} subcategories={score.subcategories} kris={score.kris} />
               {score.partial_coverage && (
                 <InlineAlert tone="warning" className="mt-5">
                   Cobertura parcial: alguna fuente falló, revisó solo una parte de sus repos o IP, o hay reglas que
