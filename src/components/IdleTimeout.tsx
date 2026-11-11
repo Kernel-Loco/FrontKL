@@ -104,7 +104,8 @@ export function IdleTimeout({ limits }: { limits?: SessionLimits }) {
       const reason: Reason = absoluteLeft <= idleLeft ? "absolute" : "idle";
       const left = Math.min(idleLeft, absoluteLeft);
       if (left <= 0) {
-        void endSession("/login?notice=expired");
+        // El tope de 8 h y la inactividad dan avisos distintos en el login.
+        void endSession(reason === "absolute" ? "/login?notice=max" : "/login?notice=expired");
         return;
       }
       const threshold = reason === "absolute" ? ABSOLUTE_WARNING_MS : idleWarningMs(idleSpan.current);
