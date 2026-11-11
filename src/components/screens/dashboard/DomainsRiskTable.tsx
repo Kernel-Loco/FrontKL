@@ -45,6 +45,7 @@ export function DomainsRiskTable({
                 // Sin score, el estado dice por qué; si ya está autorizado, falta que un escaneo calcule el riesgo.
                 const state = domainState(d);
                 const failedAt = failedScanAt(d, lastScans.get(d.fqdn));
+                const finishedAt = lastScans.get(d.fqdn)?.finished_at ?? d.last_scan_at;
                 return (
                   <tr key={d.id} className={TR}>
                     <td className={`${TD} font-mono text-[13px]`}>{d.fqdn}</td>
@@ -68,8 +69,9 @@ export function DomainsRiskTable({
                         <Badge tone={state.tone}>{state.label}</Badge>
                       )}
                     </td>
+                    {/* La misma hora que «Cambios desde el último escaneo»: cuándo terminó, si /scans lo trae. */}
                     <td className={`${TD} text-lt-muted`}>
-                      {failedAt ? `${formatDateTime(failedAt)}, falló` : d.last_scan_at ? formatDateTime(d.last_scan_at) : "—"}
+                      {failedAt ? `${formatDateTime(failedAt)}, falló` : finishedAt ? formatDateTime(finishedAt) : "—"}
                     </td>
                     <td className={`${TD} text-right`}>
                       {canOpenDetail && hasResults(d) ? (
