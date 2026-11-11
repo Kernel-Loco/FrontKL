@@ -1,11 +1,15 @@
 import { BAND_LABELS, SCORE_REASON_LABELS } from "@/config/labels";
-import type { Band, ScoreReason } from "@/types";
-import { Badge } from "@/components/ui/Badge";
+import type { Band, Grade, ScoreReason } from "@/types";
+import { Badge, GradeBadge } from "@/components/ui/Badge";
 import { BAND_TONE, SOLID_TONES } from "@/components/ui/tones";
 
 interface RiskGaugeProps {
   score: number;
   band: Band;
+  /** Letra de la A a la F que da la API (#114). */
+  grade: Grade;
+  /** Cobertura parcial: la letra lleva el mismo aviso que el score. */
+  partial: boolean;
   /** Diferencia contra el score anterior; `null` si es el primero. */
   delta: number | null;
   /** Por qué se calculó el score actual: un escaneo, un recálculo sin escaneo o una corrección. */
@@ -18,7 +22,7 @@ const RADIUS = 52;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
 /** Anillo de 0 a 100 con el score global del dominio. */
-export function RiskGauge({ score, band, delta, reason, previousReason }: RiskGaugeProps) {
+export function RiskGauge({ score, band, grade, partial, delta, reason, previousReason }: RiskGaugeProps) {
   const tone = BAND_TONE[band];
   const previous = previousReason === "scan" ? "escaneo anterior" : "cálculo anterior";
   return (
@@ -43,9 +47,12 @@ export function RiskGauge({ score, band, delta, reason, previousReason }: RiskGa
           <span className="text-xs text-lt-muted">de 100</span>
         </div>
       </div>
-      <Badge tone={tone} className="mt-4 px-3 py-1 uppercase tracking-wider">
-        Riesgo {BAND_LABELS[band]}
-      </Badge>
+      <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+        <GradeBadge grade={grade} band={band} partial={partial} />
+        <Badge tone={tone} className="px-3 py-1 uppercase tracking-wider">
+          Riesgo {BAND_LABELS[band]}
+        </Badge>
+      </div>
       {delta !== null && (
         <p className="mt-2 text-center text-xs text-lt-muted">
           {reason === "correction"

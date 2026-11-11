@@ -17,7 +17,7 @@ import { InlineAlert } from "@/components/ui/InlineAlert";
 import { BAND_LABELS, SCORE_METHOD_LABELS, SCORE_REASON_LABELS } from "@/config/labels";
 import { can, canAccessSection, SECTIONS } from "@/config/permissions";
 import { formatDate } from "@/lib/format";
-import { getDomainFindings, getDomains, getScoreHistory } from "@/services/queries";
+import { getDomainFindings, getDomains, getDomainScore, getScoreHistory } from "@/services/queries";
 import { getReports } from "@/services/reportService";
 
 export const metadata: Metadata = { title: SECTIONS.historico.label };
@@ -38,7 +38,16 @@ export default async function HistoricoPage({ searchParams }: Props) {
   const orgReports = reports.items.filter((r) => r.domain === null || domains.some((d) => d.fqdn === r.domain));
   const reportData = canReport
     ? {
-        domains: domains.map(({ fqdn, score, band, last_scan_at, open_findings }) => ({ fqdn, score, band, last_scan_at, open_findings })),
+        // La cobertura parcial sale del score de cada dominio, como en el dashboard: la letra lleva el mismo aviso.
+        domains: await Promise.all(domains.map(async ({ fqdn, score, band, grade, last_scan_at, open_findings }) => ({
+          fqdn,
+          score,
+          band,
+          grade,
+          partial_coverage: score !== null && (await getDomainScore(fqdn)).partial_coverage,
+          last_scan_at,
+          open_findings,
+        }))),
         findings: (await Promise.all(domains.map(async (domain) => {
           const result = await getDomainFindings(domain.fqdn);
           return result.items.map((finding) => ({ domain: domain.fqdn, finding }));

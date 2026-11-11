@@ -13,13 +13,17 @@ import {
   SOURCE_LABELS,
 } from "@/config/labels";
 import { formatDate, formatDateTime } from "@/lib/format";
-import type { Band, Category, DomainFinding, FindingStatus, Report, Severity } from "@/types";
+import { scoreCell } from "@/lib/riesgo";
+import type { Band, Category, DomainFinding, FindingStatus, Grade, Report, Severity } from "@/types";
 
 export interface ExecutiveReportData {
   domains: {
     fqdn: string;
     score: number | null;
     band: Band | null;
+    grade: Grade | null;
+    /** El score más reciente salió con cobertura parcial: la letra lleva el mismo aviso. */
+    partial_coverage: boolean;
     last_scan_at: string | null;
     open_findings: Record<Severity, number>;
   }[];
@@ -161,10 +165,10 @@ export function ExecutiveReportDownload({ report, data }: { report: Report; data
       autoTable(doc, {
         startY: y,
         margin: { left: MARGIN, right: MARGIN, bottom: 18 },
-        head: [["Dominio", "Score reciente", "Escaneado", "Hallazgos del periodo", "Abiertos ahora"]],
+        head: [["Dominio", "Score y letra", "Escaneado", "Hallazgos del periodo", "Abiertos ahora"]],
         body: data.domains.map((domain) => [
           domain.fqdn,
-          domain.score === null ? "-" : `${domain.score}${domain.band ? ` (${BAND_LABELS[domain.band]})` : ""}`,
+          scoreCell(domain.score, domain.grade, domain.band ? BAND_LABELS[domain.band] : null, domain.partial_coverage),
           domain.last_scan_at ? formatDate(domain.last_scan_at.slice(0, 10)) : "Sin escaneo",
           String(findingsByDomain.get(domain.fqdn) ?? 0),
           String(SEVERITIES.reduce((total, severity) => total + domain.open_findings[severity], 0)),
