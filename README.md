@@ -19,7 +19,7 @@ npm ci                       # instala las versiones exactas de package-lock.jso
 npm run dev                  # http://localhost:3000
 ```
 
-`npm run build` compila la versión de producción y `npm run lint` revisa el código con ESLint.
+`npm run build` compila la versión de producción y `npm run lint` revisa el código con ESLint. `npm test` corre las pruebas sin red (`src/**/*.test.mjs`) y pide Node 22.18 o más reciente.
 
 ## Inicio de sesión (con el backend)
 
@@ -53,5 +53,6 @@ El portal se llama **LowTide**: el acceso (login, MFA, registro y recuperación)
 - `src/types/api.ts`: tipos de la API v1. «Provisional» = endpoint que todavía no está en el contrato; «Propuesto» = campo nuevo que hay que agregar en BackKL.
 - `src/config/labels.ts`: nombres en español de todos los códigos de la API.
 - `src/lib`: formato de fechas, validación y fuerza de contraseña. En `session/`, la sesión real: `server.ts` la valida con FastAPI (`GET /auth/me`) en cada página y `shared.ts` traduce el rol de la base (`analyst`, `manager`, `admin`) al del portal.
+- `src/app/seguridad`: página pública «Seguridad», con lo que LowTide ya hace para cuidar los datos (#203). Se abre con o sin sesión y tiene enlace en el acceso y en el pie del panel. Todo su texto vive en `src/config/seguridad.ts`, copiado del resumen de seguridad para clientes (#202), y el diagrama en `public/seguridad/`. `src/config/seguridad.test.mjs` revisa que sean los textos del resumen revisado.
 - `src/app/auth/expirada`: borra una cookie que FastAPI ya no reconoce antes de volver al login.
 - `src/proxy.ts`: redirecciones según sesión (en Next 16 reemplaza a `middleware.ts`).

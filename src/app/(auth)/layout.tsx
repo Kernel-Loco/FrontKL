@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ShieldCheck } from "lucide-react";
 import { Logo } from "@/components/Logo";
 
@@ -25,6 +26,11 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         <div className="w-full max-w-[340px]">
           {children}
           <p className="mt-8 text-center text-xs text-slate-500">El acceso está restringido al personal autorizado.</p>
+          <p className="mt-2 text-center text-xs text-slate-500">
+            <Link href="/seguridad" className="rounded-sm font-semibold text-lt-primary hover:underline">
+              Cómo cuida LowTide tus datos
+            </Link>
+          </p>
         </div>
       </main>
     </div>
