@@ -23,7 +23,8 @@ function saveBlob(blob: Blob, domain: string, format: PlanExportFormat) {
   URL.revokeObjectURL(url);
 }
 
-export function ActionPlanExplorer({ plan }: { plan: ActionPlan }) {
+/** canOpenFindings: el rol entra a Hallazgos. Si no, no se ofrece el enlace a una sección que le daría 403. */
+export function ActionPlanExplorer({ plan, canOpenFindings }: { plan: ActionPlan; canOpenFindings: boolean }) {
   const [selected, setSelected] = useState<string[]>([]);
   const [simulationState, setSimulationState] = useState<{
     selection: string;
@@ -122,13 +123,15 @@ export function ActionPlanExplorer({ plan }: { plan: ActionPlan }) {
                       Score estimado: {action.score_after} ({action.score_reduction > 0 ? `−${action.score_reduction}` : "sin cambio"})
                     </span>
                     </label>
-                    <Link
-                      href={`/dashboard/hallazgos?dominio=${encodeURIComponent(plan.domain)}&regla=${encodeURIComponent(action.rule_code)}`}
-                      aria-label={`Ver ${action.finding_count} ${action.finding_count === 1 ? "hallazgo" : "hallazgos"} de esta acción`}
-                      className="mt-2 inline-block text-xs font-medium text-lt-teal underline-offset-2 hover:underline"
-                    >
-                      Ver hallazgos
-                    </Link>
+                    {canOpenFindings && (
+                      <Link
+                        href={`/dashboard/hallazgos?dominio=${encodeURIComponent(plan.domain)}&regla=${encodeURIComponent(action.rule_code)}`}
+                        aria-label={`Ver ${action.finding_count} ${action.finding_count === 1 ? "hallazgo" : "hallazgos"} de esta acción`}
+                        className="mt-2 inline-block text-xs font-medium text-lt-teal underline-offset-2 hover:underline"
+                      >
+                        Ver hallazgos
+                      </Link>
+                    )}
                   </div>
                 </li>
               );
