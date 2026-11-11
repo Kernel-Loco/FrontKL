@@ -1,8 +1,9 @@
 # LowTide · Frontend (FrontKL)
 
 Frontend de LowTide en Next.js 16 (App Router, TypeScript, Tailwind CSS v4).
-Por ahora funciona con **datos simulados**; la capa `src/services/` está lista para
-conectarse a la API de FastAPI (busca `TODO: conectar con backend`).
+El login, el dashboard, los dominios, los hallazgos, el histórico, el plan de acción y los pesos del score leen
+de la API de FastAPI. Algunas pantallas siguen con datos simulados y lo dicen arriba: la lista está en
+el párrafo «Datos reales» de [Inicio de sesión](#inicio-de-sesión-con-el-backend) y en `src/config/simulado.ts`.
 
 El backend (base de datos, API y recolectores OSINT) está en [BackKL](https://github.com/Kernel-Loco/BackKL).
 
@@ -14,12 +15,14 @@ El backend (base de datos, API y recolectores OSINT) está en [BackKL](https://g
 ## Arranque
 
 ```bash
+git clone https://github.com/Kernel-Loco/FrontKL.git
+cd FrontKL
 cp .env.example .env.local   # opcional
 npm ci                       # instala las versiones exactas de package-lock.json
 npm run dev                  # http://localhost:3000
 ```
 
-`npm run build` compila la versión de producción y `npm run lint` revisa el código con ESLint. `npm test` corre las pruebas sin red (`src/**/*.test.mjs`) y pide Node 22.18 o más reciente.
+Para la versión de producción: `npm run build` la compila y `npm start` la sirve en http://localhost:3000. `npm run lint` revisa el código con ESLint. `npm test` corre las pruebas sin red (`src/**/*.test.mjs`) y pide Node 22.18 o más reciente.
 
 ## Inicio de sesión (con el backend)
 
@@ -27,15 +30,15 @@ El login es real: lo hace FastAPI (BackKL, #25). Antes de entrar al portal, leva
 
 | Correo | Rol en el portal | Qué ve |
 |---|---|---|
-| `jordan.tate@acme-demo.mx` | Analista | Dashboard, Dominios y autorización (solo la lista), Detalle de dominio, Hallazgos y Reportes e histórico |
-| `maya.reed@acme-demo.mx` | Gerente | Dashboard, Dominios, Detalle de dominio y Reportes e histórico, solo lectura |
-| `alex.morgan@acme-demo.mx` | Administrador | Todo lo anterior, más registrar dominios y verificar el TXT, Políticas de alerta y la sección Administración |
+| `jordan.tate@acme-demo.mx` | Analista | Dashboard, Dominios y autorización (solo la lista), Detalle de dominio, Hallazgos, Reportes e histórico y Plan de acción |
+| `maya.reed@acme-demo.mx` | Gerente | Dashboard, Dominios, Detalle de dominio, Reportes e histórico y Plan de acción, solo lectura. No entra a Hallazgos |
+| `alex.morgan@acme-demo.mx` | Administrador | Dashboard, Dominios con el registro de dominios y la verificación del TXT, Hallazgos, Reportes e histórico, Plan de acción, Políticas de alerta y la sección Administración (Resumen, Usuarios y roles, Pesos del score, Acceso API, Webhooks y Bitácora). Su menú no trae Detalle de dominio: lo abre con «Ver» desde Dominios |
 
 Contraseña: `Lowtide-Demo-2026`. **Cómo pasar el MFA** (claves para la app autenticadora o el comando que da el código) y qué hacer si algo falla: [guía de cuentas de prueba en BackKL](https://github.com/Kernel-Loco/BackKL/blob/dev/docs/cuentas_de_prueba.md) (`docs/cuentas_de_prueba.md`).
 
 La sesión expira a los 15 min sin actividad (aviso un minuto antes) y a las 8 h como máximo. El registro abierto y la recuperación por correo todavía no tienen backend: esas pantallas lo dicen al enviarlas.
 
-**Datos reales (RC-17):** Dashboard, Dominios y autorización, Detalle de dominio, Hallazgos (con «¿Por qué es crítico?»), Histórico y Plan de acción leen de la API v1; «Escanear» pide un escaneo real al orquestador (#22), y el simulador calcula el score con acciones seleccionadas sin guardarlas (#70). Cada usuario ve solo los dominios de su empresa: `admin@olmardo.com` ve olmardo.com, el único que se escanea en vivo. Siguen simulados el alta de dominios y la verificación TXT (#26), los reportes, usuarios, llaves de API, webhooks, alertas y bitácora. Esas pantallas muestran arriba el aviso «Simulado: esto no se guarda» y sus mensajes de éxito empiezan con «Simulado» (#190). La lista de funciones simuladas está en `src/config/simulado.ts`: al conectar una, bórrala de ahí y el aviso desaparece. `npm run revisar:simulado` revisa que la lista esté completa.
+**Datos reales (RC-17):** Dashboard, Dominios y autorización, Detalle de dominio, Hallazgos (con «¿Por qué es crítico?»), Histórico, Plan de acción y Pesos del score leen de la API v1; «Escanear» pide un escaneo real al orquestador (#22), y el simulador calcula el score con acciones seleccionadas sin guardarlas (#70). Cada usuario ve solo los dominios de su empresa: `admin@olmardo.com` ve olmardo.com, el único que se escanea en vivo. Siguen simulados el alta de dominios y la verificación TXT (#26), los reportes, usuarios, llaves de API, webhooks, alertas y bitácora. Esas pantallas muestran arriba el aviso «Simulado: esto no se guarda» y sus mensajes de éxito empiezan con «Simulado» (#190). La lista de funciones simuladas está en `src/config/simulado.ts`: al conectar una, bórrala de ahí y el aviso desaparece. `npm run revisar:simulado` revisa que la lista esté completa.
 
 ## Estructura
 
