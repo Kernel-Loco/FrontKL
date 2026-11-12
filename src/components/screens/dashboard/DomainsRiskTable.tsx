@@ -7,7 +7,7 @@ import { ProgressBar } from "@/components/ui/ProgressBar";
 import { BAND_TONE } from "@/components/ui/tones";
 import { formatDateTime } from "@/lib/format";
 import type { Domain, Scan } from "@/types";
-import { domainState, failedScanAt, hasResults } from "../shared/domainState";
+import { domainState, failedScanAt, hasResults, lastScanAt } from "../shared/domainState";
 
 /**
  * `lastScans`: último escaneo terminado de cada dominio entre los 50 de /scans, para marcar uno que falló.
@@ -45,6 +45,7 @@ export function DomainsRiskTable({
                 // Sin score, el estado dice por qué; si ya está autorizado, falta que un escaneo calcule el riesgo.
                 const state = domainState(d);
                 const failedAt = failedScanAt(d, lastScans.get(d.fqdn));
+                const finishedAt = lastScanAt(d, lastScans.get(d.fqdn));
                 return (
                   <tr key={d.id} className={TR}>
                     <td className={`${TD} font-mono text-[13px]`}>{d.fqdn}</td>
@@ -68,8 +69,9 @@ export function DomainsRiskTable({
                         <Badge tone={state.tone}>{state.label}</Badge>
                       )}
                     </td>
+                    {/* Cuándo terminó, si /scans lo trae. Si el último terminado falló antes del que calculó el riesgo, la hora de este. */}
                     <td className={`${TD} text-lt-muted`}>
-                      {failedAt ? `${formatDateTime(failedAt)}, falló` : d.last_scan_at ? formatDateTime(d.last_scan_at) : "—"}
+                      {failedAt ? `${formatDateTime(failedAt)}, falló` : finishedAt ? formatDateTime(finishedAt) : "—"}
                     </td>
                     <td className={`${TD} text-right`}>
                       {canOpenDetail && hasResults(d) ? (

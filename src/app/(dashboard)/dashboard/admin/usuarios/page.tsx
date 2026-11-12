@@ -14,7 +14,7 @@ export default async function UsuariosPage() {
 
   return (
     <div className="space-y-8">
-      <PageHeader title={SECTIONS.usuarios.label} description="Quién entra a Lowtide y qué puede hacer cada rol." />
+      <PageHeader title={SECTIONS.usuarios.label} description="Quién entra a LowTide y qué puede hacer cada rol." />
       <AvisoSimulado acciones={["inviteUser", "changeUserRole"]} datos={["getUsers"]} />
       <UsersManager initial={(await getUsers()).items} currentUserEmail={user.email} />
     </div>

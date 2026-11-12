@@ -7,6 +7,7 @@ import { RegisteredDomainsTable } from "@/components/screens/dominios/Registered
 import { AvisoSimulado } from "@/components/ui/AvisoSimulado";
 import { Card } from "@/components/ui/Card";
 import { can, canAccessSection, SECTIONS } from "@/config/permissions";
+import { cantidad } from "@/lib/format";
 import { getDomains, getTxtVerifications } from "@/services/queries";
 
 export const metadata: Metadata = { title: SECTIONS.dominios.label };
@@ -28,7 +29,7 @@ export default async function DominiosPage() {
         <Card
           title="Dominios registrados"
           icon={<Globe aria-hidden="true" className="h-4 w-4" />}
-          action={`${domains.length} dominios en inventario`}
+          action={`${cantidad(domains.length, "dominio")} en inventario`}
         >
           <div className="-mx-5">
             <RegisteredDomainsTable domains={domains} canOpenDetail={canAccessSection(user.role, "detalle")} />

@@ -79,7 +79,7 @@ export function ApiKeysManager({ initial }: { initial: ApiKey[] }) {
 
   return (
     <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.8fr)]">
-      <Card title="Crear llave" description={`Para integrar Lowtide con otros sistemas. Vigencia máxima de ${API_KEY_MAX_DAYS} días.`} icon={<KeyRound aria-hidden="true" className="h-4 w-4" />}>
+      <Card title="Crear llave" description={`Para integrar LowTide con otros sistemas. Vigencia máxima de ${API_KEY_MAX_DAYS} días.`} icon={<KeyRound aria-hidden="true" className="h-4 w-4" />}>
         <form onSubmit={onCreate} noValidate className="space-y-4">
           <Field label="Nombre" htmlFor="key-name">
             <input id="key-name" name="name" placeholder="SIEM corporativo" className={INPUT} autoComplete="off" />

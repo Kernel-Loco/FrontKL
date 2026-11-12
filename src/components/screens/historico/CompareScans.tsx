@@ -102,9 +102,8 @@ function FindingComparison({
       </div>
       {withCorrection ? (
         <p className="mt-1 text-xs text-lt-muted">
-          Entre estas fechas hay una corrección del score guardado, así que los hallazgos de cada fecha no se
-          pueden comparar como nuevos o que ya no están. Para ver qué cambió, elige dos escaneos sin una corrección
-          entre ellos. La exportación trae los {data.total} {data.total === 1 ? "hallazgo" : "hallazgos"} de las dos fechas.
+          Por la corrección de arriba no se marcan nuevos ni los que ya no están. La exportación trae
+          los {data.total} {data.total === 1 ? "hallazgo" : "hallazgos"} de las dos fechas.
         </p>
       ) : (
         <>
@@ -200,7 +199,9 @@ export function CompareScans({ domain, points }: { domain: string; points: Score
       </ul>
       {withCorrection && (
         <p className="mt-2 text-xs text-lt-muted">
-          Entre estas fechas hay una corrección del score guardado, así que la diferencia no es un cambio de exposición.
+          Entre estas fechas hay una corrección del score guardado, así que la diferencia no es un cambio de exposición
+          y los hallazgos no se comparan como nuevos o que ya no están. Para ver qué cambió, elige dos escaneos sin una
+          corrección entre ellos.
         </p>
       )}
       <FindingComparison key={`${a.score_id}|${b.score_id}`} domain={domain} fromScoreId={a.score_id}

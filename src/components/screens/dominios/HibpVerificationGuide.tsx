@@ -10,7 +10,7 @@ export function HibpVerificationGuide() {
     <Card title="Cómo verificar el dominio en HIBP" icon={<ShieldCheck aria-hidden="true" className="h-4 w-4" />}>
       <p className="text-sm text-lt-muted">
         Para buscar fugas de datos, Have I Been Pwned (HIBP) pide demostrar que controlas el dominio. Haz esta verificación en HIBP: es independiente del
-        registro TXT que solicita Lowtide. Cada dominio se verifica por separado; verificar el dominio raíz no incluye sus subdominios.
+        registro TXT que solicita LowTide. Cada dominio se verifica por separado; verificar el dominio raíz no incluye sus subdominios.
       </p>
       <ol className="mt-4 list-decimal space-y-2 pl-5 text-sm text-lt-text marker:text-lt-muted">
         <li>

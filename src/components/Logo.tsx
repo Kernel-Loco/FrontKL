@@ -4,7 +4,7 @@ interface LogoMarkProps {
   className?: string;
 }
 
-/** Marca de Lowtide usada junto al nombre en todas las vistas. */
+/** Marca de LowTide usada junto al nombre en todas las vistas. */
 export function LogoMark({ className = "h-8 w-auto" }: LogoMarkProps) {
   return <Image src="/lowtide-mark.svg" alt="" width={594} height={313} className={className} />;
 }

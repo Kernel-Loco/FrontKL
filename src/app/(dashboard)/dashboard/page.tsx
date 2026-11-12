@@ -7,7 +7,7 @@ import { KpiTile } from "@/components/screens/dashboard/KpiTile";
 import { RecentChanges, type Change, type ScanSummary } from "@/components/screens/dashboard/RecentChanges";
 import { ScanButton } from "@/components/screens/shared/ScanButton";
 import { InlineAlert } from "@/components/ui/InlineAlert";
-import { scoredDomains } from "@/components/screens/shared/domainState";
+import { scoredDomains, unscoredLabel } from "@/components/screens/shared/domainState";
 import { BAND_TONE } from "@/components/ui/tones";
 import { can, canAccessSection } from "@/config/permissions";
 import { scoreBand } from "@/lib/format";
@@ -99,8 +99,10 @@ export default async function DashboardPage() {
         domain,
         findings: items,
         coverage: coverage[index] ?? "unscanned",
+        // El mismo estado que la tabla Dominios: sin score por falta de autorización, por vencido o por no tener escaneo.
+        stateLabel: visible[index] ? unscoredLabel(visible[index]) : "Sin calcular",
       }))} />
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)]">
+      <div className="grid gap-6 2xl:grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)]">
         <DomainsRiskTable domains={rows} lastScans={lastScans} partialDomains={new Set(partialDomains)} canOpenDetail={canAccessSection(user.role, "detalle")} />
         <RecentChanges summaries={summaries} changes={changes} more={newFindings.length - changes.length} />
       </div>

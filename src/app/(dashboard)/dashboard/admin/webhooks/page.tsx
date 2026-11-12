@@ -14,7 +14,7 @@ export default async function WebhooksPage() {
 
   return (
     <div className="space-y-8">
-      <PageHeader title={SECTIONS.webhooks.label} description="A dónde envía Lowtide las alertas: webhooks, SIEM o correo." />
+      <PageHeader title={SECTIONS.webhooks.label} description="A dónde envía LowTide las alertas: webhooks, SIEM o correo." />
       <AvisoSimulado acciones={["createIntegration", "setIntegrationEnabled"]} datos={["getIntegrations"]} />
       <IntegrationsManager initial={(await getIntegrations()).items} />
     </div>

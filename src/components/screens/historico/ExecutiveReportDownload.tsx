@@ -99,7 +99,7 @@ export function ExecutiveReportDownload({ report, data }: { report: Report; data
       const pageHeight = doc.internal.pageSize.getHeight();
       const periodLabel = `${formatDate(start)} - ${formatDate(end)}`;
 
-      doc.setProperties({ title: "Resumen ejecutivo de riesgo - Lowtide", subject: periodLabel, creator: "Lowtide" });
+      doc.setProperties({ title: "Resumen ejecutivo de riesgo - LowTide", subject: periodLabel, creator: "LowTide" });
       doc.setFont("helvetica", "bold");
       doc.setFontSize(18);
       doc.setTextColor(28, 34, 48);
@@ -141,7 +141,7 @@ export function ExecutiveReportDownload({ report, data }: { report: Report; data
         ? ["No se detectaron hallazgos durante el periodo seleccionado."]
         : [
             criticalHighOpen > 0
-              ? `${criticalHighOpen} hallazgo(s) crítico(s) o alto(s) siguen abiertos y requieren prioridad de remediación.`
+              ? `${criticalHighOpen} ${criticalHighOpen === 1 ? "hallazgo crítico o alto sigue abierto y requiere" : "hallazgos críticos o altos siguen abiertos y requieren"} prioridad de remediación.`
               : "No hay hallazgos críticos o altos abiertos en el periodo.",
             affectedDomains[0]
               ? `${affectedDomains[0][0]} concentra más hallazgos detectados (${affectedDomains[0][1]}).`
@@ -149,7 +149,7 @@ export function ExecutiveReportDownload({ report, data }: { report: Report; data
             topCategory && categoryCounts[topCategory] > 0
               ? `${CATEGORY_LABELS[topCategory]} es la categoría más frecuente (${categoryCounts[topCategory]}).`
               : "No hay una categoría predominante.",
-            `${newFindings} hallazgo(s) nuevo(s) y ${recurringFindings} recurrente(s) detectado(s).`,
+            `${newFindings} ${newFindings === 1 ? "hallazgo nuevo" : "hallazgos nuevos"} y ${recurringFindings} ${recurringFindings === 1 ? "recurrente" : "recurrentes"} en el periodo.`,
           ];
 
       doc.setFont("helvetica", "normal");
@@ -205,7 +205,7 @@ export function ExecutiveReportDownload({ report, data }: { report: Report; data
       doc.setFont("helvetica", "normal");
       doc.setFontSize(8.5);
       doc.setTextColor(89, 101, 121);
-      doc.text(`${findings.length} hallazgo(s) detectado(s) en ${periodLabel}`, MARGIN, 25);
+      doc.text(`${findings.length} ${findings.length === 1 ? "hallazgo detectado" : "hallazgos detectados"} en ${periodLabel}`, MARGIN, 25);
 
       autoTable(doc, {
         startY: 31,
@@ -240,7 +240,7 @@ export function ExecutiveReportDownload({ report, data }: { report: Report; data
         doc.setFont("helvetica", "normal");
         doc.setFontSize(7);
         doc.setTextColor(112, 123, 142);
-        doc.text(`Lowtide - Confidencial - ${page} / ${pageCount}`, pageWidth - MARGIN, pageHeight - 8, { align: "right" });
+        doc.text(`LowTide - Confidencial - ${page} / ${pageCount}`, pageWidth - MARGIN, pageHeight - 8, { align: "right" });
       }
 
       doc.save(`lowtide-resumen-ejecutivo-${start}-${end}.pdf`);

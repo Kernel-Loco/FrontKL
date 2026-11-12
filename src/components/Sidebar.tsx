@@ -40,7 +40,7 @@ function SidebarContent({ user, badges, theme, onThemeToggle, onNavigate }: { us
   return (
     <>
       <div className="flex h-20 shrink-0 items-center px-6">
-        <Link href="/dashboard" onClick={onNavigate} className="rounded-md" aria-label="Lowtide, ir al dashboard">
+        <Link href="/dashboard" onClick={onNavigate} className="rounded-md" aria-label="LowTide, ir al dashboard">
           <Logo />
         </Link>
       </div>

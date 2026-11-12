@@ -6,6 +6,7 @@ import { ActionButton } from "@/components/ui/ActionButton";
 import { CHECKBOX, Field, INPUT } from "@/components/ui/Field";
 import { InlineAlert } from "@/components/ui/InlineAlert";
 import { CATEGORY_LABELS } from "@/config/labels";
+import { cantidad } from "@/lib/format";
 import { updateScoringWeights } from "@/services/scoringService";
 import { getErrorMessage } from "@/services/errors";
 import type { Category, ScoringWeights } from "@/types";
@@ -82,7 +83,7 @@ export function ScoringWeightsEditor({ initialWeights }: { initialWeights: Scori
         tone: "success",
         text: result.unchanged
           ? `Los pesos no cambiaron; sigue activa la versión ${result.rule_set_version}.`
-          : `Se activó la versión ${result.rule_set_version} y se recalcularon los scores de ${result.recalculated_domains} dominios.`,
+          : `Se activó la versión ${result.rule_set_version} y se recalculó el score de ${cantidad(result.recalculated_domains, "dominio")}.`,
       });
       router.refresh();
     } catch (error) {

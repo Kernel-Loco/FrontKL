@@ -27,7 +27,7 @@ export function AuditTable({ entries }: { entries: AuditEntry[] }) {
             <tr key={e.id} className={TR}>
               <td className={`${TD} whitespace-nowrap text-[13px] text-lt-muted`}>{formatDateTime(e.occurred_at)}</td>
               <td className={TD}>
-                <span className="block text-[13px]">{e.actor ?? "Lowtide"}</span>
+                <span className="block text-[13px]">{e.actor ?? "LowTide"}</span>
                 <Badge tone={e.actor_type === "system" ? "gray" : e.actor_type === "api_key" ? "amber" : "indigo"} className="mt-1">
                   {AUDIT_ACTOR_LABELS[e.actor_type]}
                 </Badge>

@@ -14,7 +14,7 @@ export default async function ApiAccessPage() {
 
   return (
     <div className="space-y-8">
-      <PageHeader title={SECTIONS.api.label} description="Llaves para que otros sistemas consulten Lowtide. Solo se guarda su huella, nunca la llave completa." />
+      <PageHeader title={SECTIONS.api.label} description="Llaves para que otros sistemas consulten LowTide. Solo se guarda su huella, nunca la llave completa." />
       <AvisoSimulado acciones={["createApiKey", "revokeApiKey"]} datos={["getApiKeys"]} />
       <ApiKeysManager initial={(await getApiKeys()).items} />
     </div>

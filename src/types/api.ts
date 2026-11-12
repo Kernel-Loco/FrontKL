@@ -5,7 +5,7 @@
 // Las secciones marcadas «Provisional» todavía no están en el contrato #21: salen del
 // esquema de la base y se agregarán al contrato cuando se implementen sus endpoints.
 // Los campos marcados «Propuesto» son campos nuevos en endpoints del contrato que piden
-// las pantallas de Lowtide; hay que agregarlos también en BackKL (docs/api_v1/).
+// las pantallas de LowTide; hay que agregarlos también en BackKL (docs/api_v1/).
 import type { Role } from "./auth";
 import type { FindingSource, Severity } from "./findings";
 
