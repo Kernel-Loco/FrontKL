@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { test } from "node:test";
-import { failedScanAt, lastScanAt } from "../components/screens/shared/domainState.ts";
+import { failedScanAt, lastScanAt, unscoredLabel } from "../components/screens/shared/domainState.ts";
 import { cantidad } from "./format.ts";
 
 const SRC = join(import.meta.dirname, "..");
@@ -54,8 +54,26 @@ test("'Ver hallazgos' del plan solo sale a los roles que entran a Hallazgos", ()
 });
 
 test("el gráfico del Dashboard no dice 'riesgo sin calcular'", () => {
-  // En Detalle y Hallazgos sí aplica: ahí es un dominio autorizado que aún no tiene score.
+  // Hallazgos sí lo dice: solo lista dominios sin score con hallazgos de un escaneo en curso o caído.
   assert.doesNotMatch(leer("components/screens/dashboard/FindingsByTypeChart.tsx"), /[Rr]iesgo sin calcular/);
+});
+
+test("un dominio sin score dice su estado y solo autorizado dice 'Sin calcular'", () => {
+  const dominio = (status, auth, txt) => ({ status, authorization: { status: auth }, txt: { status: txt } });
+  assert.equal(unscoredLabel(dominio("verified", "valid", "verified")), "Sin calcular");
+  assert.equal(unscoredLabel(dominio("pending_verification", "missing", "pending")), "Sin autorización");
+  assert.equal(unscoredLabel(dominio("verified", "expired", "verified")), "Vencido");
+  assert.equal(unscoredLabel(dominio("pending_verification", "valid", "pending")), "Pendiente TXT");
+});
+
+test("el Detalle de un dominio sin score usa el estado de la tabla Dominios", () => {
+  const detalle = leer("app/(dashboard)/dashboard/dominios/[fqdn]/page.tsx");
+  assert.match(detalle, /const unscored = unscoredLabel\(domain\);/);
+  assert.match(detalle, /<EmptyState title=\{unscored === "Sin calcular" \? "Riesgo sin calcular" : unscored\}>/);
+  assert.match(detalle, /unscored === "Sin calcular" \? "Sin riesgo calculado todavía" : unscored/);
+  assert.doesNotMatch(detalle, /<EmptyState title="Riesgo sin calcular">/);
+  // Como la columna Vigencia de la tabla: una autorización vencida no dice 'Autorizado hasta'.
+  assert.match(detalle, /status === "expired" \? "Venció el" : "Autorizado hasta"/);
 });
 
 test("Usuarios e Integraciones no prometen correo ni evento mientras son simulados", () => {

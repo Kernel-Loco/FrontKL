@@ -17,6 +17,12 @@ export function domainState(domain: Domain): DomainState {
   return { label: "Autorizado", tone: "teal" };
 }
 
+/** Lo que dice la columna Nivel de la tabla Dominios para un dominio sin score: su estado, o «Sin calcular» si está autorizado. */
+export function unscoredLabel(domain: Domain): string {
+  const state = domainState(domain);
+  return state.label === "Autorizado" ? "Sin calcular" : state.label;
+}
+
 /** Dominios con score, de mayor a menor riesgo. */
 export function scoredDomains(domains: Domain[]): Domain[] {
   return domains.filter((d) => d.score !== null).sort((a, b) => (b.score ?? 0) - (a.score ?? 0));

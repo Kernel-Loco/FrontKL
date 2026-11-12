@@ -7,7 +7,7 @@ import { KpiTile } from "@/components/screens/dashboard/KpiTile";
 import { RecentChanges, type Change, type ScanSummary } from "@/components/screens/dashboard/RecentChanges";
 import { ScanButton } from "@/components/screens/shared/ScanButton";
 import { InlineAlert } from "@/components/ui/InlineAlert";
-import { domainState, scoredDomains } from "@/components/screens/shared/domainState";
+import { scoredDomains, unscoredLabel } from "@/components/screens/shared/domainState";
 import { BAND_TONE } from "@/components/ui/tones";
 import { can, canAccessSection } from "@/config/permissions";
 import { scoreBand } from "@/lib/format";
@@ -108,10 +108,4 @@ export default async function DashboardPage() {
       </div>
     </div>
   );
-}
-
-/** Lo que dice la columna Nivel de la tabla Dominios para un dominio sin score. */
-function unscoredLabel(domain: Parameters<typeof domainState>[0]): string {
-  const state = domainState(domain);
-  return state.label === "Autorizado" ? "Sin calcular" : state.label;
 }
