@@ -7,6 +7,16 @@ updates:
     target-branch: dev
     schedule:
       interval: weekly
+    # Con el límite de 5 PR abiertos, next se quedó sin PR cuando ya había 5 (14 nov).
+    open-pull-requests-limit: 10
+    # Paquetes que se suben juntos en un solo PR, para que no queden desfasados.
+    groups:
+      next:
+        patterns: ["next", "eslint-config-next"]
+      react:
+        patterns: ["react", "react-dom"]
+      tailwind:
+        patterns: ["tailwindcss", "@tailwindcss/postcss"]
     ignore:
       # eslint-config-next usa typescript-eslint, que pide typescript '>=4.8.4 <6.1.0'.
       # Con TypeScript 7, que no trae la API de JavaScript, npm run lint falla.
