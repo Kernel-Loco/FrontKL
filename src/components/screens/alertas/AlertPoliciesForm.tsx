@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/Card";
 import { CHECKBOX, INPUT, SELECT } from "@/components/ui/Field";
 import { InlineAlert } from "@/components/ui/InlineAlert";
 import { ALERT_EVENT_LABELS, SEVERITY_LABELS } from "@/config/labels";
+import { mensajeDeExito } from "@/config/simulado";
 import { scoreBand } from "@/lib/format";
 import { getErrorMessage } from "@/services/errors";
 import { updateAlertPolicies } from "@/services/settingsService";
@@ -30,7 +31,7 @@ export function AlertPoliciesForm({ initial }: { initial: AlertPolicies }) {
     setResult(null);
     try {
       setPolicies(await updateAlertPolicies(policies));
-      setResult({ tone: "success", message: "Políticas guardadas." });
+      setResult({ tone: "success", message: mensajeDeExito("updateAlertPolicies", "Políticas guardadas.") });
     } catch (error) {
       setResult({ tone: "error", message: getErrorMessage(error) });
     } finally {

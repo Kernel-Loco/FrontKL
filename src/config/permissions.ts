@@ -9,6 +9,7 @@ import {
   LayoutDashboard,
   LayoutGrid,
   ListChecks,
+  Scale,
   ScanSearch,
   ScrollText,
   TriangleAlert,
@@ -29,6 +30,7 @@ export type SectionId =
   | "admin"
   | "usuarios"
   | "api"
+  | "pesos"
   | "webhooks"
   | "bitacora";
 
@@ -54,6 +56,7 @@ export const SECTIONS: Record<SectionId, SectionConfig> = {
   admin: section("admin", "Resumen", "/dashboard/admin", LayoutDashboard),
   usuarios: section("usuarios", "Usuarios y roles", "/dashboard/admin/usuarios", Users),
   api: section("api", "Acceso API", "/dashboard/admin/api", KeyRound),
+  pesos: section("pesos", "Pesos del score", "/dashboard/admin/pesos", Scale),
   webhooks: section("webhooks", "Webhooks", "/dashboard/admin/webhooks", Webhook),
   bitacora: section("bitacora", "Bitácora", "/dashboard/admin/bitacora", ScrollText),
 };
@@ -85,7 +88,7 @@ export const ROLE_NAVIGATION: Record<Role, NavGroup[]> = {
   gerente: [{ title: "Monitoreo", items: ["dashboard", "dominios", "detalle", "historico", "plan"] }],
   admin: [
     { title: "Monitoreo", items: ["dashboard", "dominios", "hallazgos", "historico", "plan", "alertas"] },
-    { title: "Administración", items: ["admin", "usuarios", "api", "webhooks", "bitacora"] },
+    { title: "Administración", items: ["admin", "usuarios", "pesos", "api", "webhooks", "bitacora"] },
   ],
 };
 

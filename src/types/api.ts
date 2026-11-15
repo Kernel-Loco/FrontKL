@@ -5,7 +5,7 @@
 // Las secciones marcadas «Provisional» todavía no están en el contrato #21: salen del
 // esquema de la base y se agregarán al contrato cuando se implementen sus endpoints.
 // Los campos marcados «Propuesto» son campos nuevos en endpoints del contrato que piden
-// las pantallas de Lowtide; hay que agregarlos también en BackKL (docs/api_v1/).
+// las pantallas de LowTide; hay que agregarlos también en BackKL (docs/api_v1/).
 import type { Role } from "./auth";
 import type { FindingSource, Severity } from "./findings";
 
@@ -23,6 +23,8 @@ export interface ApiErrorBody {
 // ---------------------------------------------------------------- score y criterio (#29)
 
 export type Band = "low" | "medium" | "high" | "critical";
+/** Letra del score final (#114): A 0–19, B 20–39, C 40–59, D 60–79, F 80–100. No hay E. La da la API. */
+export type Grade = "A" | "B" | "C" | "D" | "F";
 export type Category = "infrastructure" | "digital_identity" | "configuration" | "data_leaks";
 export type ScoreMethod = "rules" | "ml";
 export type ScoreReason = "scan" | "intel_update" | "rules_change" | "correction";
@@ -63,6 +65,7 @@ export interface Domain {
   scan_eligibility: { can_scan: boolean; reasons: ScanBlockReason[] };
   score: number | null;
   band: Band | null;
+  grade: Grade | null;
   open_findings: SeverityCounts;
   last_scan_at: string | null;
   next_scan_at: string | null;
@@ -115,12 +118,17 @@ interface ScoreBase {
   score_id: string;
   score: number;
   band: Band;
+  /** Con `partial_coverage` lleva el mismo aviso que el score. */
+  grade: Grade;
   weighted: number;
   floor: number;
   /** El piso por hallazgos críticos subió el score: el portal muestra el aviso. */
   floor_applied: boolean;
+  floor_message: string | null;
   critical_open: number;
   method: ScoreMethod;
+  model_version: string | null;
+  model_fallback_reason: string | null;
   rule_set_version: number;
   reason: ScoreReason;
   partial_coverage: boolean;
@@ -134,10 +142,45 @@ export interface CategoryScore {
   weight: number;
 }
 
+/** Hallazgos vigentes y aportes de una subcategoría (#114). `other` junta las reglas que el mapa no conoce. */
+export interface SubcategoryScore {
+  category: Category;
+  subcategory: string;
+  name: string;
+  findings: number;
+  penalty: number;
+}
+
+/**
+ * ok: sus fuentes corrieron completas. partial: hay datos, pero no de todo. no_coverage: alguna fuente no
+ * respondió o nada se revisó. no_source_yet: aún no tiene fuente. Con los dos últimos los conteos van en null.
+ */
+export type KriStatus = "ok" | "partial" | "no_coverage" | "no_source_yet";
+
+/** Indicador clave de riesgo (#114). Los KRI no cubren todo el score. */
+export interface Kri {
+  kri: string;
+  name: string;
+  status: KriStatus;
+  subcategories: string[];
+  sources: string[];
+  sources_failed: string[];
+  sources_not_run: string[];
+  sources_partial: string[];
+  rules_without_coverage: string[];
+  findings: number | null;
+  max_severity: Severity | null;
+  penalty: number | null;
+}
+
 /** `GET /api/v1/domains/{fqdn}/score` */
 export interface DomainScore extends ScoreBase {
   domain: string;
   categories: CategoryScore[];
+  subcategories: SubcategoryScore[];
+  kris: Kri[];
+  kri_map_version: number;
+  /** El umbral compara el score de 0 a 100, nunca la letra. */
   alert: { threshold: number; triggered: boolean };
 }
 
@@ -151,6 +194,45 @@ export interface ScoreHistoryPoint extends ScoreBase {
 /** `GET /api/v1/domains/{fqdn}/score/history`, del más viejo al más nuevo. */
 export interface ScoreHistory extends ListResponse<ScoreHistoryPoint> {
   domain: string;
+}
+
+// ---------------------------------------------------------------- comparación de dos scores (#24, RC-57)
+
+/** new: está en `hasta` y no en `desde`. gone: al revés. kept: está en los dos. */
+export type ComparisonChange = "new" | "gone" | "kept";
+
+export interface ComparisonPoint {
+  score_id: string;
+  scan_id: string;
+  score: number;
+  reason: ScoreReason;
+  partial_coverage: boolean;
+  computed_at: string;
+}
+
+export interface ComparisonItem {
+  finding_id: string;
+  change: ComparisonChange;
+  severity_changed: boolean;
+  title: string;
+  rule_code: string;
+  category: Category;
+  asset: string;
+  asset_type: AssetType;
+  severity_from: Severity | null;
+  severity_to: Severity | null;
+  penalty_from: number | null;
+  penalty_to: number | null;
+  /** Estado de hoy. `gone` no dice por qué ya no está. */
+  status_now: FindingStatus;
+}
+
+/** `GET /api/v1/domains/{fqdn}/score/compare?desde=<score_id>&hasta=<score_id>`. 403 sin autorización vigente. */
+export interface ScoreComparison extends ListResponse<ComparisonItem> {
+  domain: string;
+  from: ComparisonPoint;
+  to: ComparisonPoint;
+  summary: Record<ComparisonChange, number> & { severity_changed: number };
 }
 
 // ---------------------------------------------------------------- plan de acción y simulador (#42, #70)
@@ -250,9 +332,18 @@ export interface ScoringWeights {
   validated_by: string | null;
   category_weights: Record<Category, number>;
   bands: { band: Band; from: number; to: number }[];
+  grades: { grade: Grade; from: number; to: number }[];
   floor: { one_critical: number; two_or_more_critical: number; counts_statuses: FindingStatus[] };
   alert_threshold_default: number;
   rules: ScoringRule[];
+}
+
+/** `PUT /api/v1/scoring/weights` */
+export interface ScoringWeightsUpdateResult {
+  rule_set_version: number;
+  category_weights: Record<Category, number>;
+  recalculated_domains: number;
+  unchanged: boolean;
 }
 
 // ---------------------------------------------------------------- Provisional: activos (tabla assets)
@@ -432,6 +523,12 @@ export interface ApiKeyRequest {
   name: string;
   scopes: string[];
   expires_in_days: number;
+  /**
+   * Declaración del Administrador de que la llave es para un sistema de su propia empresa, no de un
+   * integrador ni de otra empresa. Obligatoria: el backend responde 422 si falta, es null o es false
+   * (BackKL cirdan/api/llaves.py, RC-129).
+   */
+  own_use: true;
 }
 
 /** La llave completa solo viaja en esta respuesta; después solo se ve su prefijo. */

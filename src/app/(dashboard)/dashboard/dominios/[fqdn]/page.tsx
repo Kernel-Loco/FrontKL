@@ -6,10 +6,12 @@ import { checkSectionAccess } from "@/components/dashboard/SectionAccess";
 import { AssetsCard } from "@/components/screens/detalle/AssetsCard";
 import { CategoryBars } from "@/components/screens/detalle/CategoryBars";
 import { DomainTabs, domainTabs } from "@/components/screens/detalle/DomainTabs";
+import { KriPanel } from "@/components/screens/detalle/KriPanel";
 import { RiskGauge } from "@/components/screens/detalle/RiskGauge";
 import { ReportButton } from "@/components/screens/shared/ReportButton";
 import { ScanButton } from "@/components/screens/shared/ScanButton";
-import { failedScanAt } from "@/components/screens/shared/domainState";
+import { failedScanAt, unscoredLabel } from "@/components/screens/shared/domainState";
+import { AvisoSimulado } from "@/components/ui/AvisoSimulado";
 import { TEXT_LINK } from "@/components/ui/ActionButton";
 import { SeverityBadge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
@@ -60,6 +62,8 @@ export default async function DomainDetailPage({ params }: Props) {
   const failedAt = failedScanAt(domain, ownScans.find((s) => s.finished_at));
   // Si el escaneo fallido también calculó el riesgo (misma fecha), no hay un riesgo anterior que nombrar.
   const riskAt = domain.last_scan_at && (!failedAt || Date.parse(domain.last_scan_at) < Date.parse(failedAt)) ? domain.last_scan_at : null;
+  // Sin score, el mismo estado que la tabla Dominios: «Sin autorización», «Vencido»... o «Sin calcular» si está autorizado.
+  const unscored = unscoredLabel(domain);
   const subtitle = [
     running ? "Escaneo en curso" : null,
     failedAt ? `Último escaneo: ${formatDateTime(failedAt)}, falló` : null,
@@ -68,9 +72,11 @@ export default async function DomainDetailPage({ params }: Props) {
       : failedAt
         ? null
         : domain.score === null
-          ? "Sin riesgo calculado todavía"
+          ? unscored === "Sin calcular" ? "Sin riesgo calculado todavía" : unscored
           : "Sin fecha de escaneo",
-    domain.authorization.valid_until ? `Autorizado hasta ${formatDate(domain.authorization.valid_until)}` : null,
+    domain.authorization.valid_until
+      ? `${domain.authorization.status === "expired" ? "Venció el" : "Autorizado hasta"} ${formatDate(domain.authorization.valid_until)}`
+      : null,
   ]
     .filter(Boolean)
     .join(" · ");
@@ -93,7 +99,7 @@ export default async function DomainDetailPage({ params }: Props) {
       action={
         canSeeFindings && findings.total > 0 ? (
           <Link href={`/dashboard/hallazgos?dominio=${encodeURIComponent(fqdn)}`} className={TEXT_LINK}>
-            Ver los {findings.total} hallazgos
+            {findings.total === 1 ? "Ver el hallazgo" : `Ver los ${findings.total} hallazgos`}
           </Link>
         ) : undefined
       }
@@ -130,17 +136,21 @@ export default async function DomainDetailPage({ params }: Props) {
         }
       />
       <DomainTabs tabs={domainTabs(fqdn, findings.total, "resumen", canSeeFindings, domain.score !== null)} />
+      {can(user.role, "request_report") && <AvisoSimulado acciones={["requestReport"]} solo="«Exportar PDF»" />}
 
       {blocked && <InlineAlert tone="warning">Este dominio no se puede escanear ni exportar: {blocked}.</InlineAlert>}
 
       {score ? (
         <>
+          <KriPanel kris={score.kris} subcategories={score.subcategories} mapVersion={score.kri_map_version} />
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)]">
             <Card title="Riesgo global">
               <div className="py-2">
                 <RiskGauge
                   score={score.score}
                   band={score.band}
+                  grade={score.grade}
+                  partial={score.partial_coverage}
                   delta={delta}
                   reason={score.reason}
                   previousReason={points.length >= 2 ? points[points.length - 2]!.reason : null}
@@ -154,11 +164,11 @@ export default async function DomainDetailPage({ params }: Props) {
               )}
             </Card>
             <Card title="Riesgo por categoría" action="Ponderación configurable">
-              <CategoryBars categories={score.categories} />
+              <CategoryBars categories={score.categories} subcategories={score.subcategories} kris={score.kris} />
               {score.partial_coverage && (
                 <InlineAlert tone="warning" className="mt-5">
                   Cobertura parcial: alguna fuente falló, revisó solo una parte de sus repos o IP, o hay reglas que
-                  las fuentes actuales todavía no pueden revisar. El score puede estar incompleto.
+                  las fuentes actuales todavía no pueden revisar. El score y su letra pueden estar incompletos.
                 </InlineAlert>
               )}
             </Card>
@@ -168,7 +178,7 @@ export default async function DomainDetailPage({ params }: Props) {
       ) : (
         <>
           <Card>
-            <EmptyState title="Riesgo sin calcular">{pendingNote}</EmptyState>
+            <EmptyState title={unscored === "Sin calcular" ? "Riesgo sin calcular" : unscored}>{pendingNote}</EmptyState>
           </Card>
           {top.length > 0 && topFindings}
         </>

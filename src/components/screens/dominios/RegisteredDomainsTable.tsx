@@ -38,7 +38,7 @@ export function RegisteredDomainsTable({ domains, canOpenDetail }: RegisteredDom
                   <span aria-hidden="true" className={`mr-2.5 inline-block h-1.5 w-1.5 rounded-full align-middle ${SOLID_TONES[state.tone].bg}`} />
                   {d.fqdn}
                 </td>
-                <td className={`${TD} break-all text-[13px] text-lt-muted`}>{d.authorization.signer_email ?? "—"}</td>
+                <td className={`${TD} whitespace-nowrap text-[13px] text-lt-muted`}>{d.authorization.signer_email ?? "—"}</td>
                 <td className={`${TD} whitespace-nowrap text-[13px] text-lt-muted`}>
                   {valid_until ? `${d.authorization.status === "expired" ? "venció " : "hasta "}${formatDate(valid_until)}` : "—"}
                 </td>
@@ -47,7 +47,7 @@ export function RegisteredDomainsTable({ domains, canOpenDetail }: RegisteredDom
                     {state.label}
                   </Badge>
                 </td>
-                <td className={`${TD} text-right`}>
+                <td className={`${TD} whitespace-nowrap text-right`}>
                   {canOpenDetail && hasResults(d) && (
                     <Link href={`/dashboard/dominios/${d.fqdn}`} className={`${TEXT_LINK} text-[13px]`}>
                       Ver<span className="sr-only"> {d.fqdn}</span>

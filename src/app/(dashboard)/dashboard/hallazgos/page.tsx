@@ -66,6 +66,7 @@ export default async function HallazgosPage({ searchParams }: Props) {
       )}
       <FindingsExplorer
         key={`${fqdn}-${initialRule}`}
+        domain={fqdn}
         findings={findings.items}
         initialRule={initialRule}
         partialCoverage={score?.partial_coverage ?? false}

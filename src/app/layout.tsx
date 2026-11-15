@@ -13,7 +13,7 @@ const mono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: { default: "Lowtide", template: "%s · Lowtide" },
+  title: { default: "LowTide", template: "%s · LowTide" },
   description: "Inteligencia de la superficie de ataque externa: monitoreo OSINT pasivo y score de riesgo.",
 };
 

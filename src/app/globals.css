@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* Tokens de diseño de Lowtide. Tailwind v4 genera utilidades a partir de @theme
+/* Tokens de diseño de LowTide. Tailwind v4 genera utilidades a partir de @theme
    (bg-lt-bg, text-lt-muted, border-lt-border, ...).
    El acceso (login y MFA) es claro; el portal es oscuro. */
 @theme {

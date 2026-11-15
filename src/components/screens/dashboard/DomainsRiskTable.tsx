@@ -1,22 +1,27 @@
 import Link from "next/link";
 import { TEXT_LINK } from "@/components/ui/ActionButton";
-import { Badge, BandBadge } from "@/components/ui/Badge";
+import { Badge, BandBadge, GradeBadge } from "@/components/ui/Badge";
 import { Card, TableWrap, TD, TH, TR } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { BAND_TONE } from "@/components/ui/tones";
 import { formatDateTime } from "@/lib/format";
 import type { Domain, Scan } from "@/types";
-import { domainState, failedScanAt, hasResults } from "../shared/domainState";
+import { domainState, failedScanAt, hasResults, lastScanAt } from "../shared/domainState";
 
-/** `lastScans`: último escaneo terminado de cada dominio entre los 50 de /scans, para marcar uno que falló. */
+/**
+ * `lastScans`: último escaneo terminado de cada dominio entre los 50 de /scans, para marcar uno que falló.
+ * `partialDomains`: dominios cuyo score salió con cobertura parcial; su letra lleva el mismo aviso.
+ */
 export function DomainsRiskTable({
   domains,
   lastScans,
+  partialDomains,
   canOpenDetail,
 }: {
   domains: Domain[];
   lastScans: Map<string, Scan>;
+  partialDomains: Set<string>;
   canOpenDetail: boolean;
 }) {
   return (
@@ -40,6 +45,7 @@ export function DomainsRiskTable({
                 // Sin score, el estado dice por qué; si ya está autorizado, falta que un escaneo calcule el riesgo.
                 const state = domainState(d);
                 const failedAt = failedScanAt(d, lastScans.get(d.fqdn));
+                const finishedAt = lastScanAt(d, lastScans.get(d.fqdn));
                 return (
                   <tr key={d.id} className={TR}>
                     <td className={`${TD} font-mono text-[13px]`}>{d.fqdn}</td>
@@ -48,6 +54,7 @@ export function DomainsRiskTable({
                         <div className="flex items-center gap-3">
                           <span className="w-7 font-semibold tabular-nums">{d.score}</span>
                           <ProgressBar value={d.score} tone={BAND_TONE[d.band]} className="w-28" />
+                          {d.grade && <GradeBadge grade={d.grade} band={d.band} partial={partialDomains.has(d.fqdn)} />}
                         </div>
                       ) : (
                         <span className="text-lt-faint">—</span>
@@ -62,8 +69,9 @@ export function DomainsRiskTable({
                         <Badge tone={state.tone}>{state.label}</Badge>
                       )}
                     </td>
+                    {/* Cuándo terminó, si /scans lo trae. Si el último terminado falló antes del que calculó el riesgo, la hora de este. */}
                     <td className={`${TD} text-lt-muted`}>
-                      {failedAt ? `${formatDateTime(failedAt)}, falló` : d.last_scan_at ? formatDateTime(d.last_scan_at) : "—"}
+                      {failedAt ? `${formatDateTime(failedAt)}, falló` : finishedAt ? formatDateTime(finishedAt) : "—"}
                     </td>
                     <td className={`${TD} text-right`}>
                       {canOpenDetail && hasResults(d) ? (

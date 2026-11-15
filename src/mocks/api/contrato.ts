@@ -26,6 +26,7 @@ export const mockDomains: ListResponse<Domain> = {
       },
       "score": 60,
       "band": "high",
+      "grade": "D",
       "open_findings": {
         "critical": 1,
         "high": 2,
@@ -55,6 +56,7 @@ export const mockDomains: ListResponse<Domain> = {
       },
       "score": 0,
       "band": "low",
+      "grade": "A",
       "open_findings": {
         "critical": 0,
         "high": 0,
@@ -84,6 +86,7 @@ export const mockDomains: ListResponse<Domain> = {
       },
       "score": 0,
       "band": "low",
+      "grade": "A",
       "open_findings": {
         "critical": 0,
         "high": 0,
@@ -116,6 +119,7 @@ export const mockDomains: ListResponse<Domain> = {
       },
       "score": null,
       "band": null,
+      "grade": null,
       "open_findings": {
         "critical": 0,
         "high": 0,
@@ -148,6 +152,7 @@ export const mockDomains: ListResponse<Domain> = {
       },
       "score": null,
       "band": null,
+      "grade": null,
       "open_findings": {
         "critical": 0,
         "high": 0,
@@ -303,11 +308,15 @@ export const mockScore: DomainScore = {
   "score_id": "a0000000-0000-4000-8000-000000000004",
   "score": 60,
   "band": "high",
+  "grade": "D",
   "weighted": 28,
   "floor": 60,
   "floor_applied": true,
+  "floor_message": "Subido a 60 por 1 hallazgo crítico vigente; la suma ponderada da 28.",
   "critical_open": 1,
   "method": "rules",
+  "model_version": null,
+  "model_fallback_reason": null,
   "rule_set_version": 1,
   "reason": "correction",
   "partial_coverage": false,
@@ -338,6 +347,28 @@ export const mockScore: DomainScore = {
       "weight": 0.3
     }
   ],
+  "subcategories": [
+    { "category": "infrastructure", "subcategory": "certificates", "name": "Certificados", "findings": 1, "penalty": 20.0 },
+    { "category": "infrastructure", "subcategory": "exposed_services", "name": "Exposición de servicios", "findings": 0, "penalty": 0.0 },
+    { "category": "infrastructure", "subcategory": "exposed_apis", "name": "Documentación de APIs expuesta", "findings": 0, "penalty": 0.0 },
+    { "category": "infrastructure", "subcategory": "vulnerable_software", "name": "Software vulnerable o sin soporte", "findings": 1, "penalty": 25.0 },
+    { "category": "infrastructure", "subcategory": "domain_registration", "name": "Registro del dominio", "findings": 0, "penalty": 0.0 },
+    { "category": "digital_identity", "subcategory": "impersonation", "name": "Suplantación", "findings": 0, "penalty": 0.0 },
+    { "category": "digital_identity", "subcategory": "exposed_emails", "name": "Correos expuestos", "findings": 0, "penalty": 0.0 },
+    { "category": "configuration", "subcategory": "email", "name": "Correo", "findings": 1, "penalty": 10.0 },
+    { "category": "configuration", "subcategory": "server_configuration", "name": "Configuración de servidores", "findings": 0, "penalty": 0.0 },
+    { "category": "data_leaks", "subcategory": "breaches", "name": "Brechas de datos", "findings": 1, "penalty": 40.0 },
+    { "category": "data_leaks", "subcategory": "exposed_secrets", "name": "Secretos expuestos", "findings": 0, "penalty": 0.0 },
+    { "category": "data_leaks", "subcategory": "public_storage", "name": "Almacenamiento público", "findings": 0, "penalty": 0.0 }
+  ],
+  "kris": [
+    { "kri": "certificates", "name": "Certificados", "status": "ok", "subcategories": ["certificates"], "sources": ["ct_logs"], "sources_failed": [], "sources_not_run": [], "sources_partial": [], "rules_without_coverage": [], "findings": 1, "max_severity": "high", "penalty": 20.0 },
+    { "kri": "service_exposure", "name": "Exposición de servicios", "status": "partial", "subcategories": ["exposed_services", "exposed_apis"], "sources": ["shodan", "api_docs"], "sources_failed": [], "sources_not_run": ["api_docs"], "sources_partial": [], "rules_without_coverage": [], "findings": 0, "max_severity": null, "penalty": 0.0 },
+    { "kri": "email", "name": "Correo", "status": "ok", "subcategories": ["email"], "sources": ["dns"], "sources_failed": [], "sources_not_run": [], "sources_partial": [], "rules_without_coverage": [], "findings": 1, "max_severity": "medium", "penalty": 10.0 },
+    { "kri": "impersonation", "name": "Suplantación", "status": "ok", "subcategories": ["impersonation"], "sources": ["ct_logs"], "sources_failed": [], "sources_not_run": [], "sources_partial": [], "rules_without_coverage": [], "findings": 0, "max_severity": null, "penalty": 0.0 },
+    { "kri": "reputation", "name": "Reputación", "status": "no_source_yet", "subcategories": [], "sources": [], "sources_failed": [], "sources_not_run": [], "sources_partial": [], "rules_without_coverage": [], "findings": null, "max_severity": null, "penalty": null }
+  ],
+  "kri_map_version": 1,
   "alert": {
     "threshold": 60,
     "triggered": true
@@ -353,11 +384,15 @@ export const mockScoreHistory: ScoreHistory = {
       "computed_at": "2026-09-30T14:24:30-06:00",
       "score": 68,
       "band": "high",
+      "grade": "D",
       "weighted": 68,
       "floor": 60,
       "floor_applied": false,
+      "floor_message": null,
       "critical_open": 1,
       "method": "rules",
+      "model_version": null,
+      "model_fallback_reason": null,
       "rule_set_version": 1,
       "reason": "scan",
       "partial_coverage": false,
@@ -375,11 +410,15 @@ export const mockScoreHistory: ScoreHistory = {
       "computed_at": "2026-10-29T20:16:09-06:00",
       "score": 60,
       "band": "high",
+      "grade": "D",
       "weighted": 28,
       "floor": 60,
       "floor_applied": true,
+      "floor_message": "Subido a 60 por 1 hallazgo crítico vigente; la suma ponderada da 28.",
       "critical_open": 1,
       "method": "rules",
+      "model_version": null,
+      "model_fallback_reason": null,
       "rule_set_version": 1,
       "reason": "correction",
       "partial_coverage": false,
@@ -461,6 +500,13 @@ export const mockWeights: ScoringWeights = {
       "from": 80,
       "to": 100
     }
+  ],
+  "grades": [
+    { "grade": "A", "from": 0, "to": 19 },
+    { "grade": "B", "from": 20, "to": 39 },
+    { "grade": "C", "from": 40, "to": 59 },
+    { "grade": "D", "from": 60, "to": 79 },
+    { "grade": "F", "from": 80, "to": 100 }
   ],
   "floor": {
     "one_critical": 60,

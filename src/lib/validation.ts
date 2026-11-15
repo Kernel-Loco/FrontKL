@@ -16,8 +16,8 @@ export const passwordSchema = z
 const emailSchema = z
   .string()
   .trim()
-  .min(1, "El e-mail es obligatorio.")
-  .pipe(z.email("Ingresa un e-mail válido."));
+  .min(1, "El correo es obligatorio.")
+  .pipe(z.email("Ingresa un correo válido."));
 
 // En login no se valida la política: solo se exige que haya algo que enviar.
 export const loginSchema = z.object({

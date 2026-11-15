@@ -116,7 +116,7 @@ export const mockSettings: OrgSettings = {
     { id: "b0000000-0000-4000-8000-000000000003", kind: "siem_cef", name: "SIEM corporativo (CEF)", endpoint: "https://siem.acme-demo.mx/cef", enabled: false, events: ["finding.created", "finding.resolved"] },
   ],
   api_keys: [
-    { id: "c0000000-0000-4000-8000-000000000001", name: "SIEM corporativo", key_prefix: "lt_live_7f3a", scopes: ["findings:read", "scores:read"], created_at: "2026-09-10T11:00:00-06:00", expires_at: "2026-12-09T11:00:00-06:00", last_used_at: "2026-10-13T23:00:00-06:00", revoked_at: null },
+    { id: "c0000000-0000-4000-8000-000000000001", name: "SIEM corporativo", key_prefix: "CIRDAN_FAKE_7f3a", scopes: ["findings:read", "scores:read"], created_at: "2026-09-10T11:00:00-06:00", expires_at: "2026-12-09T11:00:00-06:00", last_used_at: "2026-10-13T23:00:00-06:00", revoked_at: null },
   ],
 };
 
@@ -182,11 +182,11 @@ export const mockExplanationsExtra: Record<string, Omit<FindingExplanation, "tit
 /** Registro TXT que cada dominio debe publicar (solo Admin). */
 export const mockTxtVerifications: ListResponse<TxtVerification> = {
   items: [
-    { fqdn: "acme-demo.mx", status: "verified", expected_value: "cirdan-verification=c41d7e2a9b06", checked_at: "2026-09-30T14:19:20-06:00" },
-    { fqdn: "acme-tienda.mx", status: "verified", expected_value: "cirdan-verification=5e9a1f3c7d28", checked_at: "2026-09-29T09:11:30-06:00" },
-    { fqdn: "acme-portal.mx", status: "verified", expected_value: "cirdan-verification=a2b8c6e4f019", checked_at: "2026-09-27T18:44:10-06:00" },
-    { fqdn: "partner-example.com", status: "missing", expected_value: "cirdan-verification=8f3c2a91e7b4", checked_at: "2026-10-01T16:10:00-06:00" },
-    { fqdn: "old-example.net", status: "verified", expected_value: "cirdan-verification=3d7f9b1e5c82", checked_at: "2026-10-01T06:00:00-06:00" },
+    { fqdn: "acme-demo.mx", status: "verified", expected_value: "cirdan-verification=CIRDAN_FAKE_c41d7e2a9b06", checked_at: "2026-09-30T14:19:20-06:00" },
+    { fqdn: "acme-tienda.mx", status: "verified", expected_value: "cirdan-verification=CIRDAN_FAKE_5e9a1f3c7d28", checked_at: "2026-09-29T09:11:30-06:00" },
+    { fqdn: "acme-portal.mx", status: "verified", expected_value: "cirdan-verification=CIRDAN_FAKE_a2b8c6e4f019", checked_at: "2026-09-27T18:44:10-06:00" },
+    { fqdn: "partner-example.com", status: "missing", expected_value: "cirdan-verification=CIRDAN_FAKE_8f3c2a91e7b4", checked_at: "2026-10-01T16:10:00-06:00" },
+    { fqdn: "old-example.net", status: "verified", expected_value: "cirdan-verification=CIRDAN_FAKE_3d7f9b1e5c82", checked_at: "2026-10-01T06:00:00-06:00" },
   ],
   total: 5,
 };

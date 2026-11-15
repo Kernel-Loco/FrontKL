@@ -79,7 +79,7 @@ export function ResetPasswordForm() {
       />
       {formError && <Notice tone="error">{formError}</Notice>}
       <Button type="submit" loading={isSubmitting || navigating} className="mt-2">
-        Reset password
+        Guardar contraseña
       </Button>
     </form>
   );

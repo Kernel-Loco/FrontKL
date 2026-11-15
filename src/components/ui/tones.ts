@@ -1,4 +1,5 @@
 // Colores para severidades, bandas del score y estados.
+import type { KriTone } from "@/lib/riesgo";
 import type { Band, Severity } from "@/types";
 
 export type Tone = "red" | "orange" | "amber" | "blue" | "teal" | "green" | "indigo" | "gray";
@@ -29,6 +30,9 @@ export const SOLID_TONES: Record<Tone, { bg: string; text: string; stroke: strin
 
 export const SEVERITY_TONE: Record<Severity, Tone> = { critical: "red", high: "orange", medium: "amber", low: "blue" };
 export const BAND_TONE: Record<Band, Tone> = { critical: "red", high: "orange", medium: "amber", low: "blue" };
+
+/** Color de un KRI (#114): su severidad más alta; sin datos completos va en gris, nunca en el verde de sin riesgo. */
+export const kriTone = (tone: KriTone): Tone => (tone === "clean" ? "green" : tone === "unknown" ? "gray" : SEVERITY_TONE[tone]);
 
 /** Etiqueta de severidad: fondo pastel del Figma y texto oscuro, igual en los dos modos. */
 export const SEVERITY_BADGE: Record<Severity, string> = {

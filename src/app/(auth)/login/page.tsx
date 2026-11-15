@@ -9,6 +9,8 @@ export const metadata: Metadata = { title: "Iniciar sesión" };
 
 const NOTICES: Record<string, string> = {
   expired: "Tu sesión expiró por inactividad. Vuelve a iniciar sesión.",
+  max: "Tu sesión llegó a su duración máxima de 8 horas. Vuelve a iniciar sesión.",
+  ended: "Tu sesión ya no es válida: venció por inactividad, llegó a su máximo de 8 horas o se cerró en otro lado. Vuelve a iniciar sesión.",
   registered: "Cuenta creada con rol Analista. Ya puedes iniciar sesión.",
   reset: "Tu contraseña se actualizó. Inicia sesión con la nueva.",
   logout: "Cerraste sesión correctamente.",

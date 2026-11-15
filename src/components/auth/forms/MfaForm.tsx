@@ -90,7 +90,7 @@ export function MfaForm() {
         <button
           type="button"
           // TODO: conectar con backend — códigos de recuperación de MFA (POST /auth/mfa/recovery).
-          onClick={() => setInfo("Los códigos de recuperación estarán disponibles próximamente. Pide ayuda a un Admin.")}
+          onClick={() => setInfo("Los códigos de recuperación estarán disponibles próximamente. Pide ayuda a un Administrador.")}
           className="rounded-sm font-medium text-lt-primary hover:underline"
         >
           Código de recuperación

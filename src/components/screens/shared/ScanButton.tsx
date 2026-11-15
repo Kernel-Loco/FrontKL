@@ -8,6 +8,7 @@ import { Field, SELECT } from "@/components/ui/Field";
 import { InlineAlert } from "@/components/ui/InlineAlert";
 import { Modal } from "@/components/ui/Modal";
 import { SCAN_BLOCK_REASON_LABELS } from "@/config/labels";
+import { cantidad } from "@/lib/format";
 import { getErrorMessage } from "@/services/errors";
 import { getScan, isScanFinished, requestScan, type ScanProgress } from "@/services/scanService";
 import type { Domain } from "@/types";
@@ -34,7 +35,7 @@ function progressResult(scan: ScanProgress): Result {
     return { tone: "info", message: `Escaneando ${scan.domain}${sources}…` };
   }
   const stats = scan.stats;
-  const found = stats ? ` ${stats.findings} hallazgos y ${stats.assets} activos.` : "";
+  const found = stats ? ` ${cantidad(stats.findings, "hallazgo")} y ${cantidad(stats.assets, "activo")}.` : "";
   if (scan.status === "failed") {
     // Un cierre normal sin ninguna fuente bien (caídas o sin cupo) deja sources_ok en 0. Uno que se cayó deja `error` y no
     // calcula el riesgo, aunque alguna fuente haya respondido.

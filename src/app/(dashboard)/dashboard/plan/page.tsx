@@ -46,7 +46,7 @@ export default async function ActionPlanPage({ searchParams }: Props) {
         actions={<DomainPicker domains={options} value={fqdn} />}
       />
       {canOpenDetail && <DomainTabs tabs={domainTabs(fqdn, findings.total, "plan", canAccessSection(user.role, "hallazgos"))} />}
-      <ActionPlanExplorer key={fqdn} plan={plan} />
+      <ActionPlanExplorer key={fqdn} plan={plan} canOpenFindings={canAccessSection(user.role, "hallazgos")} />
     </div>
   );
 }

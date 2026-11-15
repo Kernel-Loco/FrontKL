@@ -15,7 +15,7 @@ export default async function PerfilPage() {
 
   return (
     <div className="space-y-8">
-      <PageHeader title="Mi perfil" description="Tus datos de acceso a Lowtide." />
+      <PageHeader title="Mi perfil" description="Tus datos de acceso a LowTide." />
       <div className="grid items-start gap-6 lg:grid-cols-2">
         <Card title="Cuenta">
           <dl className="space-y-4 text-sm">

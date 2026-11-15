@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Check, Hourglass, RefreshCw, ShieldCheck } from "lucide-react";
 import { ActionButton } from "@/components/ui/ActionButton";
 import { Badge } from "@/components/ui/Badge";
+import { mensajeDeExito } from "@/config/simulado";
 import { formatRelative } from "@/lib/format";
 import { verifyTxt } from "@/services/domainService";
 import { getErrorMessage } from "@/services/errors";
@@ -30,7 +31,7 @@ export function TxtVerificationList({ items, onChange }: { items: TxtVerificatio
     try {
       const result = await verifyTxt(fqdn);
       onChange(result);
-      setMessage(result.status === "verified" ? `${fqdn}: registro TXT verificado.` : `${fqdn}: todavía no encontramos el registro TXT.`);
+      setMessage(mensajeDeExito("verifyTxt", result.status === "verified" ? `${fqdn}: registro TXT verificado.` : `${fqdn}: todavía no encontramos el registro TXT.`));
     } catch (error) {
       setMessage(getErrorMessage(error));
     } finally {
@@ -45,7 +46,7 @@ export function TxtVerificationList({ items, onChange }: { items: TxtVerificatio
       <div className="flex items-center justify-between gap-3">
         <h3 className="text-[15px] font-semibold text-lt-text">Verificación TXT</h3>
         <Badge tone="indigo">
-          <ShieldCheck aria-hidden="true" className="h-3 w-3" /> Solo Admin
+          <ShieldCheck aria-hidden="true" className="h-3 w-3" /> Solo Administrador
         </Badge>
       </div>
       <ul className="mt-3 divide-y divide-lt-border">

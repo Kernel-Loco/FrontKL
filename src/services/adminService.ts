@@ -1,11 +1,13 @@
 // Llaves de API, webhooks y bitácora (provisional: aún no está en el contrato #21). Solo Admin.
 // Se usa desde el servidor (listas) y desde componentes de cliente (crear, revocar, activar).
+import { PREFIJO_FALSO } from "@/config/simulado";
 import { mockDelay } from "@/lib/mock";
 import { mockAuditLog, mockSettings } from "@/mocks/api/provisional";
 import type { ApiKey, ApiKeyCreated, ApiKeyRequest, AuditEntry, Integration, IntegrationRequest, ListResponse } from "@/types";
 import { ServiceError } from "./errors";
 
 export const API_KEY_MAX_DAYS = 90;
+export const API_KEY_OWN_USE_ERROR = "Confirma que la llave es solo para los sistemas de tu propia empresa.";
 export const API_SCOPES = ["findings:read", "scores:read", "domains:read", "reports:read", "scans:write"] as const;
 
 export async function getApiKeys(): Promise<ListResponse<ApiKey>> {
@@ -17,6 +19,7 @@ export async function getApiKeys(): Promise<ListResponse<ApiKey>> {
 export async function createApiKey(request: ApiKeyRequest): Promise<ApiKeyCreated> {
   // TODO: conectar con backend → POST /api-keys
   await mockDelay(600);
+  if (request.own_use !== true) throw new ServiceError("invalid", API_KEY_OWN_USE_ERROR);
   if (!request.name.trim()) throw new ServiceError("invalid", "Ponle un nombre a la llave.");
   if (request.scopes.length === 0) throw new ServiceError("invalid", "Elige al menos un permiso.");
   if (request.expires_in_days < 1 || request.expires_in_days > API_KEY_MAX_DAYS) {
@@ -26,11 +29,11 @@ export async function createApiKey(request: ApiKeyRequest): Promise<ApiKeyCreate
   const now = new Date();
   const expires = new Date(now.getTime() + request.expires_in_days * 86_400_000);
   return {
-    secret: `lt_live_${random}`,
+    secret: `${PREFIJO_FALSO}${random}`,
     api_key: {
       id: crypto.randomUUID(),
       name: request.name.trim(),
-      key_prefix: `lt_live_${random.slice(0, 4)}`,
+      key_prefix: `${PREFIJO_FALSO}${random.slice(0, 4)}`,
       scopes: request.scopes,
       created_at: now.toISOString(),
       expires_at: expires.toISOString(),
