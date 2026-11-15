@@ -523,6 +523,12 @@ export interface ApiKeyRequest {
   name: string;
   scopes: string[];
   expires_in_days: number;
+  /**
+   * Declaración del Administrador de que la llave es para un sistema de su propia empresa, no de un
+   * integrador ni de otra empresa. Obligatoria: el backend responde 422 si falta, es null o es false
+   * (BackKL cirdan/api/llaves.py, RC-129).
+   */
+  own_use: true;
 }
 
 /** La llave completa solo viaja en esta respuesta; después solo se ve su prefijo. */
