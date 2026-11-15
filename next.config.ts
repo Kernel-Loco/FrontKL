@@ -14,6 +14,8 @@ const SECURITY_HEADERS = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // Solo la imagen del despliegue (Dockerfile, RC-91) compila standalone. Sin la variable, npm start sigue igual.
+  ...(process.env.NEXT_OUTPUT === "standalone" && { output: "standalone" as const }),
   // En todas las páginas y archivos del portal. Lo que se reenvía a FastAPI (/api/v1/*) no pasa por aquí: Next
   // entrega esa respuesta tal cual, y esas tres cabeceras las pone la propia API (cirdan/api/main.py de BackKL).
   async headers() {
