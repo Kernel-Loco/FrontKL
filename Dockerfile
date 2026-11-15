@@ -18,10 +18,13 @@ RUN npm run build
 
 FROM node:22.23.5-bookworm-slim
 WORKDIR /app
+# KEEP_ALIVE_TIMEOUT: Node cierra una conexión ociosa a los 5 s y cloudflared la reutiliza hasta 90 s. Un POST que
+# cloudflared manda justo cuando Node la cierra no se reintenta y da 502. Con 95 s siempre la suelta cloudflared primero.
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
     PORT=3000 \
-    HOSTNAME=0.0.0.0
+    HOSTNAME=0.0.0.0 \
+    KEEP_ALIVE_TIMEOUT=95000
 # El usuario node (uid 1000) ya viene en la imagen.
 COPY --from=construir --chown=node:node /app/.next/standalone ./
 COPY --from=construir --chown=node:node /app/.next/static ./.next/static
