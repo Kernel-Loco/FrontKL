@@ -3,8 +3,9 @@ node_modules
 .next
 out
 coverage
-.env*
-!.env.example
+# En cualquier carpeta, como .gitignore:34.
+**/.env*
+!**/.env.example
 *.tsbuildinfo
 next-env.d.ts
 # Lo mismo que .gitignore: llaves, carpetas de otras herramientas y registros de depuración no entran al contexto.
