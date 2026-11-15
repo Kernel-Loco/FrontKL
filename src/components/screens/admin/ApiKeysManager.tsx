@@ -10,7 +10,7 @@ import { InlineAlert } from "@/components/ui/InlineAlert";
 import { API_SCOPE_LABELS } from "@/config/labels";
 import { mensajeDeExito } from "@/config/simulado";
 import { formatDate, formatDateTime } from "@/lib/format";
-import { API_KEY_MAX_DAYS, API_SCOPES, createApiKey, revokeApiKey } from "@/services/adminService";
+import { API_KEY_MAX_DAYS, API_KEY_OWN_USE_ERROR, API_SCOPES, createApiKey, revokeApiKey } from "@/services/adminService";
 import { getErrorMessage } from "@/services/errors";
 import type { ApiKey } from "@/types";
 
@@ -25,6 +25,7 @@ export function ApiKeysManager({ initial }: { initial: ApiKey[] }) {
   const [scopes, setScopes] = useState<string[]>(["findings:read", "scores:read"]);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [ownUseError, setOwnUseError] = useState<string | null>(null);
   const [secret, setSecret] = useState<{ name: string; value: string } | null>(null);
   const [copied, setCopied] = useState(false);
   const [confirmId, setConfirmId] = useState<string | null>(null);
@@ -34,14 +35,20 @@ export function ApiKeysManager({ initial }: { initial: ApiKey[] }) {
     event.preventDefault();
     const form = event.currentTarget;
     const data = new FormData(form);
-    setCreating(true);
-    setError(null);
     setSecret(null);
+    setError(null);
+    if (data.get("own_use") !== "on") {
+      setOwnUseError(API_KEY_OWN_USE_ERROR);
+      return;
+    }
+    setOwnUseError(null);
+    setCreating(true);
     try {
       const created = await createApiKey({
         name: String(data.get("name") ?? ""),
         scopes,
         expires_in_days: Number(data.get("days")),
+        own_use: true,
       });
       setKeys((current) => [created.api_key, ...current]);
       setSecret({ name: created.api_key.name, value: created.secret });
@@ -79,7 +86,7 @@ export function ApiKeysManager({ initial }: { initial: ApiKey[] }) {
 
   return (
     <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.8fr)]">
-      <Card title="Crear llave" description={`Para integrar LowTide con otros sistemas. Vigencia máxima de ${API_KEY_MAX_DAYS} días.`} icon={<KeyRound aria-hidden="true" className="h-4 w-4" />}>
+      <Card title="Crear llave" description={`Para conectar LowTide con los sistemas de tu propia empresa. Vigencia máxima de ${API_KEY_MAX_DAYS} días.`} icon={<KeyRound aria-hidden="true" className="h-4 w-4" />}>
         <form onSubmit={onCreate} noValidate className="space-y-4">
           <Field label="Nombre" htmlFor="key-name">
             <input id="key-name" name="name" placeholder="SIEM corporativo" className={INPUT} autoComplete="off" />
@@ -103,6 +110,23 @@ export function ApiKeysManager({ initial }: { initial: ApiKey[] }) {
           <Field label="Vigencia (días)" htmlFor="key-days">
             <input id="key-days" name="days" type="number" min={1} max={API_KEY_MAX_DAYS} defaultValue={90} className={`${INPUT} w-28`} />
           </Field>
+          <div className="rounded-lg border border-lt-border bg-lt-raised/60 p-3.5">
+            <label className="flex items-start gap-2.5 text-[13px] text-lt-muted">
+              <input
+                type="checkbox"
+                name="own_use"
+                className={`${CHECKBOX} mt-0.5`}
+                onChange={(e) => e.target.checked && setOwnUseError(null)}
+                {...(ownUseError ? { "aria-invalid": true, "aria-describedby": "own_use-error" } : {})}
+              />
+              Confirmo que la llave es para un sistema de mi propia empresa. No se da a un integrador ni a otra empresa.
+            </label>
+            {ownUseError && (
+              <p id="own_use-error" className="mt-1.5 text-xs font-medium text-lt-red">
+                {ownUseError}
+              </p>
+            )}
+          </div>
           {error && <InlineAlert tone="error">{error}</InlineAlert>}
           <ActionButton type="submit" loading={creating} className="w-full">
             Crear llave
