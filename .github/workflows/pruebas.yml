@@ -1,0 +1,37 @@
+# CI de pruebas de FrontKL (RC-332, punto 7 del Hecho cuando): en cada PR y push a dev o main instala las
+# dependencias con npm ci y corre npm test (node --test sobre src/**/*.test.mjs). Las pruebas no usan red ni secretos.
+name: Pruebas
+
+on:
+  pull_request:
+    branches: [dev, main]
+  push:
+    branches: [dev, main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pruebas-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pruebas:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      # La versión de Node está en .nvmrc y src/config/versionNode.test.mjs revisa que sea la misma de los FROM
+      # del Dockerfile. Las pruebas importan .ts directo, así que necesitan Node 22.18 o más, que quita los tipos
+      # sin bandera.
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm test

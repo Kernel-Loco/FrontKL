@@ -1,5 +1,5 @@
-# Dependabot revisa cada semana los paquetes de npm (package.json y package-lock.json)
-# y abre un PR a dev cuando hay una versión nueva.
+# Dependabot revisa cada semana los paquetes de npm (package.json y package-lock.json) y las acciones de
+# .github/workflows, y abre un PR a dev cuando hay una versión nueva.
 version: 2
 updates:
   - package-ecosystem: npm
@@ -23,3 +23,12 @@ updates:
       # Quitar cuando typescript-eslint acepte typescript 6.1 o más, incluida la 7.
       - dependency-name: typescript
         versions: [">=6.1.0"]
+  # Las acciones del CI de pruebas (checkout y setup-node), en un solo PR, como en BackKL.
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: dev
+    schedule:
+      interval: weekly
+    groups:
+      github-actions:
+        patterns: ["*"]
