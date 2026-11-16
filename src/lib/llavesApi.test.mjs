@@ -100,7 +100,9 @@ test("7. una llave que vence con la página abierta se ve y se cuenta como venci
 test("8. revocar la llave del aviso lo quita, refresca la ruta y cada revocación lleva su id y su error", () => {
   const pantalla = leer("../components/screens/admin/ApiKeysManager.tsx");
   assert.match(pantalla, /setSecret\(\(current\) => \(current\?\.id === id \? null : current\)\)/);
-  assert.equal(pantalla.match(/router\.refresh\(\);/g)?.length, 2);
+  // La única llamada (la otra mención está en un comentario).
+  assert.equal(pantalla.match(/router\.refresh\(\)\)/g)?.length, 1);
+  assert.equal(pantalla.match(/refrescar\(\);/g)?.length, 3);
   assert.match(pantalla, /quedan\.delete\(id\)/);
   assert.match(pantalla, /setConfirmId\(\(current\) => \(current === id \? null : current\)\)/);
   assert.doesNotMatch(pantalla, /revokingId|setRevokingId\(null\)|setConfirmId\(null\);\r?\n\s*\}/);
@@ -141,9 +143,9 @@ test("10. la llave del aviso no se pierde por un refresco, la lista vieja no des
   // Regresión 1: crear no refresca. Revocar otra llave con el aviso a la vista tampoco: se refresca al cerrarlo.
   const alCrear = pantalla.slice(pantalla.indexOf("const onCreate"), pantalla.indexOf("const onRevoke"));
   assert.doesNotMatch(alCrear, /router\.refresh\(\)/);
-  assert.match(pantalla, /if \(!aviso \|\| aviso\.id === id\) router\.refresh\(\);/);
+  assert.match(pantalla, /if \(!aviso \|\| aviso\.id === id\) refrescar\(\);/);
   const alCerrar = pantalla.slice(pantalla.indexOf("const cerrarAviso"));
-  assert.match(alCerrar.slice(0, alCerrar.indexOf("};")), /setSecret\(null\);[\s\S]*router\.refresh\(\);/);
+  assert.match(alCerrar.slice(0, alCerrar.indexOf("};")), /setSecret\(null\);[\s\S]*refrescar\(\);/);
   assert.match(pantalla, /onClick=\{cerrarAviso\}/);
 
   // Regresión 2: una lista pedida antes del DELETE trae la llave activa y se queda revocada.
@@ -155,7 +157,7 @@ test("10. la llave del aviso no se pierde por un refresco, la lista vieja no des
   assert.equal(lista[1], otra);
   const yaRevocada = fila({ status: "revoked", revoked_at: "2026-11-02T00:00:00Z" });
   assert.equal(conRevocadasLocales([yaRevocada], new Map([[yaRevocada.id, revocadaEn]]))[0], yaRevocada);
-  assert.match(pantalla, /setKeys\(conRevocadasLocales\(initial, revocadas\)\)/);
+  assert.match(pantalla, /if \(initial\) setKeys\(conRevocadasLocales\(initial, revocadas\)\)/);
 
   // Regresión 3: con el reloj adelantado se ve 'Vencida', pero Revocar sigue el status de la API.
   const vigente = fila({ expires_at: "2026-11-16T10:05:00Z" });
@@ -167,4 +169,24 @@ test("10. la llave del aviso no se pierde por un refresco, la lista vieja no des
 
   // Regresión 4: el error de un DELETE solo se ve mientras la fila sigue revocable.
   assert.match(pantalla, /const revokeError = revocable \? revokeErrors\[k\.id\] : undefined;/);
+});
+
+test("11. ningún refresco está en vuelo cuando aparece el aviso de copiar y un GET /api-keys fallido no desmonta la pantalla", () => {
+  const pantalla = leer("../components/screens/admin/ApiKeysManager.tsx");
+  // El único router.refresh va en una transición y crear espera a que termine.
+  assert.match(pantalla, /const \[refrescando, startRefresh\] = useTransition\(\);/);
+  assert.match(pantalla, /startRefresh\(\(\) => router\.refresh\(\)\);/);
+  assert.match(pantalla, /<ActionButton type="submit" loading=\{creating\} disabled=\{refrescando\}/);
+  const alCrear = pantalla.slice(pantalla.indexOf("const onCreate"), pantalla.indexOf("const onRevoke"));
+  assert.match(alCrear, /if \(creandoRef\.current \|\| refrescando\) return;/);
+  assert.match(alCrear, /creandoRef\.current = true;[\s\S]*await createApiKey/);
+  // Con un POST en curso, revocar o cerrar el aviso deja el refresco para después; sin aviso nuevo va al terminar.
+  const refrescar = pantalla.slice(pantalla.indexOf("const refrescar"), pantalla.indexOf("const onCreate"));
+  assert.match(refrescar, /if \(creandoRef\.current\) \{\s*refrescoPendienteRef\.current = true;\s*return;/);
+  assert.match(alCrear, /finally \{\s*creandoRef\.current = false;[\s\S]*if \(!creada\) refrescar\(\);/);
+  // Respaldo: un ServiceError de GET /api-keys deja la lista de la pantalla y el aviso.
+  const pagina = leer("../app/(dashboard)/dashboard/admin/api/page.tsx");
+  assert.match(pagina, /getApiKeys\(\)\.catch\(\(error: unknown\) => \{\s*if \(error instanceof ServiceError\) return null;\s*throw error;/);
+  assert.match(pagina, /initial=\{keys \? keys\.items : null\}/);
+  assert.match(pantalla, /initial === null && \(/);
 });

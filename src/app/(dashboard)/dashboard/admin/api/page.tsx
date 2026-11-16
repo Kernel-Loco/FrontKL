@@ -13,7 +13,11 @@ export default async function ApiAccessPage() {
   if (forbidden) return forbidden;
 
   const [keys, domains] = await Promise.all([
-    getApiKeys(),
+    // Respaldo: si GET /api-keys falla en un refresco, la pantalla sigue montada con su lista y el aviso de copiar.
+    getApiKeys().catch((error: unknown) => {
+      if (error instanceof ServiceError) return null;
+      throw error;
+    }),
     // Los dominios solo llenan el selector: si /domains falla, la lista y la revocación siguen a la mano.
     getDomains().catch((error: unknown) => {
       if (error instanceof ServiceError) return null;
@@ -26,7 +30,7 @@ export default async function ApiAccessPage() {
   return (
     <div className="space-y-8">
       <PageHeader title={SECTIONS.api.label} description="Llaves para que otros sistemas consulten LowTide. Solo se guarda su huella, nunca la llave completa." />
-      <ApiKeysManager initial={keys.items} domains={fqdns} />
+      <ApiKeysManager initial={keys ? keys.items : null} domains={fqdns} />
     </div>
   );
 }

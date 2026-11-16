@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { KeyRound } from "lucide-react";
 import { ActionButton } from "@/components/ui/ActionButton";
@@ -32,16 +32,17 @@ function sinLlave(created: ApiKeyCreated): ApiKey {
 /** Cada cuánto se vuelve a calcular el estado a la vista, para que una llave que vence con la página abierta lo muestre. */
 const RELOJ_MS = 30_000;
 
-export function ApiKeysManager({ initial, domains }: { initial: ApiKey[]; domains: string[] | null }) {
+export function ApiKeysManager({ initial, domains }: { initial: ApiKey[] | null; domains: string[] | null }) {
   const router = useRouter();
-  const [keys, setKeys] = useState(initial);
+  const [keys, setKeys] = useState(initial ?? []);
   // Las revocadas aquí (id → hora del DELETE), para que una lista pedida antes del DELETE no las vuelva a mostrar activas.
   const [revocadas, setRevocadas] = useState<ReadonlyMap<string, string>>(() => new Map());
   // router.refresh() trae otra lista del servidor: se toma en lugar de la local, que solo se cambió a mano.
   const [base, setBase] = useState(initial);
   if (base !== initial) {
     setBase(initial);
-    setKeys(conRevocadasLocales(initial, revocadas));
+    // null: GET /api-keys falló en ese refresco y la lista de la pantalla se queda como estaba.
+    if (initial) setKeys(conRevocadasLocales(initial, revocadas));
   }
   // 0 hasta montar: el primer dibujo usa el estado del servidor y no choca con el HTML que ya llegó.
   const [ahora, setAhora] = useState(0);
@@ -59,6 +60,20 @@ export function ApiKeysManager({ initial, domains }: { initial: ApiKey[]; domain
   useEffect(() => {
     avisoRef.current = secret;
   }, [secret]);
+  // El refresco de la ruta va en una transición: mientras trae la lista, refrescando sigue en true y no se crea otra
+  // llave. Así ningún refresco está en vuelo cuando aparece el aviso de copiar: si su GET /api-keys o /auth/me fallara,
+  // admin/error.tsx o el layout quitarían la pantalla y con ella la llave que solo se muestra una vez.
+  const [refrescando, startRefresh] = useTransition();
+  // Un POST /api-keys en curso. Si se pide un refresco mientras tanto, espera a que el POST responda.
+  const creandoRef = useRef(false);
+  const refrescoPendienteRef = useRef(false);
+  const refrescar = () => {
+    if (creandoRef.current) {
+      refrescoPendienteRef.current = true;
+      return;
+    }
+    startRefresh(() => router.refresh());
+  };
 
   useEffect(() => {
     const tick = () => setAhora(Date.now());
@@ -72,6 +87,7 @@ export function ApiKeysManager({ initial, domains }: { initial: ApiKey[]; domain
 
   const onCreate = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (creandoRef.current || refrescando) return;
     const form = event.currentTarget;
     const data = new FormData(form);
     // La llave recién creada sigue a la vista hasta que otra la reemplace: un envío que falla no la borra.
@@ -82,6 +98,8 @@ export function ApiKeysManager({ initial, domains }: { initial: ApiKey[]; domain
     }
     setOwnUseError(null);
     setCreating(true);
+    creandoRef.current = true;
+    let creada = false;
     try {
       const created = await createApiKey({
         name: String(data.get("name") ?? ""),
@@ -94,13 +112,20 @@ export function ApiKeysManager({ initial, domains }: { initial: ApiKey[]; domain
       setCopied(false);
       setCopyError(null);
       form.reset();
+      creada = true;
       // Aquí no se refresca la ruta: si GET /api-keys fallara, admin/error.tsx quitaría la pantalla y con ella la
       // llave que solo se muestra una vez. La ruta se refresca al cerrar el aviso (cerrarAviso).
     } catch (err) {
       // 403 sin plan con API y 409 con 20 vigentes traen su mensaje en el detail de la API.
       setCreateError(getErrorMessage(err, { apiMessageOn403: true }));
     } finally {
+      creandoRef.current = false;
       setCreating(false);
+      // El refresco que esperó al POST: sin aviso nuevo va ya. Con aviso lo hace cerrarAviso.
+      if (refrescoPendienteRef.current) {
+        refrescoPendienteRef.current = false;
+        if (!creada) refrescar();
+      }
     }
   };
 
@@ -121,7 +146,7 @@ export function ApiKeysManager({ initial, domains }: { initial: ApiKey[]; domain
       const aviso = avisoRef.current;
       setSecret((current) => (current?.id === id ? null : current));
       // Con el aviso de otra llave a la vista no se refresca: un GET /api-keys fallido lo borraría. Se hace al cerrarlo.
-      if (!aviso || aviso.id === id) router.refresh();
+      if (!aviso || aviso.id === id) refrescar();
     } catch (err) {
       setRevokeErrors((current) => ({ ...current, [id]: getErrorMessage(err) }));
     } finally {
@@ -150,7 +175,7 @@ export function ApiKeysManager({ initial, domains }: { initial: ApiKey[]; domain
     setSecret(null);
     setCopied(false);
     setCopyError(null);
-    router.refresh();
+    refrescar();
   };
 
   return (
@@ -204,7 +229,7 @@ export function ApiKeysManager({ initial, domains }: { initial: ApiKey[]; domain
             )}
           </div>
           {createError && <InlineAlert tone="error">{createError}</InlineAlert>}
-          <ActionButton type="submit" loading={creating} className="w-full">
+          <ActionButton type="submit" loading={creating} disabled={refrescando} className="w-full">
             Crear llave
           </ActionButton>
         </form>
@@ -222,6 +247,11 @@ export function ApiKeysManager({ initial, domains }: { initial: ApiKey[]; domain
       </Card>
 
       <Card title="Llaves" padded={false} action={`${contarActivas(keys, ahora)} activas`}>
+        {initial === null && (
+          <div className="p-4">
+            <InlineAlert tone="error">No se pudo cargar la lista de llaves. Recarga la página para verla al día.</InlineAlert>
+          </div>
+        )}
         <TableWrap>
           <table className="w-full min-w-[640px]">
             <thead>
@@ -235,7 +265,7 @@ export function ApiKeysManager({ initial, domains }: { initial: ApiKey[]; domain
               </tr>
             </thead>
             <tbody>
-              {keys.length === 0 && (
+              {keys.length === 0 && initial !== null && (
                 <tr className={TR}>
                   <td colSpan={6} className={`${TD} text-[13px] text-lt-muted`}>Todavía no hay llaves.</td>
                 </tr>
