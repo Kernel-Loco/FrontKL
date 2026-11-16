@@ -10,8 +10,7 @@ import { KriPanel } from "@/components/screens/detalle/KriPanel";
 import { RiskGauge } from "@/components/screens/detalle/RiskGauge";
 import { ReportButton } from "@/components/screens/shared/ReportButton";
 import { ScanButton } from "@/components/screens/shared/ScanButton";
-import { failedScanAt, unscoredLabel } from "@/components/screens/shared/domainState";
-import { AvisoSimulado } from "@/components/ui/AvisoSimulado";
+import { exportBlockReasons, failedScanAt, unscoredLabel } from "@/components/screens/shared/domainState";
 import { TEXT_LINK } from "@/components/ui/ActionButton";
 import { SeverityBadge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
@@ -53,8 +52,10 @@ export default async function DomainDetailPage({ params }: Props) {
   const points = history.items;
   const delta = points.length >= 2 ? points[points.length - 1]!.score - points[points.length - 2]!.score : null;
   const top = findings.items.slice(0, 4);
-  const blocked = domain.scan_eligibility.can_scan ? undefined : domain.scan_eligibility.reasons.map((r) => SCAN_BLOCK_REASON_LABELS[r]).join(" · ");
-  const today = new Date().toISOString().slice(0, 10);
+  const reasons = domain.scan_eligibility.can_scan ? [] : domain.scan_eligibility.reasons;
+  const blocked = reasons.length ? reasons.map((r) => SCAN_BLOCK_REASON_LABELS[r]).join(" · ") : undefined;
+  // El reporte solo se frena sin carta vigente, como la API (403). Los demás motivos solo frenan el escaneo.
+  const reportBlocked = exportBlockReasons(reasons).map((r) => SCAN_BLOCK_REASON_LABELS[r]).join(" · ") || undefined;
 
   // /scans trae los últimos 50 de la empresa, del más nuevo al más viejo; un dominio tiene a lo más un escaneo activo.
   const ownScans = scans?.items.filter((s) => s.domain === fqdn) ?? [];
@@ -129,16 +130,17 @@ export default async function DomainDetailPage({ params }: Props) {
         actions={
           <>
             {can(user.role, "request_report") && (
-              <ReportButton domain={fqdn} periodStart={points[0]?.computed_at.slice(0, 10) ?? today} periodEnd={today} disabledReason={blocked} />
+              <ReportButton key={fqdn} domain={fqdn} disabledReason={reportBlocked} />
             )}
             {can(user.role, "request_scan") && <ScanButton domains={domains.items} fixedDomain={fqdn} label="Escanear ahora" />}
           </>
         }
       />
       <DomainTabs tabs={domainTabs(fqdn, findings.total, "resumen", canSeeFindings, domain.score !== null)} />
-      {can(user.role, "request_report") && <AvisoSimulado acciones={["requestReport"]} solo="«Exportar PDF»" />}
 
-      {blocked && <InlineAlert tone="warning">Este dominio no se puede escanear ni exportar: {blocked}.</InlineAlert>}
+      {blocked && (
+        <InlineAlert tone="warning">Este dominio no se puede escanear{reportBlocked ? " ni exportar" : ""}: {blocked}.</InlineAlert>
+      )}
 
       {score ? (
         <>
