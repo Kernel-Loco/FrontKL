@@ -1,5 +1,5 @@
 // Único archivo con los textos de la página Seguridad (#203, RC-323). Son los del resumen de seguridad para
-// clientes (#202, RC-321) del 10 de noviembre de 2026: solo los controles que ya funcionan. No se editan aquí a
+// clientes (#202, RC-321) del 16 de noviembre de 2026: solo los controles que ya funcionan. No se editan aquí a
 // mano: si el resumen cambia, se copian de nuevo y se actualiza la huella de seguridad.test.mjs.
 
 export interface Frontera {
@@ -22,7 +22,7 @@ export interface GrupoDeControles {
 
 export const SEGURIDAD = {
   titulo: "Cómo cuida LowTide los datos de sus clientes",
-  fecha: "10 de noviembre de 2026",
+  fecha: "16 de noviembre de 2026",
   intro: "LowTide descubre lo que una empresa expone en internet solo con información pública y con las peticiones que autoriza su carta, y da un score de riesgo de 0 a 100 con plan de acción. Esta página sale del modelo de amenazas del equipo y lista solo los controles que ya funcionan hoy. Lo planeado aparece punteado en el diagrama y no se cuenta aquí.",
   diagrama: {
     src: "/seguridad/arquitectura.png",
@@ -52,7 +52,7 @@ export const SEGURIDAD = {
         },
         {
           tema: "Fórmulas escondidas en las descargas CSV",
-          texto: "Los textos que vienen de sitios ajenos se neutralizan antes de exportarse, y la descarga pide sesión y autorización vigente.",
+          texto: "Los textos que vienen de sitios ajenos se neutralizan antes de exportarse, tanto en los archivos que arma el servidor como en los que arma el navegador. Los datos de cada descarga se piden con la sesión de quien la hace.",
         },
       ],
     },
@@ -116,7 +116,7 @@ export const SEGURIDAD = {
         },
         {
           tema: "Que la aplicación gane privilegios en la base",
-          texto: "La única función con privilegios elevados, la del inicio de sesión, está limitada a 4 columnas y tiene pruebas automáticas.",
+          texto: "Solo cuatro funciones de la base corren con privilegios elevados y cada una hace lo mínimo: la del inicio de sesión devuelve 4 columnas, la de las llaves de API busca una llave por su huella y dos reservan y ajustan el cupo diario de cada fuente. Todas tienen pruebas automáticas.",
         },
         {
           tema: "Saber qué software usa otra empresa",

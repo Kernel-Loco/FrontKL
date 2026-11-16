@@ -27,6 +27,17 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           {children}
           <p className="mt-8 text-center text-xs text-slate-500">El acceso está restringido al personal autorizado.</p>
           <p className="mt-2 text-center text-xs text-slate-500">
+            Al iniciar sesión aceptas los{" "}
+            <Link href="/terminos" className="rounded-sm font-semibold text-lt-primary hover:underline">
+              Términos de uso
+            </Link>
+            .
+          </p>
+          <p className="mt-2 text-center text-xs text-slate-500">
+            <Link href="/privacidad" className="rounded-sm font-semibold text-lt-primary hover:underline">
+              Aviso de privacidad
+            </Link>
+            {" · "}
             <Link href="/seguridad" className="rounded-sm font-semibold text-lt-primary hover:underline">
               Cómo cuida LowTide tus datos
             </Link>

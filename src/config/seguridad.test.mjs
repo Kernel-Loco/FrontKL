@@ -6,9 +6,9 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { SEGURIDAD } from "./seguridad.ts";
 
-// Huella de las fronteras y los controles del resumen de seguridad para clientes del 10 de noviembre de 2026, que
+// Huella de las fronteras y los controles del resumen de seguridad para clientes del 16 de noviembre de 2026, que
 // se revisó contra el modelo de amenazas: solo trae controles que ya funcionan.
-const HUELLA_DEL_RESUMEN = "f3a19c91f56f7670df5e68a338518389729dec824c473aeaba3a62fd4968ba9b";
+const HUELLA_DEL_RESUMEN = "d2a1900d56ec392b0a067a49c424c5f42205fcb2182fe5391d6e58ea881d2b20";
 
 const controles = SEGURIDAD.grupos.flatMap((grupo) => grupo.controles);
 

@@ -93,6 +93,14 @@ export function DashboardShell({ user, badges, children }: DashboardShellProps) 
             Seguridad
           </Link>
           {" · "}
+          <Link href="/privacidad" className={FOOTER_LINK}>
+            Privacidad
+          </Link>
+          {" · "}
+          <Link href="/terminos" className={FOOTER_LINK}>
+            Términos
+          </Link>
+          {" · "}
           <a href={DBIP_URL} lang="en" target="_blank" rel="noopener noreferrer" className={FOOTER_LINK}>
             IP Geolocation by DB-IP{NEW_TAB}
           </a>
