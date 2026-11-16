@@ -7,55 +7,37 @@ import { Spinner } from "@/components/Spinner";
 import { EXPOSICION_LABELS, SENSIBILIDAD_LABELS } from "@/config/labels";
 import { getFindingExplanation } from "@/services/domainService";
 import { getErrorMessage } from "@/services/errors";
+import { SHAP_LABELS, shapDisplay, shapLegend, shapPhrase, shapTone } from "@/lib/shap";
 import type { DomainFinding, FindingExplanation } from "@/types";
 
 interface Factor {
   label: string;
   value: number;
   display: string;
+  tone: { text: string; bar: string };
 }
 
-const SHAP_LABELS: Record<string, string> = {
-  tipo: "Tipo de hallazgo",
-  antiguedad_dias: "Antigüedad",
-  exposicion: "Exposición",
-  sensibilidad: "Sensibilidad",
-};
+// Puntos de una regla: más puntos es más riesgo, así que sí van con los colores de severidad alta y baja.
+const POINTS_TONE = { up: { text: "text-lt-orange", bar: "bg-lt-orange" }, down: { text: "text-lt-blue", bar: "bg-lt-blue" } };
 
 function factorsOf(explanation: FindingExplanation): Factor[] {
   if (explanation.method === "ml" && explanation.shap?.length) {
+    // SHAP de la clase predicha: signo y color salen de shap.ts, con la misma regla que la frase (RC-71).
     return [...explanation.shap]
       .sort((a, b) => Math.abs(b.contribution) - Math.abs(a.contribution))
       .map((s) => ({
         label: SHAP_LABELS[s.feature] ?? s.feature.replace(/_/g, " "),
-      value: s.contribution,
-      display: `${s.contribution > 0 ? "+" : "−"}${Math.abs(s.contribution).toFixed(2)}`,
+        value: s.contribution,
+        display: shapDisplay(s.contribution),
+        tone: shapTone(s.contribution),
       }));
   }
-  return explanation.factors.map((f) => ({ label: f.label, value: f.points, display: `${f.points > 0 ? "+" : "−"}${Math.abs(f.points)} pts` }));
-}
-
-function shapPhrase(feature: string, value: string | number, characteristics: DomainFinding["caracteristicas"], contribution: number) {
-  const direction = contribution >= 0 ? "aumenta" : "reduce";
-  const label = SHAP_LABELS[feature] ?? feature.replace(/_/g, " ");
-
-  switch (feature) {
-    case "tipo":
-      return `El tipo de hallazgo (${characteristics.tipo.replace(/_/g, " ")}) ${direction} el riesgo.`;
-    case "antiguedad_dias": {
-      const days = Number(value);
-      const age = Number.isFinite(days) ? `${days} ${days === 1 ? "día" : "días"}` : String(value);
-      return `La exposición lleva ${age}; este factor ${direction} el riesgo.`;
-    }
-    case "exposicion":
-      return characteristics.exposicion === "directa"
-        ? `El activo responde directamente desde internet; esto ${direction} el riesgo.`
-        : `El dato está disponible públicamente; esto ${direction} el riesgo.`;
-    case "sensibilidad":
-      return `La información expuesta tiene sensibilidad ${characteristics.sensibilidad}; esto ${direction} el riesgo.`;
-    default:
-      return `${label} (${String(value)}) ${direction} el riesgo.`;
-  }
+  return explanation.factors.map((f) => ({
+    label: f.label,
+    value: f.points,
+    display: `${f.points > 0 ? "+" : "−"}${Math.abs(f.points)} pts`,
+    tone: f.points >= 0 ? POINTS_TONE.up : POINTS_TONE.down,
+  }));
 }
 
 /** Panel «¿Por qué es crítico?» del hallazgo elegido. */
@@ -111,22 +93,23 @@ export function ExplanationPanel({ finding }: { finding: DomainFinding }) {
                 <ol className="mt-3 space-y-2">
                   {topShap.map((factor, index) => (
                     <li key={`${factor.feature}-${index}`} className="text-sm leading-relaxed text-lt-text">
-                      {shapPhrase(factor.feature, factor.value, c, factor.contribution)}
+                      {shapPhrase(factor.feature, factor.value, c, factor.contribution, explanation.model_prediction)}
                     </li>
                   ))}
                 </ol>
                 <details className="mt-4 border-t border-lt-border pt-3">
                   <summary className="cursor-pointer text-xs text-lt-muted hover:text-lt-text">Ver detalle SHAP</summary>
+                  <p className="mt-2 text-[11px] text-lt-faint">{shapLegend(explanation.model_prediction)}</p>
                   <ul className="mt-3 space-y-3">
                     {factors.map((f) => (
                       <li key={f.label}>
                         <div className="mb-1 flex justify-between gap-3 text-[13px]">
                           <span className="text-lt-text">{f.label}</span>
-                          <span className={`tabular-nums ${f.value >= 0 ? "text-lt-orange" : "text-lt-blue"}`}>{f.display}</span>
+                          <span className={`tabular-nums ${f.tone.text}`}>{f.display}</span>
                         </div>
                         <div className="h-1.5 overflow-hidden rounded-full bg-lt-raised">
                           <div
-                            className={`h-full rounded-full ${f.value >= 0 ? "bg-lt-orange" : "bg-lt-blue"}`}
+                            className={`h-full rounded-full ${f.tone.bar}`}
                             style={{ width: `${(Math.abs(f.value) / max) * 100}%` }}
                           />
                         </div>
@@ -143,11 +126,11 @@ export function ExplanationPanel({ finding }: { finding: DomainFinding }) {
                     <li key={f.label}>
                       <div className="mb-1 flex justify-between gap-3 text-[13px]">
                         <span className="text-lt-text">{f.label}</span>
-                        <span className={`tabular-nums ${f.value >= 0 ? "text-lt-orange" : "text-lt-blue"}`}>{f.display}</span>
+                        <span className={`tabular-nums ${f.tone.text}`}>{f.display}</span>
                       </div>
                       <div className="h-1.5 overflow-hidden rounded-full bg-lt-raised">
                         <div
-                          className={`h-full rounded-full ${f.value >= 0 ? "bg-lt-orange" : "bg-lt-blue"}`}
+                          className={`h-full rounded-full ${f.tone.bar}`}
                           style={{ width: `${(Math.abs(f.value) / max) * 100}%` }}
                         />
                       </div>

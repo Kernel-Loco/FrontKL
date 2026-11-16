@@ -310,6 +310,8 @@ export interface FindingExplanation {
   recommendation: string;
   /** Solo con `method = "ml"`: confianza del clasificador en la severidad (0–1). */
   confidence: number | null;
+  /** Solo con `method = "ml"`: clase que predijo el modelo. El SHAP es de esta clase (RC-71). */
+  model_prediction?: Severity | null;
   /** Solo con `method = "ml"` (#35). */
   shap: ShapContribution[] | null;
 }
