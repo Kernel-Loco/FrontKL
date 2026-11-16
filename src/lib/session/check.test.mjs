@@ -59,7 +59,9 @@ test("getServerSession usa el tope de 15 s y lanza ServiceError en vez de null s
   assert.match(fuente, /signal: withTimeout\(\)/);
   assert.match(fuente, /checkSession\(/);
   assert.match(fuente, /throw new ServiceError\(/);
-  assert.doesNotMatch(fuente, /catch\s*\{\s*(\/\/.*\s*)*return null/);
+  // Sin los comentarios de línea, para no mirarlos con una regex que retrocede de más (CodeQL).
+  const sinComentarios = fuente.replace(/\/\/[^\n]*/g, "");
+  assert.doesNotMatch(sinComentarios, /catch\s*\{\s*return null/);
 });
 
 test("el layout del panel atrapa el ServiceError de la sesión y no manda a /auth/expirada", () => {
