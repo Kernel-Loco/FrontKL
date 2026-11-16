@@ -22,6 +22,11 @@ export interface ApiUser {
   idle_timeout_seconds?: number;
   /** Segundos que faltan para el tope absoluto de la sesión (8 h desde el inicio). */
   absolute_expires_in_seconds?: number;
+  /** Superadmin de la plataforma (RC-332). Con él, organization_id y organization_name son los de la empresa activa. */
+  platform_admin?: boolean;
+  /** Empresa de la cuenta. Solo llega si platform_admin es true. */
+  home_organization_id?: string;
+  home_organization_name?: string;
 }
 
 /** Vencimientos de la sesión según el servidor, medidos al momento de recibirlos. */
@@ -41,6 +46,39 @@ export interface User {
   last_login_at: string | null;
   /** Ausente si la API aún no informa los vencimientos: el portal usa su configuración local. */
   session_limits?: SessionLimits;
+  /** Superadmin de la plataforma (RC-332): puede cambiar de empresa activa sin cerrar sesión. */
+  platform_admin: boolean;
+  /** Empresa de la cuenta del superadmin, si la API la informa. */
+  home_organization_name?: string;
+  /** El superadmin trabaja en una empresa que no es la suya. */
+  outside_home: boolean;
+}
+
+/** Estado de una organización (organizations.status). */
+export type OrganizationStatus = "trial" | "active" | "suspended" | "cancelled";
+
+/** Empresa en GET /platform/organizations (RC-332). */
+export interface PlatformOrganization {
+  id: string;
+  name: string;
+  status: OrganizationStatus;
+  /** Es la empresa activa de la sesión. */
+  active: boolean;
+  /** Es la empresa de la cuenta. */
+  home: boolean;
+}
+
+export interface PlatformOrganizationList {
+  items: PlatformOrganization[];
+  total: number;
+}
+
+/** Respuesta de POST /platform/organization. */
+export interface PlatformSwitchResult {
+  organization_id: string;
+  organization_name: string;
+  role: ApiRole;
+  home: boolean;
 }
 
 export interface Session {
