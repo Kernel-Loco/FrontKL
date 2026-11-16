@@ -408,6 +408,41 @@ export interface Report {
   download_url: string | null;
 }
 
+/** Un hallazgo del reporte ejecutivo: de los más severos, con la primera frase de qué hacer. */
+export interface ExecutiveReportFinding {
+  title: string;
+  severity: Severity;
+  category: Category;
+  asset: string;
+  source: FindingSource;
+  detected_at: string;
+  recurrence: Recurrence;
+  /** Primera frase de la recomendación de la regla, con tope; vacío si la regla no trae texto. */
+  action: string;
+}
+
+/**
+ * `GET /api/v1/domains/{fqdn}/report` (#45, RC-70): el reporte ejecutivo del estado actual del dominio. El PDF del portal
+ * se arma con esto y `?formato=html` da el mismo reporte en HTML. 403 sin autorización firmada vigente.
+ */
+export interface ExecutiveReport {
+  domain: string;
+  organization: string;
+  generated_at: string;
+  authorization: { valid_from: string; valid_until: string };
+  score: { score: number; band: Band; grade: Grade; partial_coverage: boolean; computed_at: string } | null;
+  last_scan_at: string | null;
+  /** Todos los abiertos, por severidad y por categoría, aunque la lista traiga solo los más severos. */
+  open_findings: Record<Severity, number>;
+  by_category: Record<Category, number>;
+  total_open: number;
+  findings: ExecutiveReportFinding[];
+  /** Abiertos que no caben en la lista (van en la exportación de hallazgos). */
+  findings_omitted: number;
+  /** La de Have I Been Pwned va siempre (CC BY 4.0). */
+  attributions: { source: string; name: string; text: string; url: string; license_url: string }[];
+}
+
 /** `POST /api/v1/reports` */
 export interface ReportRequest {
   domain: string | null;

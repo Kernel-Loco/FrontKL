@@ -17,7 +17,7 @@ import { InlineAlert } from "@/components/ui/InlineAlert";
 import { BAND_LABELS, SCORE_METHOD_LABELS, SCORE_REASON_LABELS } from "@/config/labels";
 import { can, canAccessSection, SECTIONS } from "@/config/permissions";
 import { formatDate } from "@/lib/format";
-import { getDomainFindings, getDomains, getDomainScore, getScoreHistory } from "@/services/queries";
+import { getDomainFindings, getDomains, getScoreHistory } from "@/services/queries";
 import { getReports } from "@/services/reportService";
 
 export const metadata: Metadata = { title: SECTIONS.historico.label };
@@ -36,31 +36,12 @@ export default async function HistoricoPage({ searchParams }: Props) {
   const canReport = can(user.role, "request_report");
   // Los reportes siguen simulados: solo se muestran los de los dominios de tu empresa.
   const orgReports = reports.items.filter((r) => r.domain === null || domains.some((d) => d.fqdn === r.domain));
-  // Score, banda, letra y cobertura del PDF salen juntos del score de cada dominio, para que el aviso parcial sea el de esa
-  // misma letra. Si ese score no responde, quedan los de /domains con el aviso: el PDF no afirma una cobertura que no leyó.
-  const reportDomain = async ({ fqdn, score, band, grade, last_scan_at, open_findings }: (typeof domains)[number]) => {
-    if (score === null) return { fqdn, score, band, grade, partial_coverage: false, last_scan_at, open_findings };
-    const current = await getDomainScore(fqdn).catch(() => null);
-    return current
-      ? { fqdn, score: current.score, band: current.band, grade: current.grade, partial_coverage: current.partial_coverage, last_scan_at, open_findings }
-      : { fqdn, score, band, grade, partial_coverage: true, last_scan_at, open_findings };
-  };
-  const reportData = canReport
-    ? await Promise.all([
-        Promise.all(domains.map(reportDomain)),
-        Promise.all(domains.map(async (domain) => {
-          const result = await getDomainFindings(domain.fqdn);
-          return result.items.map((finding) => ({ domain: domain.fqdn, finding }));
-        })),
-      ]).then(([reportDomains, findings]) => ({ domains: reportDomains, findings: findings.flat() }))
-    : undefined;
-
   if (!fqdn) {
     return (
       <div className="space-y-8">
         <PageHeader title="Histórico de escaneos" />
         <AvisoSimulado datos={["getReports"]} datosDe="la tarjeta Reportes" />
-        <ReportsCard reports={orgReports} reportData={reportData} />
+        <ReportsCard reports={orgReports} />
       </div>
     );
   }
@@ -103,9 +84,14 @@ export default async function HistoricoPage({ searchParams }: Props) {
       <PageHeader
         breadcrumb={[{ label: fqdn, href: canOpenDetail ? `/dashboard/dominios/${fqdn}` : undefined }, { label: "Histórico" }]}
         title="Histórico de escaneos"
-        actions={<DomainPicker domains={options} value={fqdn} />}
+        actions={(
+          <>
+            {canReport && <ReportButton domain={fqdn} />}
+            <DomainPicker domains={options} value={fqdn} />
+          </>
+        )}
       />
-      <AvisoSimulado acciones={canReport ? ["requestReport"] : []} datos={["getReports"]} solo="«Generar reporte»" datosDe="la tarjeta Reportes" />
+      <AvisoSimulado datos={["getReports"]} datosDe="la tarjeta Reportes" />
       {canOpenDetail && <DomainTabs tabs={domainTabs(fqdn, findings.total, "historico", canAccessSection(user.role, "hallazgos"))} />}
 
       {hasPartialCoverage && (
@@ -141,7 +127,6 @@ export default async function HistoricoPage({ searchParams }: Props) {
                     <th scope="col" className={TH}>Nuevos</th>
                     <th scope="col" className={TH}>Resueltos</th>
                     <th scope="col" className={TH}>Cobertura</th>
-                    <th scope="col" className={TH}><span className="sr-only">Reporte</span></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -164,18 +149,6 @@ export default async function HistoricoPage({ searchParams }: Props) {
                           <span className="text-xs text-lt-muted">Completa</span>
                         )}
                       </td>
-                      <td className={`${TD} text-right`}>
-                        {canReport && (
-                          <ReportButton
-                            domain={fqdn}
-                            periodStart={(newestFirst[i + 1]?.point.computed_at ?? point.computed_at).slice(0, 10)}
-                            periodEnd={point.computed_at.slice(0, 10)}
-                            label="Generar reporte"
-                            variant="ghost"
-                            size="sm"
-                          />
-                        )}
-                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -192,7 +165,7 @@ export default async function HistoricoPage({ searchParams }: Props) {
         </div>
       )}
 
-      <ReportsCard reports={domainReports} reportData={reportData} />
+      <ReportsCard reports={domainReports} />
     </div>
   );
 }

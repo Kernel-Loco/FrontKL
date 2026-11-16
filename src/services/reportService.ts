@@ -1,7 +1,10 @@
-// Reportes PDF/HTML (provisional: aún no está en el contrato #21).
+// Reportes. El ejecutivo del dominio (#45, RC-70) viene de la API. La lista de reportes guardados sigue
+// provisional: aún no está en el contrato #21.
+import { apiClient } from "@/lib/apiClient";
 import { mockDelay } from "@/lib/mock";
 import { mockReports } from "@/mocks/api/provisional";
-import type { ListResponse, Report, ReportRequest } from "@/types";
+import type { ExecutiveReport, ListResponse, Report } from "@/types";
+import { downloadExport } from "./exportService";
 
 export async function getReports(): Promise<ListResponse<Report>> {
   // TODO: conectar con backend → GET /reports
@@ -9,18 +12,12 @@ export async function getReports(): Promise<ListResponse<Report>> {
   return structuredClone(mockReports);
 }
 
-/** Pide generar un reporte. Queda en `pending` hasta que el backend lo genere. */
-export async function requestReport(request: ReportRequest): Promise<Report> {
-  // TODO: conectar con backend → POST /reports
-  await mockDelay(600);
-  return {
-    id: `report-${Date.now()}`,
-    kind: request.format === "pdf" ? "pdf_report" : "html_report",
-    domain: request.domain,
-    period_start: request.period_start,
-    period_end: request.period_end,
-    status: "pending",
-    generated_at: null,
-    download_url: null,
-  };
+/** GET /domains/{fqdn}/report: el reporte ejecutivo del estado actual, para armar el PDF. 403 sin autorización vigente. */
+export function getExecutiveReport(domain: string, signal?: AbortSignal): Promise<ExecutiveReport> {
+  return apiClient.get<ExecutiveReport>(`/domains/${encodeURIComponent(domain)}/report`, { signal });
+}
+
+/** El mismo reporte en HTML (GET /domains/{fqdn}/report?formato=html), como archivo. */
+export function downloadExecutiveHtml(domain: string, signal?: AbortSignal): Promise<Blob> {
+  return downloadExport(`/domains/${encodeURIComponent(domain)}/report`, "html", signal);
 }

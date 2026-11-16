@@ -37,7 +37,6 @@ export const FUNCIONES_SIMULADAS: readonly FuncionDeServicio[] = [
   "updateAlertPolicies",
   // Reportes (reportService.ts)
   "getReports",
-  "requestReport",
 ];
 
 /** Prefijo de toda llave o token inventado por el portal (regla 7 del equipo). */
