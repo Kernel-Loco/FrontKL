@@ -8,6 +8,11 @@ import type { Band, Category, ExecutiveReport, Grade, Severity } from "@/types";
 export const SEVERITIES: Severity[] = ["critical", "high", "medium", "low"];
 export const CATEGORIES: Category[] = ["infrastructure", "digital_identity", "configuration", "data_leaks"];
 export const MAX_PAGES = 2;
+// Los mismos topes de cirdan/reporte.py (MAX_TITULO, MAX_ACTIVO y MAX_ACCION). La API ya los aplica; aquí se repiten
+// para que un JSON con textos más largos no abra una tercera página.
+export const MAX_TITLE = 160;
+export const MAX_ASSET = 120;
+export const MAX_ACTION = 220;
 const MARGIN = 14;
 const HEAD = { fillColor: [24, 39, 75] as [number, number, number], textColor: 255, fontSize: 7, fontStyle: "bold" as const };
 
@@ -23,6 +28,12 @@ export interface ReportLabels {
   scoreCell: (score: number | null, grade: Grade | null, band: string | null, partial: boolean) => string;
 }
 
+/** El texto en una línea, con tope de `max` caracteres (el último es '…'), como tope() de cirdan/reporte.py. */
+export function clip(text: string | null | undefined, max: number): string {
+  const t = (text ?? "").split(/\s+/).filter(Boolean).join(" ");
+  return t.length > max ? `${t.slice(0, max - 1).trimEnd()}…` : t;
+}
+
 /** Las mismas frases de 'Lectura ejecutiva' que cirdan/reporte.py lectura(). */
 export function insights(r: ExecutiveReport, labels: Pick<ReportLabels, "category">): string[] {
   if (r.total_open === 0) return ["El dominio no tiene hallazgos abiertos."];
@@ -36,7 +47,8 @@ export function insights(r: ExecutiveReport, labels: Pick<ReportLabels, "categor
   out.push(`${labels.category[top]} es la categoría con más hallazgos abiertos (${r.by_category[top]}).`);
   if (r.findings_omitted === 0) {
     const nuevos = r.findings.filter((f) => f.recurrence === "new").length;
-    out.push(`${nuevos} de los ${r.total_open} hallazgos abiertos aparecieron en el último escaneo.`);
+    // recurrence se calcula contra el último escaneo de cada hallazgo, no el del dominio (FINDINGS_SQL de la API).
+    out.push(`${nuevos} de los ${r.total_open} hallazgos abiertos son nuevos en el escaneo más reciente que los revisó.`);
   }
   return out;
 }
@@ -115,9 +127,9 @@ export function buildExecutivePdf(r: ExecutiveReport, labels: ReportLabels): jsP
     body: r.findings.length > 0
       ? r.findings.map((f) => [
           labels.severity[f.severity] ?? f.severity,
-          `${f.title}\nActivo: ${f.asset}\nFuente: ${labels.source[f.source] ?? f.source}`,
+          `${clip(f.title, MAX_TITLE)}\nActivo: ${clip(f.asset, MAX_ASSET)}\nFuente: ${labels.source[f.source] ?? f.source}`,
           labels.formatDate(f.detected_at),
-          f.action || "-",
+          clip(f.action, MAX_ACTION) || "-",
         ])
       : [["-", "El dominio no tiene hallazgos abiertos.", "-", "-"]],
     columnStyles: { 0: { cellWidth: 18 }, 1: { cellWidth: 72 }, 2: { cellWidth: 22 }, 3: { cellWidth: 70 } },

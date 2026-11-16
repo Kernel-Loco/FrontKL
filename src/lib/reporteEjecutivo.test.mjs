@@ -1,8 +1,11 @@
 // Reporte ejecutivo en PDF (#45, RC-70): de 1 a 2 páginas con el JSON de GET /domains/{fqdn}/report, la atribución
 // de Have I Been Pwned y sin filtro de fechas. node --test, sin red.
 import assert from "node:assert/strict";
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { test } from "node:test";
-import { buildExecutivePdf, insights, MAX_PAGES } from "./reporteEjecutivo.ts";
+import { exportBlockReasons } from "../components/screens/shared/domainState.ts";
+import { buildExecutivePdf, clip, insights, MAX_ACTION, MAX_ASSET, MAX_PAGES, MAX_TITLE } from "./reporteEjecutivo.ts";
 
 const SEV = { critical: "Crítico", high: "Alto", medium: "Medio", low: "Bajo" };
 const CAT = { infrastructure: "Infraestructura", digital_identity: "Identidad digital", configuration: "Configuración",
@@ -84,5 +87,44 @@ test("4. la lectura ejecutiva usa las cifras de todos los abiertos", () => {
   ]);
   assert.deepEqual(insights({ ...r, total_open: 0 }, LABELS), ["El dominio no tiene hallazgos abiertos."]);
   const todos = { ...r, findings: r.findings.slice(0, 4), findings_omitted: 0, total_open: 4 };
-  assert.equal(insights(todos, LABELS)[2], "2 de los 4 hallazgos abiertos aparecieron en el último escaneo.");
+  // recurrence es contra el último escaneo de cada hallazgo, no el del dominio: la frase no dice 'el último escaneo'.
+  assert.equal(insights(todos, LABELS)[2], "2 de los 4 hallazgos abiertos son nuevos en el escaneo más reciente que los revisó.");
+});
+
+test("5. títulos, activos y acciones sin tope en el JSON no abren una tercera página", () => {
+  const r = reporte(8);
+  r.findings = r.findings.map((f, i) => ({
+    ...f,
+    title: `CVE-2026-${1000 + i} en el servidor expuesto `.repeat(30),
+    asset: `n${i}.`.repeat(150) + "acme-demo.mx",
+    action: "Actualiza el servidor y revisa la configuración expuesta ".repeat(20),
+  }));
+  const paginas = buildExecutivePdf(r, LABELS).getNumberOfPages();
+  assert.ok(paginas <= MAX_PAGES, `páginas: ${paginas}`);
+  assert.equal(clip("a ".repeat(300), MAX_TITLE).length, MAX_TITLE);
+  assert.ok(clip("x".repeat(500), MAX_ASSET).endsWith("…"));
+  assert.equal(clip("Corto", MAX_ACTION), "Corto");
+  assert.equal(clip(null, MAX_ACTION), "");
+  // Los mismos topes de cirdan/reporte.py.
+  assert.deepEqual([MAX_TITLE, MAX_ASSET, MAX_ACTION], [160, 120, 220]);
+});
+
+test("6. el reporte solo se frena sin carta vigente, como la API", () => {
+  assert.deepEqual(exportBlockReasons(["txt_not_verified", "domain_paused", "scan_in_progress", "live_scan_not_allowed"]), []);
+  assert.deepEqual(exportBlockReasons(["authorization_expired", "scan_in_progress"]), ["authorization_expired"]);
+  for (const r of ["authorization_missing", "authorization_not_started", "authorization_revoked"]) {
+    assert.deepEqual(exportBlockReasons([r]), [r]);
+  }
+});
+
+test("7. cada ReportButton lleva key y el detalle le pasa solo los motivos de la carta", () => {
+  const src = join(import.meta.dirname, "..");
+  const archivos = (dir) => readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
+    e.isDirectory() ? archivos(join(dir, e.name)) : /\.tsx$/.test(e.name) ? [join(dir, e.name)] : []);
+  const usos = archivos(src).flatMap((ruta) => [...readFileSync(ruta, "utf8").matchAll(/<ReportButton\b[^>]*>/g)].map((m) => [ruta, m[0]]));
+  assert.ok(usos.length >= 2, "se esperan el detalle y el histórico");
+  for (const [ruta, uso] of usos) assert.match(uso, /\bkey=\{/, ruta);
+  const detalle = readFileSync(join(src, "app/(dashboard)/dashboard/dominios/[fqdn]/page.tsx"), "utf8");
+  assert.doesNotMatch(detalle, /disabledReason=\{blocked\}/);
+  assert.match(detalle, /disabledReason=\{reportBlocked\}/);
 });

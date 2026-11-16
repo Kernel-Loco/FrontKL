@@ -1,10 +1,18 @@
 // Estado de un dominio para mostrarlo en tablas: autorizado, por validar, vencido, etc.
-import type { Domain, Scan } from "@/types";
+import type { Domain, Scan, ScanBlockReason } from "@/types";
 import type { Tone } from "@/components/ui/tones";
 
 export interface DomainState {
   label: string;
   tone: Tone;
+}
+
+/**
+ * Los motivos de scan_eligibility que también frenan el reporte ejecutivo y las exportaciones: la API solo pide la
+ * carta vigente (403 sin ella). En pausa, sin TXT, con un escaneo en curso o en la demo, el reporte sí sale (RC-70).
+ */
+export function exportBlockReasons(reasons: ScanBlockReason[]): ScanBlockReason[] {
+  return reasons.filter((r) => r.startsWith("authorization_"));
 }
 
 export function domainState(domain: Domain): DomainState {

@@ -12,7 +12,7 @@ import { downloadExecutiveHtml, getExecutiveReport } from "@/services/reportServ
 
 interface ReportButtonProps {
   domain: string;
-  /** Un dominio vencido o por validar no se puede exportar. */
+  /** Sin carta vigente no se puede exportar (exportBlockReasons). */
   disabledReason?: string;
   variant?: "secondary" | "ghost";
   size?: "sm" | "md";
@@ -29,7 +29,8 @@ function saveBlob(blob: Blob, filename: string) {
 
 /**
  * Reporte ejecutivo del dominio (#45, RC-70) en PDF y en HTML, con el estado actual de la API. Sin autorización
- * firmada vigente la API responde 403 y ese mensaje se muestra tal cual.
+ * firmada vigente la API responde 403 y ese mensaje se muestra tal cual. Úsalo con key={domain}: el estado (mensaje y
+ * descarga en curso) es de un dominio, y al cambiar de dominio el botón anterior se desmonta y aborta su petición.
  */
 export function ReportButton({ domain, disabledReason, variant = "secondary", size = "md" }: ReportButtonProps) {
   const [busy, setBusy] = useState<"pdf" | "html" | null>(null);
