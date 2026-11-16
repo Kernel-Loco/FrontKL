@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { ChangePasswordForm } from "@/components/screens/perfil/ChangePasswordForm";
-import { MfaSetup } from "@/components/screens/perfil/MfaSetup";
+import { MfaSetupCard } from "@/components/screens/perfil/MfaSetup";
 import { PasskeysSection } from "@/components/screens/perfil/PasskeysSection";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
@@ -52,13 +52,10 @@ export default async function PerfilPage() {
           <ChangePasswordForm />
         </Card>
         <Card title="Passkeys">
-          <PasskeysSection mfaEnabled={profile.mfa_enabled} />
+          {/* La key la vuelve a montar al activar TOTP: la lista se pide otra vez sin las passkeys borradas. */}
+          <PasskeysSection key={String(profile.mfa_enabled)} mfaEnabled={profile.mfa_enabled} />
         </Card>
-        {!profile.mfa_enabled && (
-          <Card title="Activar la verificación en dos pasos">
-            <MfaSetup />
-          </Card>
-        )}
+        <MfaSetupCard mfaEnabled={profile.mfa_enabled} />
       </div>
     </div>
   );

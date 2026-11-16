@@ -69,7 +69,11 @@ export function autofillRefreshMs(expiresInSeconds: number): number {
   return Math.max(expiresInSeconds - 15, 30) * 1000;
 }
 
-/** El registro ya gastó el código TOTP: cualquier falla después pide esperar al siguiente código. */
+/**
+ * El registro ya gastó el código TOTP: cualquier falla después pide esperar al siguiente código. Un 'Inténtalo de
+ * nuevo.' al final del mensaje se quita: con la pista, sobra y se contradice.
+ */
 export function withNextCodeHint(message: string | null): string {
-  return `${message ?? "Se canceló la passkey."} Para intentarlo otra vez, espera el siguiente código de tu app.`;
+  const base = (message ?? "Se canceló la passkey.").replace(/\s*Inténtalo de nuevo\.?$/, "");
+  return `${base} Para intentarlo otra vez, espera el siguiente código de tu app.`;
 }

@@ -101,6 +101,8 @@ export function LoginForm() {
         setFormError(passkeyMessage(error));
         // Sin bucle: una falla del navegador que se repite al instante no lo vuelve a armar, y hay un tope de vueltas.
         if (!canRearmAutofill(error, autofillRetries.current)) return;
+        // Con el diálogo del botón abierto no se rearma: el cleanup cortaría su ceremonia. El botón lo rearma al terminar.
+        if (buttonActive.current) return;
         autofillRetries.current += 1;
         setAutofillRound((n) => n + 1);
       }

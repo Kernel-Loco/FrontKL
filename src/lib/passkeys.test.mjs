@@ -85,6 +85,10 @@ test("9. el reto del autollenado se renueva antes de vencer", () => {
 
 test("10. tras gastar el código, la falla pide esperar el siguiente", () => {
   assert.match(withNextCodeHint("Se canceló la passkey o se agotó el tiempo."), /agotó el tiempo\. Para intentarlo otra vez, espera el siguiente código/);
+  // R7 de RC-331: con el mensaje real del navegador no queda 'Inténtalo de nuevo.' antes de la pista.
+  const cancelada = withNextCodeHint(ceremonyErrorMessage({ name: "NotAllowedError" }));
+  assert.equal(cancelada, "Se canceló la passkey o se agotó el tiempo. Para intentarlo otra vez, espera el siguiente código de tu app.");
+  assert.doesNotMatch(withNextCodeHint("No se pudo registrar la passkey. Inténtalo de nuevo."), /Inténtalo de nuevo/);
   assert.match(withNextCodeHint(null), /^Se canceló la passkey\. Para intentarlo/);
 });
 
