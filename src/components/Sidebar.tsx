@@ -2,13 +2,15 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { LogOut, X } from "lucide-react";
-import { getNavigation, isNavItemActive, ROLE_LABELS, type SectionId } from "@/config/permissions";
+import { canSwitchOrganization, getNavigation, isNavItemActive, ROLE_LABELS, type SectionId } from "@/config/permissions";
+import { leaveSession } from "@/lib/session/logout";
 import { logout } from "@/services/authService";
 import type { User } from "@/types";
 import { ThemeToggle, type ThemeMode } from "./ThemeToggle";
 import { Logo } from "./Logo";
+import { OrganizationSwitcher } from "./OrganizationSwitcher";
 import { Spinner } from "./Spinner";
 
 export const MOBILE_NAV_ID = "mobile-navigation";
@@ -25,16 +27,20 @@ function initials(name: string) {
     .join("");
 }
 
-function SidebarContent({ user, badges, theme, onThemeToggle, onNavigate }: { user: User; badges: NavBadges; theme: ThemeMode; onThemeToggle: () => void; onNavigate?: () => void }) {
+/** Sin `user` la API no respondió al validar la sesión: menú de analista (el de menos permisos), sin perfil, con salida. */
+const OFFLINE_ROLE = "analista";
+
+function SidebarContent({ user, badges, theme, onThemeToggle, onNavigate }: { user: User | null; badges: NavBadges; theme: ThemeMode; onThemeToggle: () => void; onNavigate?: () => void }) {
   const pathname = usePathname();
-  const router = useRouter();
+  const role = user?.role ?? OFFLINE_ROLE;
   const [loggingOut, setLoggingOut] = useState(false);
 
+  // Cierra la sesión en el servidor si la API responde y, responda o no, sale por /auth/expirada, que borra la
+  // cookie. Con user null también se muestra: es la única salida mientras la API no valide la sesión (RC-225).
   const handleLogout = async () => {
     setLoggingOut(true);
     await logout();
-    router.replace("/login?notice=logout");
-    router.refresh();
+    leaveSession("logout");
   };
 
   return (
@@ -45,18 +51,28 @@ function SidebarContent({ user, badges, theme, onThemeToggle, onNavigate }: { us
         </Link>
       </div>
       <div className="mx-6 mb-2 border-b border-lt-border px-1 pb-4">
-        <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-lt-faint">Empresa activa</p>
-        <p title={user.organization_name} className="mt-1 truncate text-sm font-semibold text-lt-text">
-          {user.organization_name}
-        </p>
+        {user && canSwitchOrganization(user) ? (
+          <OrganizationSwitcher user={user} />
+        ) : (
+          <>
+            <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-lt-faint">Empresa activa</p>
+            {user ? (
+              <p title={user.organization_name} className="mt-1 truncate text-sm font-semibold text-lt-text">
+                {user.organization_name}
+              </p>
+            ) : (
+              <p className="mt-1 text-sm font-semibold text-lt-amber">Sin conexión con el servicio</p>
+            )}
+          </>
+        )}
       </div>
       <nav aria-label="Navegación principal" className="flex-1 space-y-7 overflow-y-auto px-3 py-2">
-        {getNavigation(user.role).map((group) => (
+        {getNavigation(role).map((group) => (
           <div key={group.title}>
             <p className="px-3 pb-2 font-mono text-[10px] font-medium uppercase tracking-[0.2em] text-lt-faint">{group.title}</p>
             <ul className="space-y-0.5">
               {group.items.map((item) => {
-                const active = isNavItemActive(item, pathname, user.role);
+                const active = isNavItemActive(item, pathname, role);
                 const count = badges[item.id];
                 const Icon = item.icon;
                 return (
@@ -89,20 +105,22 @@ function SidebarContent({ user, badges, theme, onThemeToggle, onNavigate }: { us
       </nav>
       <div className="mx-3 mb-4 border-t border-lt-border px-3 pt-4">
         <ThemeToggle theme={theme} onToggle={onThemeToggle} className="mb-3 w-full justify-start px-2 py-2 text-lt-muted hover:bg-lt-raised hover:text-lt-text" />
-        <Link
-          href="/dashboard/perfil"
-          onClick={onNavigate}
-          className="-mx-2 flex items-center gap-3 rounded-lg px-2 py-1.5 hover:bg-lt-raised"
-          aria-label={`Mi perfil: ${user.full_name}, ${ROLE_LABELS[user.role]}`}
-        >
-          <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-lt-nav text-xs font-bold text-lt-indigo-soft">
-            {initials(user.full_name)}
-          </span>
-          <span aria-hidden="true" className="min-w-0 leading-tight">
-            <span className="block truncate text-sm font-semibold text-lt-text">{user.full_name}</span>
-            <span className="block text-xs text-lt-indigo-soft">{ROLE_LABELS[user.role]}</span>
-          </span>
-        </Link>
+        {user && (
+          <Link
+            href="/dashboard/perfil"
+            onClick={onNavigate}
+            className="-mx-2 flex items-center gap-3 rounded-lg px-2 py-1.5 hover:bg-lt-raised"
+            aria-label={`Mi perfil: ${user.full_name}, ${ROLE_LABELS[user.role]}`}
+          >
+            <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-lt-nav text-xs font-bold text-lt-indigo-soft">
+              {initials(user.full_name)}
+            </span>
+            <span aria-hidden="true" className="min-w-0 leading-tight">
+              <span className="block truncate text-sm font-semibold text-lt-text">{user.full_name}</span>
+              <span className="block text-xs text-lt-indigo-soft">{ROLE_LABELS[user.role]}</span>
+            </span>
+          </Link>
+        )}
         <button
           type="button"
           onClick={handleLogout}
@@ -119,7 +137,7 @@ function SidebarContent({ user, badges, theme, onThemeToggle, onNavigate }: { us
 }
 
 interface SidebarProps {
-  user: User;
+  user: User | null;
   badges: NavBadges;
   theme: ThemeMode;
   onThemeToggle: () => void;

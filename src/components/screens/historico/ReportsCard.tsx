@@ -6,11 +6,10 @@ import type { Tone } from "@/components/ui/tones";
 import { REPORT_KIND_LABELS, REPORT_STATUS_LABELS } from "@/config/labels";
 import { formatDate, formatDateTime } from "@/lib/format";
 import type { Report, ReportStatus } from "@/types";
-import { ExecutiveReportDownload, type ExecutiveReportData } from "./ExecutiveReportDownload";
 
 const STATUS_TONE: Record<ReportStatus, Tone> = { ready: "teal", pending: "amber", generating: "indigo", failed: "red" };
 
-export function ReportsCard({ reports, action, reportData }: { reports: Report[]; action?: React.ReactNode; reportData?: ExecutiveReportData }) {
+export function ReportsCard({ reports, action }: { reports: Report[]; action?: React.ReactNode }) {
   return (
     <Card title="Reportes" padded={false} action={action}>
       {reports.length === 0 ? (
@@ -44,9 +43,7 @@ export function ReportsCard({ reports, action, reportData }: { reports: Report[]
                     </Badge>
                   </td>
                   <td className={`${TD} text-right`}>
-                    {r.status === "ready" && r.kind === "pdf_report" && r.domain === null && reportData ? (
-                      <ExecutiveReportDownload report={r} data={reportData} />
-                    ) : r.download_url && r.download_url !== "#" && r.status === "ready" ? (
+                    {r.download_url && r.download_url !== "#" && r.status === "ready" ? (
                       <a href={r.download_url} className="inline-flex items-center gap-1.5 rounded-sm text-[13px] font-medium text-lt-teal hover:underline">
                         <Download aria-hidden="true" className="h-3.5 w-3.5" />
                         Descargar<span className="sr-only"> {REPORT_KIND_LABELS[r.kind]}</span>

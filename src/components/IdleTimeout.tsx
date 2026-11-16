@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Clock } from "lucide-react";
 import {
   ABSOLUTE_WARNING_MS,
@@ -10,6 +9,7 @@ import {
   idleWarningMs,
   SESSION_REFRESH_INTERVAL_MS,
 } from "@/config/session";
+import { leaveSession, type LoginNotice } from "@/lib/session/logout";
 import { getCurrentUser, logout } from "@/services/authService";
 import type { SessionLimits } from "@/types";
 
@@ -32,7 +32,6 @@ function formatWait(seconds: number) {
  * extender. Sin esos datos usa la configuración local. Avisa antes de cerrar y, al vencer, sale al login.
  */
 export function IdleTimeout({ limits }: { limits?: SessionLimits }) {
-  const router = useRouter();
   const titleId = useId();
   const descriptionId = useId();
   const idleSpan = useRef(effectiveIdleMs(limits?.idle_timeout_seconds));
@@ -44,16 +43,13 @@ export function IdleTimeout({ limits }: { limits?: SessionLimits }) {
   const ending = useRef(false);
   const [warning, setWarning] = useState<Warning | null>(null);
 
-  const endSession = useCallback(
-    async (target: string) => {
-      if (ending.current) return;
-      ending.current = true;
-      await logout();
-      router.replace(target);
-      router.refresh();
-    },
-    [router],
-  );
+  // Sale por /auth/expirada, que borra la cookie aunque POST /auth/logout falle con la API caída (RC-225).
+  const endSession = useCallback(async (notice: LoginNotice) => {
+    if (ending.current) return;
+    ending.current = true;
+    await logout();
+    leaveSession(notice);
+  }, []);
 
   const applyLimits = useCallback((next: SessionLimits | undefined, now: number) => {
     if (!next) return;
@@ -67,7 +63,7 @@ export function IdleTimeout({ limits }: { limits?: SessionLimits }) {
       .then((user) => {
         if (!user) {
           // El servidor ya no reconoce la sesión y no dice por qué: el mismo aviso que /auth/expirada.
-          void endSession("/login?notice=ended");
+          void endSession("ended");
           return;
         }
         const now = Date.now();
@@ -106,7 +102,7 @@ export function IdleTimeout({ limits }: { limits?: SessionLimits }) {
       const left = Math.min(idleLeft, absoluteLeft);
       if (left <= 0) {
         // El tope de 8 h y la inactividad dan avisos distintos en el login.
-        void endSession(reason === "absolute" ? "/login?notice=max" : "/login?notice=expired");
+        void endSession(reason === "absolute" ? "max" : "expired");
         return;
       }
       const threshold = reason === "absolute" ? ABSOLUTE_WARNING_MS : idleWarningMs(idleSpan.current);
@@ -162,7 +158,7 @@ export function IdleTimeout({ limits }: { limits?: SessionLimits }) {
         <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <button
             type="button"
-            onClick={() => void endSession("/login?notice=logout")}
+            onClick={() => void endSession("logout")}
             className="rounded-lg px-4 py-2 text-sm font-semibold text-lt-muted hover:bg-lt-raised"
           >
             Cerrar sesión

@@ -28,6 +28,8 @@ Para la versión de producción: `npm run build` la compila y `npm start` la sir
 
 El login es real: lo hace FastAPI (BackKL, #25). Antes de entrar al portal, levanta el backend con `docker compose up -d` en BackKL (con `DEMO_ACCOUNTS=true` en su `.env`). El portal reenvía `/api/v1/*` a la API (`next.config.ts`, variable `API_INTERNAL_URL`), así que la cookie de sesión `lt_session` (httpOnly) es del mismo sitio y JavaScript nunca la ve. **Usa `npm run dev` en el puerto 3000**, porque la API solo acepta escrituras de los orígenes de `ALLOWED_ORIGINS`.
 
+Estas cuentas son solo para desarrollo y pruebas. Su contraseña y su MFA son públicos. En las demos con el socio formador y en la VM se entra con las cuentas reales de Grupo Olmardo y con equipo@lowtidesec.com de la organización LowTide. Sus contraseñas y su MFA no se documentan.
+
 | Correo | Rol en el portal | Qué ve |
 |---|---|---|
 | `jordan.tate@acme-demo.mx` | Analista | Dashboard, Dominios y autorización (solo la lista), Detalle de dominio, Hallazgos, Reportes e histórico y Plan de acción |

@@ -403,7 +403,12 @@ export const mockScoreHistory: ScoreHistory = {
         "data_leaks": 90
       },
       "new_findings": 3,
-      "resolved_findings": 0
+      "resolved_findings": 0,
+      "weekly_changes": {
+        "previous_scan_id": null, "previous_scan_at": null, "assets_before": null, "assets_now": 6, "new_assets": 0,
+        "assets_growth_percent": null, "new_findings": 3,
+        "alerts": { "new_asset": false, "new_finding": true, "assets_growth_over_20_percent": false }
+      }
     },
     {
       "score_id": "a0000000-0000-4000-8000-000000000004",
@@ -429,7 +434,8 @@ export const mockScoreHistory: ScoreHistory = {
         "data_leaks": 40.0
       },
       "new_findings": 0,
-      "resolved_findings": 0
+      "resolved_findings": 0,
+      "weekly_changes": null
     }
   ],
   "total": 2

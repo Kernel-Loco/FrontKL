@@ -4,6 +4,7 @@ import { useRef, useState, type FormEvent } from "react";
 import { ActionButton } from "@/components/ui/ActionButton";
 import { Field, INPUT } from "@/components/ui/Field";
 import { InlineAlert } from "@/components/ui/InlineAlert";
+import { PASSKEYS_CHANGED, passwordChangedMessage } from "@/lib/passkeys";
 import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from "@/lib/validation";
 import { changePassword } from "@/services/authService";
 import { getErrorMessage } from "@/services/errors";
@@ -28,9 +29,11 @@ export function ChangePasswordForm() {
     setBusy(true);
     setResult(null);
     try {
-      await changePassword({ current_password: current, new_password: next });
+      const { passkeys_removed } = await changePassword({ current_password: current, new_password: next });
       formRef.current?.reset();
-      setResult({ tone: "success", message: "Tu contraseña se actualizó." });
+      setResult({ tone: "success", message: passwordChangedMessage(passkeys_removed) });
+      // La lista de passkeys del perfil se pide otra vez, ya sin las borradas.
+      if (passkeys_removed > 0) window.dispatchEvent(new Event(PASSKEYS_CHANGED));
     } catch (error) {
       setResult({ tone: "error", message: getErrorMessage(error) });
     } finally {

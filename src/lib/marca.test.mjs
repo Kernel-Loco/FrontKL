@@ -26,8 +26,8 @@ test("la pestaña, el enlace de la barra y el PDF ejecutivo dicen LowTide", () =
   const leer = (r) => readFileSync(join(SRC, r), "utf8");
   assert.match(leer("app/layout.tsx"), /default: "LowTide", template: "%s · LowTide"/);
   assert.match(leer("components/Sidebar.tsx"), /aria-label="LowTide, ir al dashboard"/);
-  const pdf = leer("components/screens/historico/ExecutiveReportDownload.tsx");
-  assert.match(pdf, /title: "Resumen ejecutivo de riesgo - LowTide"/);
+  const pdf = leer("lib/reporteEjecutivo.ts");
+  assert.match(pdf, /title: `Resumen ejecutivo de riesgo - \$\{r\.domain\} - LowTide`/);
   assert.match(pdf, /creator: "LowTide"/);
   assert.match(pdf, /`LowTide - Confidencial - /);
 });

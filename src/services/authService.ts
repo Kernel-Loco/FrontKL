@@ -7,9 +7,21 @@ import type {
   ApiUser,
   LoginRequest,
   LoginResponse,
+  MfaEnableRequest,
+  MfaEnableResponse,
+  MfaSetupRequest,
+  MfaSetupResponse,
   MfaVerifyRequest,
   MfaVerifyResponse,
+  Passkey,
+  PasskeyList,
+  PasskeyLoginOptionsResponse,
+  PasskeyLoginVerifyRequest,
+  PasskeyRegisterOptionsRequest,
+  PasskeyRegisterOptionsResponse,
+  PasskeyRegisterVerifyRequest,
   PasswordChangeRequest,
+  PasswordChangeResponse,
   PasswordResetConfirmRequest,
   PasswordResetRequest,
   PasswordResetVerifyRequest,
@@ -25,6 +37,43 @@ export async function login(payload: LoginRequest): Promise<LoginResponse> {
 
 export async function verifyMfa(payload: MfaVerifyRequest): Promise<MfaVerifyResponse> {
   return apiClient.post<MfaVerifyResponse>("/auth/mfa/verify", payload);
+}
+
+/** Alta de TOTP desde el perfil (RC-154): con la contraseña actual devuelve el QR de un secreto nuevo. */
+export async function startMfaSetup(payload: MfaSetupRequest): Promise<MfaSetupResponse> {
+  return apiClient.post<MfaSetupResponse>("/auth/mfa/setup", payload);
+}
+
+/** Guarda el secreto del alta solo si el código de la app es válido. */
+export async function enableMfa(payload: MfaEnableRequest): Promise<MfaEnableResponse> {
+  return apiClient.post<MfaEnableResponse>("/auth/mfa/enable", payload);
+}
+
+// --- Passkeys (RC-331). Las opciones y las respuestas de WebAuthn viajan como JSON sin tocarlas.
+
+export async function passkeyLoginOptions(): Promise<PasskeyLoginOptionsResponse> {
+  return apiClient.post<PasskeyLoginOptionsResponse>("/auth/passkeys/login/options");
+}
+
+/** Revisa la firma de la passkey y, si sirve, la API crea la sesión (cookie). La passkey cuenta como MFA. */
+export async function passkeyLoginVerify(payload: PasskeyLoginVerifyRequest): Promise<MfaVerifyResponse> {
+  return apiClient.post<MfaVerifyResponse>("/auth/passkeys/login/verify", payload);
+}
+
+export async function passkeyRegisterOptions(payload: PasskeyRegisterOptionsRequest): Promise<PasskeyRegisterOptionsResponse> {
+  return apiClient.post<PasskeyRegisterOptionsResponse>("/auth/passkeys/register/options", payload);
+}
+
+export async function passkeyRegisterVerify(payload: PasskeyRegisterVerifyRequest): Promise<Passkey> {
+  return apiClient.post<Passkey>("/auth/passkeys/register/verify", payload);
+}
+
+export async function listPasskeys(): Promise<PasskeyList> {
+  return apiClient.get<PasskeyList>("/auth/passkeys");
+}
+
+export async function deletePasskey(id: string): Promise<void> {
+  await apiClient.delete<void>(`/auth/passkeys/${encodeURIComponent(id)}`);
 }
 
 export async function logout(): Promise<void> {
@@ -45,8 +94,9 @@ export async function getCurrentUser(): Promise<User | null> {
   }
 }
 
-export async function changePassword(payload: PasswordChangeRequest): Promise<void> {
-  await apiClient.post<void>("/auth/password", payload);
+/** Cambia la contraseña. La API borra las passkeys de la cuenta y dice cuántas (RC-331). */
+export async function changePassword(payload: PasswordChangeRequest): Promise<PasswordChangeResponse> {
+  return apiClient.post<PasswordChangeResponse>("/auth/password", payload);
 }
 
 // --- Aún sin backend: las cuentas las crea un Administrador y la recuperación por correo llega después.

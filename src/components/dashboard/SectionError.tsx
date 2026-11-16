@@ -10,6 +10,8 @@ export interface SectionErrorProps {
   retry: () => void;
   /** Nombre de la sección, para el título. */
   section?: string;
+  /** Mensaje ya armado en el servidor (p. ej. la API no responde al validar la sesión); gana sobre el de `error`. */
+  message?: string;
 }
 
 /**
@@ -26,9 +28,9 @@ function messageFor(error: unknown) {
 }
 
 /** Falla de una sección del panel: el menú lateral sigue visible porque el layout no se cae. */
-export function SectionError({ error, retry, section }: SectionErrorProps) {
+export function SectionError({ error, retry, section, message }: SectionErrorProps) {
   useEffect(() => {
-    console.error(error);
+    if (error) console.error(error);
   }, [error]);
 
   return (
@@ -37,7 +39,7 @@ export function SectionError({ error, retry, section }: SectionErrorProps) {
         <TriangleAlert aria-hidden="true" className="h-7 w-7 text-lt-amber" />
       </div>
       <h1 className="text-xl font-bold text-lt-text">{section ? `No pudimos cargar ${section}` : "Algo salió mal"}</h1>
-      <p className="mt-2 text-sm text-lt-muted">{messageFor(error)}</p>
+      <p className="mt-2 text-sm text-lt-muted">{message ?? messageFor(error)}</p>
       <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
         <button
           type="button"

@@ -17,7 +17,7 @@ import {
   Webhook,
   type LucideIcon,
 } from "lucide-react";
-import type { Role } from "@/types";
+import type { Role, User } from "@/types";
 
 export type SectionId =
   | "dashboard"
@@ -117,6 +117,14 @@ export function canAccessSection(role: Role, id: SectionId): boolean {
 
 export function can(role: Role, capability: Capability): boolean {
   return CAPABILITIES[role].includes(capability);
+}
+
+/**
+ * Superadmin de la plataforma (RC-332): cambia de empresa activa desde la barra lateral. No depende del rol,
+ * que en una empresa ajena es Admin. La API vuelve a revisarlo en la base en cada cambio.
+ */
+export function canSwitchOrganization(user: User | null | undefined): boolean {
+  return user?.platform_admin === true;
 }
 
 export function getNavigation(role: Role): { title: string; items: SectionConfig[] }[] {

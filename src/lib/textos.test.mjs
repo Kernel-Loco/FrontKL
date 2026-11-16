@@ -82,7 +82,8 @@ test("Usuarios e Integraciones no prometen correo ni evento mientras son simulad
 });
 
 test("el tope de 8 h tiene su propio aviso en el login", () => {
-  assert.match(leer("components/IdleTimeout.tsx"), /reason === "absolute" \? "\/login\?notice=max" : "\/login\?notice=expired"/);
+  // IdleTimeout sale por /auth/expirada?notice=<aviso>, que lleva a /login?notice=<aviso> (RC-225, logout.test.mjs).
+  assert.match(leer("components/IdleTimeout.tsx"), /endSession\(reason === "absolute" \? "max" : "expired"\)/);
   assert.match(leer("app/(auth)/login/page.tsx"), /max: "Tu sesión llegó a su duración máxima de 8 horas\./);
 });
 
@@ -113,10 +114,11 @@ test("la tabla Dominios no muestra la hora de un escaneo fallido sin decir que f
 });
 
 test("un 401 sin causa conocida no dice 'inactividad': el aviso nombra las tres causas", () => {
-  assert.match(leer("app/auth/expirada/route.ts"), /"\/login\?notice=ended"/);
+  // Sin ?notice, /auth/expirada lleva a /login?notice=ended (loginNoticeFrom, logout.test.mjs).
+  assert.match(leer("lib/session/logout.ts"), /\?\? "ended";/);
   assert.match(leer("app/(auth)/login/page.tsx"), /ended: "Tu sesión ya no es válida: venció por inactividad, llegó a su máximo de 8 horas o se cerró en otro lado\./);
   // 'expired' queda solo para el reloj de inactividad de IdleTimeout, que sí sabe la causa.
-  const expired = buscar(/notice=expired/);
+  const expired = buscar(/notice=expired|endSession\(.*"expired"|leaveSession\(.*"expired"/);
   assert.equal(expired.length, 1);
   assert.match(expired[0], /IdleTimeout\.tsx:\d+$/);
 });

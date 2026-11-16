@@ -189,6 +189,23 @@ export interface ScoreHistoryPoint extends ScoreBase {
   /** Hallazgos que el escaneo abrió y que resolvió. 0 en un recálculo y null si su escaneo no los contó (antes de RC-55). */
   new_findings: number | null;
   resolved_findings: number | null;
+  /** Cambios frente al escaneo anterior (#37, RC-73). null en un recálculo y en un escaneo sin novedades. */
+  weekly_changes: WeeklyChanges | null;
+}
+
+/**
+ * `weekly_changes` de cirdan/score/cambios.py: activos y hallazgos nuevos del escaneo y crecimiento del inventario
+ * frente al escaneo anterior de los últimos 7 días. `assets_growth_percent` es null sin un escaneo anterior en esos 7 días.
+ */
+export interface WeeklyChanges {
+  previous_scan_id: string | null;
+  previous_scan_at: string | null;
+  assets_before: number | null;
+  assets_now: number | null;
+  new_assets: number;
+  assets_growth_percent: number | null;
+  new_findings: number;
+  alerts: { new_asset: boolean; new_finding: boolean; assets_growth_over_20_percent: boolean };
 }
 
 /** `GET /api/v1/domains/{fqdn}/score/history`, del más viejo al más nuevo. */
@@ -310,6 +327,8 @@ export interface FindingExplanation {
   recommendation: string;
   /** Solo con `method = "ml"`: confianza del clasificador en la severidad (0–1). */
   confidence: number | null;
+  /** Solo con `method = "ml"`: clase que predijo el modelo. El SHAP es de esta clase (RC-71). */
+  model_prediction?: Severity | null;
   /** Solo con `method = "ml"` (#35). */
   shap: ShapContribution[] | null;
 }
@@ -406,6 +425,41 @@ export interface Report {
   status: ReportStatus;
   generated_at: string | null;
   download_url: string | null;
+}
+
+/** Un hallazgo del reporte ejecutivo: de los más severos, con la primera frase de qué hacer. */
+export interface ExecutiveReportFinding {
+  title: string;
+  severity: Severity;
+  category: Category;
+  asset: string;
+  source: FindingSource;
+  detected_at: string;
+  recurrence: Recurrence;
+  /** Primera frase de la recomendación de la regla, con tope; vacío si la regla no trae texto. */
+  action: string;
+}
+
+/**
+ * `GET /api/v1/domains/{fqdn}/report` (#45, RC-70): el reporte ejecutivo del estado actual del dominio. El PDF del portal
+ * se arma con esto y `?formato=html` da el mismo reporte en HTML. 403 sin autorización firmada vigente.
+ */
+export interface ExecutiveReport {
+  domain: string;
+  organization: string;
+  generated_at: string;
+  authorization: { valid_from: string; valid_until: string };
+  score: { score: number; band: Band; grade: Grade; partial_coverage: boolean; computed_at: string } | null;
+  last_scan_at: string | null;
+  /** Todos los abiertos, por severidad y por categoría, aunque la lista traiga solo los más severos. */
+  open_findings: Record<Severity, number>;
+  by_category: Record<Category, number>;
+  total_open: number;
+  findings: ExecutiveReportFinding[];
+  /** Abiertos que no caben en la lista (van en la exportación de hallazgos). */
+  findings_omitted: number;
+  /** La de Have I Been Pwned va siempre (CC BY 4.0). */
+  attributions: { source: string; name: string; text: string; url: string; license_url: string }[];
 }
 
 /** `POST /api/v1/reports` */
@@ -547,7 +601,7 @@ export interface IntegrationRequest {
 
 // ---------------------------------------------------------------- Provisional: bitácora (audit_log)
 
-export type AuditActorType = "user" | "system" | "api_key";
+export type AuditActorType = "user" | "system" | "api_key" | "platform";
 
 /** `GET /api/v1/audit-log` (solo Admin), del más nuevo al más viejo. */
 export interface AuditEntry {
@@ -567,4 +621,9 @@ export interface AuditEntry {
 export interface PasswordChangeRequest {
   current_password: string;
   new_password: string;
+}
+
+export interface PasswordChangeResponse {
+  /** Passkeys que la API borró al cambiar la contraseña (RC-331): se registraron con la anterior. */
+  passkeys_removed: number;
 }
