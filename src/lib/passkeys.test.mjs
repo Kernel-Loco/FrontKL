@@ -10,6 +10,8 @@ import {
   cleanPasskeyName,
   isCeremonyAborted,
   MAX_AUTOFILL_RETRIES,
+  PASSKEYS_CHANGED,
+  passwordChangedMessage,
   registrationMustRestart,
   withNextCodeHint,
 } from "./passkeys.ts";
@@ -99,4 +101,17 @@ test("11. el login no deja que el autollenado corte el botón y renueva el reto"
   assert.match(form, /autofillRefreshMs\(options\.expires_in_seconds\)/);
   const mfa = leer("../components/screens/perfil/MfaSetup.tsx");
   assert.match(mfa, /passkeys_removed/);
+});
+
+test("12. cambiar la contraseña avisa las passkeys borradas y pone al día la lista (T1)", () => {
+  assert.equal(PASSKEYS_CHANGED, "lowtide:passkeys-changed");
+  assert.equal(passwordChangedMessage(0), "Tu contraseña se actualizó.");
+  assert.match(passwordChangedMessage(1), /Se borró tu passkey: puedes registrar otra con la contraseña nueva\.$/);
+  assert.match(passwordChangedMessage(3), /Se borraron tus 3 passkeys:/);
+  const form = leer("../components/screens/perfil/ChangePasswordForm.tsx");
+  assert.match(form, /passwordChangedMessage\(passkeys_removed\)/);
+  assert.match(form, /dispatchEvent\(new Event\(PASSKEYS_CHANGED\)\)/);
+  const lista = leer("../components/screens/perfil/PasskeysSection.tsx");
+  assert.match(lista, /addEventListener\(PASSKEYS_CHANGED, refresh\)/);
+  assert.match(lista, /removeEventListener\(PASSKEYS_CHANGED, refresh\)/);
 });

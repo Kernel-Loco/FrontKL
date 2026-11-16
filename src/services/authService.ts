@@ -21,6 +21,7 @@ import type {
   PasskeyRegisterOptionsResponse,
   PasskeyRegisterVerifyRequest,
   PasswordChangeRequest,
+  PasswordChangeResponse,
   PasswordResetConfirmRequest,
   PasswordResetRequest,
   PasswordResetVerifyRequest,
@@ -93,8 +94,9 @@ export async function getCurrentUser(): Promise<User | null> {
   }
 }
 
-export async function changePassword(payload: PasswordChangeRequest): Promise<void> {
-  await apiClient.post<void>("/auth/password", payload);
+/** Cambia la contraseña. La API borra las passkeys de la cuenta y dice cuántas (RC-331). */
+export async function changePassword(payload: PasswordChangeRequest): Promise<PasswordChangeResponse> {
+  return apiClient.post<PasswordChangeResponse>("/auth/password", payload);
 }
 
 // --- Aún sin backend: las cuentas las crea un Administrador y la recuperación por correo llega después.

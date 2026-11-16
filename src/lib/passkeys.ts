@@ -48,6 +48,16 @@ export function registrationMustRestart(status: number, message: string): boolea
 }
 
 /** Veces que el autollenado se vuelve a armar solo tras un fallo, por carga de la página. */
+/** Evento de window que avisa a la lista del perfil que la API borró passkeys fuera de ella. */
+export const PASSKEYS_CHANGED = "lowtide:passkeys-changed";
+
+/** Aviso tras cambiar la contraseña: la API borra las passkeys, que se registraron con la anterior. */
+export function passwordChangedMessage(passkeysRemoved: number): string {
+  if (passkeysRemoved <= 0) return "Tu contraseña se actualizó.";
+  const passkeys = passkeysRemoved === 1 ? "tu passkey" : `tus ${passkeysRemoved} passkeys`;
+  return `Tu contraseña se actualizó. Se ${passkeysRemoved === 1 ? "borró" : "borraron"} ${passkeys}: puedes registrar otra con la contraseña nueva.`;
+}
+
 export const MAX_AUTOFILL_RETRIES = 3;
 
 /**

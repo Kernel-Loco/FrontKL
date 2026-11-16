@@ -13,6 +13,7 @@ import {
   ceremonyErrorMessage,
   cleanPasskeyName,
   isCeremonyAborted,
+  PASSKEYS_CHANGED,
   registrationMustRestart,
   withNextCodeHint,
 } from "@/lib/passkeys";
@@ -51,12 +52,17 @@ export function PasskeysSection({ mfaEnabled }: { mfaEnabled: boolean }) {
 
   useEffect(() => {
     let active = true;
-    listPasskeys().then(
-      (result) => active && setData(result),
-      (err) => active && setError(getErrorMessage(err)),
-    );
+    const refresh = () =>
+      listPasskeys().then(
+        (result) => active && setData(result),
+        (err) => active && setError(getErrorMessage(err)),
+      );
+    refresh();
+    // Cambiar la contraseña borra las passkeys en la API: la lista se pone al día sin recargar la página.
+    window.addEventListener(PASSKEYS_CHANGED, refresh);
     return () => {
       active = false;
+      window.removeEventListener(PASSKEYS_CHANGED, refresh);
     };
   }, []);
 

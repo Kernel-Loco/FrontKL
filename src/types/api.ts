@@ -622,3 +622,8 @@ export interface PasswordChangeRequest {
   current_password: string;
   new_password: string;
 }
+
+export interface PasswordChangeResponse {
+  /** Passkeys que la API borró al cambiar la contraseña (RC-331): se registraron con la anterior. */
+  passkeys_removed: number;
+}
