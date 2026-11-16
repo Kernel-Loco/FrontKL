@@ -8,11 +8,13 @@ import {
   API_KEY_MAX_DAYS,
   API_KEY_NAME_MAX,
   API_KEY_OWN_USE_ERROR,
+  conRevocadasLocales,
   contarActivas,
   cuerpoDeLlave,
   estadoVisible,
   largoDelNombre,
   marcarRevocada,
+  puedeRevocar,
   validarLlave,
 } from "./llavesApi.ts";
 
@@ -90,7 +92,7 @@ test("7. una llave que vence con la página abierta se ve y se cuenta como venci
   assert.equal(contarActivas([llave], despues), 0);
   const pantalla = leer("../components/screens/admin/ApiKeysManager.tsx");
   assert.match(pantalla, /const estado = estadoVisible\(k, ahora\)/);
-  assert.match(pantalla, /estado === "active" &&/);
+  assert.match(pantalla, /revocable &&/);
   assert.match(pantalla, /contarActivas\(keys, ahora\)/);
   assert.match(pantalla, /setInterval\(tick, RELOJ_MS\)/);
 });
@@ -98,7 +100,7 @@ test("7. una llave que vence con la página abierta se ve y se cuenta como venci
 test("8. revocar la llave del aviso lo quita, refresca la ruta y cada revocación lleva su id y su error", () => {
   const pantalla = leer("../components/screens/admin/ApiKeysManager.tsx");
   assert.match(pantalla, /setSecret\(\(current\) => \(current\?\.id === id \? null : current\)\)/);
-  assert.equal(pantalla.match(/^\s*router\.refresh\(\);/gm)?.length, 2);
+  assert.equal(pantalla.match(/router\.refresh\(\);/g)?.length, 2);
   assert.match(pantalla, /quedan\.delete\(id\)/);
   assert.match(pantalla, /setConfirmId\(\(current\) => \(current === id \? null : current\)\)/);
   assert.doesNotMatch(pantalla, /revokingId|setRevokingId\(null\)|setConfirmId\(null\);\r?\n\s*\}/);
@@ -128,7 +130,41 @@ test("5. la pantalla muestra `key`, no la deja en la lista y no borra la llave s
   const pantalla = leer("../components/screens/admin/ApiKeysManager.tsx");
   assert.match(pantalla, /setSecret\(\{ id: created\.id, name: created\.name, value: created\.key \}\)/);
   assert.match(pantalla, /setKeys\(\(current\) => \[sinLlave\(created\), \.\.\.current\]\)/);
-  assert.doesNotMatch(pantalla, /setSecret\(null\)/);
+  const alCrear = pantalla.slice(pantalla.indexOf("const onCreate"), pantalla.indexOf("const onRevoke"));
+  assert.doesNotMatch(alCrear, /setSecret\(null\)/);
   assert.match(pantalla, /getErrorMessage\(err, \{ apiMessageOn403: true \}\)/);
   assert.match(pantalla, /name="domain"/);
+});
+
+test("10. la llave del aviso no se pierde por un refresco, la lista vieja no deshace una revocación y Revocar no depende del reloj", () => {
+  const pantalla = leer("../components/screens/admin/ApiKeysManager.tsx");
+  // Regresión 1: crear no refresca. Revocar otra llave con el aviso a la vista tampoco: se refresca al cerrarlo.
+  const alCrear = pantalla.slice(pantalla.indexOf("const onCreate"), pantalla.indexOf("const onRevoke"));
+  assert.doesNotMatch(alCrear, /router\.refresh\(\)/);
+  assert.match(pantalla, /if \(!aviso \|\| aviso\.id === id\) router\.refresh\(\);/);
+  const alCerrar = pantalla.slice(pantalla.indexOf("const cerrarAviso"));
+  assert.match(alCerrar.slice(0, alCerrar.indexOf("};")), /setSecret\(null\);[\s\S]*router\.refresh\(\);/);
+  assert.match(pantalla, /onClick=\{cerrarAviso\}/);
+
+  // Regresión 2: una lista pedida antes del DELETE trae la llave activa y se queda revocada.
+  const revocadaEn = "2026-11-16T10:00:00Z";
+  const otra = fila({ id: "c0000000-0000-4000-8000-000000000002" });
+  const lista = conRevocadasLocales([fila(), otra], new Map([[fila().id, revocadaEn]]));
+  assert.equal(lista[0].status, "revoked");
+  assert.equal(lista[0].revoked_at, revocadaEn);
+  assert.equal(lista[1], otra);
+  const yaRevocada = fila({ status: "revoked", revoked_at: "2026-11-02T00:00:00Z" });
+  assert.equal(conRevocadasLocales([yaRevocada], new Map([[yaRevocada.id, revocadaEn]]))[0], yaRevocada);
+  assert.match(pantalla, /setKeys\(conRevocadasLocales\(initial, revocadas\)\)/);
+
+  // Regresión 3: con el reloj adelantado se ve 'Vencida', pero Revocar sigue el status de la API.
+  const vigente = fila({ expires_at: "2026-11-16T10:05:00Z" });
+  const relojAdelantado = Date.parse("2026-11-17T00:00:00Z");
+  assert.equal(estadoVisible(vigente, relojAdelantado), "expired");
+  assert.equal(puedeRevocar(vigente), true);
+  assert.equal(puedeRevocar(marcarRevocada(vigente, revocadaEn)), false);
+  assert.equal(puedeRevocar(fila({ status: "expired" })), false);
+
+  // Regresión 4: el error de un DELETE solo se ve mientras la fila sigue revocable.
+  assert.match(pantalla, /const revokeError = revocable \? revokeErrors\[k\.id\] : undefined;/);
 });

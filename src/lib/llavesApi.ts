@@ -57,6 +57,26 @@ export function estadoVisible(key: ApiKey, ahora: number): ApiKeyStatus {
   return key.status;
 }
 
+/**
+ * Si se puede pedir DELETE de la fila: lo decide el status que dio la API (o la revocación ya hecha aquí), no la hora
+ * del navegador. Con el reloj adelantado una llave vigente se ve 'Vencida', pero se puede revocar igual: revoke_api_key
+ * de llaves.py acepta una llave vencida (204).
+ */
+export function puedeRevocar(key: ApiKey): boolean {
+  return key.status === "active" && !key.revoked_at;
+}
+
+/**
+ * La lista que llega con router.refresh() se pidió antes o a la par de un DELETE hecho aquí: las llaves que ya se
+ * revocaron en esta pantalla siguen revocadas aunque esa lista las traiga activas. revocadas: id → hora del DELETE.
+ */
+export function conRevocadasLocales(keys: readonly ApiKey[], revocadas: ReadonlyMap<string, string>): ApiKey[] {
+  return keys.map((k) => {
+    const en = revocadas.get(k.id);
+    return en ? marcarRevocada(k, en) : k;
+  });
+}
+
 /** Llaves vigentes a la hora dada, con el mismo estado que muestra la tabla. */
 export function contarActivas(keys: readonly ApiKey[], ahora: number = Date.now()): number {
   return keys.filter((k) => estadoVisible(k, ahora) === "active").length;

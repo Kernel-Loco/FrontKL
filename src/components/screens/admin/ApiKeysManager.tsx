@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { KeyRound } from "lucide-react";
 import { ActionButton } from "@/components/ui/ActionButton";
@@ -11,7 +11,7 @@ import { InlineAlert } from "@/components/ui/InlineAlert";
 import { API_SCOPE_LABELS } from "@/config/labels";
 import { mensajeDeExito } from "@/config/simulado";
 import { formatDate, formatDateTime } from "@/lib/format";
-import { API_KEY_MAX_DAYS, API_KEY_OWN_USE_ERROR, API_KEY_SCOPE, contarActivas, estadoVisible, marcarRevocada } from "@/lib/llavesApi";
+import { API_KEY_MAX_DAYS, API_KEY_OWN_USE_ERROR, API_KEY_SCOPE, conRevocadasLocales, contarActivas, estadoVisible, marcarRevocada, puedeRevocar } from "@/lib/llavesApi";
 import { createApiKey, revokeApiKey } from "@/services/adminService";
 import { getErrorMessage } from "@/services/errors";
 import type { ApiKey, ApiKeyCreated, ApiKeyStatus } from "@/types";
@@ -35,11 +35,13 @@ const RELOJ_MS = 30_000;
 export function ApiKeysManager({ initial, domains }: { initial: ApiKey[]; domains: string[] | null }) {
   const router = useRouter();
   const [keys, setKeys] = useState(initial);
+  // Las revocadas aquí (id → hora del DELETE), para que una lista pedida antes del DELETE no las vuelva a mostrar activas.
+  const [revocadas, setRevocadas] = useState<ReadonlyMap<string, string>>(() => new Map());
   // router.refresh() trae otra lista del servidor: se toma en lugar de la local, que solo se cambió a mano.
   const [base, setBase] = useState(initial);
   if (base !== initial) {
     setBase(initial);
-    setKeys(initial);
+    setKeys(conRevocadasLocales(initial, revocadas));
   }
   // 0 hasta montar: el primer dibujo usa el estado del servidor y no choca con el HTML que ya llegó.
   const [ahora, setAhora] = useState(0);
@@ -52,6 +54,11 @@ export function ApiKeysManager({ initial, domains }: { initial: ApiKey[]; domain
   const [copied, setCopied] = useState(false);
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [revoking, setRevoking] = useState<ReadonlySet<string>>(() => new Set());
+  // El aviso de copiar en el momento del DELETE, no el de cuando empezó: onRevoke espera la respuesta de la API.
+  const avisoRef = useRef(secret);
+  useEffect(() => {
+    avisoRef.current = secret;
+  }, [secret]);
 
   useEffect(() => {
     const tick = () => setAhora(Date.now());
@@ -87,7 +94,8 @@ export function ApiKeysManager({ initial, domains }: { initial: ApiKey[]; domain
       setCopied(false);
       setCopyError(null);
       form.reset();
-      router.refresh();
+      // Aquí no se refresca la ruta: si GET /api-keys fallara, admin/error.tsx quitaría la pantalla y con ella la
+      // llave que solo se muestra una vez. La ruta se refresca al cerrar el aviso (cerrarAviso).
     } catch (err) {
       // 403 sin plan con API y 409 con 20 vigentes traen su mensaje en el detail de la API.
       setCreateError(getErrorMessage(err, { apiMessageOn403: true }));
@@ -107,10 +115,13 @@ export function ApiKeysManager({ initial, domains }: { initial: ApiKey[]; domain
     try {
       await revokeApiKey(id);
       const revocadaEn = new Date().toISOString();
+      setRevocadas((current) => new Map(current).set(id, revocadaEn));
       setKeys((current) => current.map((k) => (k.id === id ? marcarRevocada(k, revocadaEn) : k)));
       // La llave revocada ya no sirve: si es la del aviso de copiar, el aviso se va con su valor.
+      const aviso = avisoRef.current;
       setSecret((current) => (current?.id === id ? null : current));
-      router.refresh();
+      // Con el aviso de otra llave a la vista no se refresca: un GET /api-keys fallido lo borraría. Se hace al cerrarlo.
+      if (!aviso || aviso.id === id) router.refresh();
     } catch (err) {
       setRevokeErrors((current) => ({ ...current, [id]: getErrorMessage(err) }));
     } finally {
@@ -132,6 +143,14 @@ export function ApiKeysManager({ initial, domains }: { initial: ApiKey[]; domain
     } catch {
       setCopyError("No se pudo copiar. Selecciona la llave y cópiala a mano.");
     }
+  };
+
+  // Ya guardada la llave, la ruta se refresca para que Atrás y Adelante no muestren una lista sin ella.
+  const cerrarAviso = () => {
+    setSecret(null);
+    setCopied(false);
+    setCopyError(null);
+    router.refresh();
   };
 
   return (
@@ -197,6 +216,7 @@ export function ApiKeysManager({ initial, domains }: { initial: ApiKey[]; domain
               <ActionButton variant="secondary" size="sm" onClick={copy}>{copied ? "Copiada" : "Copiar"}</ActionButton>
             </div>
             {copyError && <InlineAlert tone="error">{copyError}</InlineAlert>}
+            <ActionButton variant="ghost" size="sm" onClick={cerrarAviso}>Ya la guardé</ActionButton>
           </div>
         )}
       </Card>
@@ -224,7 +244,9 @@ export function ApiKeysManager({ initial, domains }: { initial: ApiKey[]; domain
                 const estado = estadoVisible(k, ahora);
                 const status = STATUS[estado] ?? STATUS.expired;
                 const enCurso = revoking.has(k.id);
-                const revokeError = revokeErrors[k.id];
+                // Si la API sí guardó un DELETE que respondió con error, la fila llega revocada y el error ya no aplica.
+                const revocable = puedeRevocar(k);
+                const revokeError = revocable ? revokeErrors[k.id] : undefined;
                 return (
                   <tr key={k.id} className={TR}>
                     <td className={TD}>
@@ -246,7 +268,7 @@ export function ApiKeysManager({ initial, domains }: { initial: ApiKey[]; domain
                     <td className={`${TD} whitespace-nowrap text-[13px] text-lt-muted`}>{k.last_used_at ? formatDateTime(k.last_used_at) : "Nunca"}</td>
                     <td className={TD}><Badge tone={status.tone} dot>{status.label}</Badge></td>
                     <td className={`${TD} text-right`}>
-                      {estado === "active" &&
+                      {revocable &&
                         (enCurso ? (
                           <ActionButton variant="danger" size="sm" loading>Revocando</ActionButton>
                         ) : confirmId === k.id ? (
