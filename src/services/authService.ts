@@ -7,6 +7,10 @@ import type {
   ApiUser,
   LoginRequest,
   LoginResponse,
+  MfaEnableRequest,
+  MfaEnableResponse,
+  MfaSetupRequest,
+  MfaSetupResponse,
   MfaVerifyRequest,
   MfaVerifyResponse,
   PasswordChangeRequest,
@@ -25,6 +29,16 @@ export async function login(payload: LoginRequest): Promise<LoginResponse> {
 
 export async function verifyMfa(payload: MfaVerifyRequest): Promise<MfaVerifyResponse> {
   return apiClient.post<MfaVerifyResponse>("/auth/mfa/verify", payload);
+}
+
+/** Alta de TOTP desde el perfil (RC-154): con la contraseña actual devuelve el QR de un secreto nuevo. */
+export async function startMfaSetup(payload: MfaSetupRequest): Promise<MfaSetupResponse> {
+  return apiClient.post<MfaSetupResponse>("/auth/mfa/setup", payload);
+}
+
+/** Guarda el secreto del alta solo si el código de la app es válido. */
+export async function enableMfa(payload: MfaEnableRequest): Promise<MfaEnableResponse> {
+  return apiClient.post<MfaEnableResponse>("/auth/mfa/enable", payload);
 }
 
 export async function logout(): Promise<void> {
