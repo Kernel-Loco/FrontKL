@@ -116,7 +116,7 @@ export const SEGURIDAD = {
         },
         {
           tema: "Que la aplicación gane privilegios en la base",
-          texto: "Solo cuatro funciones de la base corren con privilegios elevados y cada una hace lo mínimo: la del inicio de sesión devuelve 4 columnas, la de las llaves de API busca una llave por su huella y dos reservan y ajustan el cupo diario de cada fuente. Todas tienen pruebas automáticas.",
+          texto: "Solo cuatro funciones de la base corren con privilegios elevados y cada una hace lo mínimo: la del inicio de sesión devuelve 4 columnas, la de las llaves de API busca una llave por su huella y dos reservan y ajustan el cupo diario de cada fuente. El ajuste acepta cualquier cantidad: el tope diario lo cuida la aplicación, no la base. Todas tienen pruebas automáticas.",
         },
         {
           tema: "Saber qué software usa otra empresa",
@@ -129,7 +129,7 @@ export const SEGURIDAD = {
       controles: [
         {
           tema: "Escanear un dominio que no es del cliente",
-          texto: "Ningún escaneo corre sin carta de autorización vigente y sin un registro TXT de verificación en el DNS del dominio, consultado justo antes. Lo exigen el código y la base de datos.",
+          texto: "Ningún escaneo corre sin carta de autorización vigente y sin un registro TXT de verificación en el DNS del dominio, consultado justo antes. Lo exigen el código y la base de datos, que frena una revocación desde que el equipo la registra.",
         },
         {
           tema: "No saber de dónde salió un dato",

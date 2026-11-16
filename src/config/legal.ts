@@ -23,12 +23,12 @@ export const PRIVACIDAD: DocumentoLegal & { simplificado: string } = {
     "Qué datos personales trata LowTide de quienes usan el portal y de quien firma la carta de autorización, para qué y cómo ejercer tus derechos.",
   fecha: "8 de noviembre de 2026",
   simplificado:
-    "El responsable de tus datos, que se definirá en el convenio entre el Tecnológico de Monterrey e IKUSI, trata tu nombre, correo, empresa y rol, los registros de acceso y, si usas el chat, tus preguntas, para darte acceso a LowTide, proteger tu cuenta, dejar rastro de cada análisis y responder tus dudas sobre los hallazgos. No los usamos para nada más. Si no quieres que tus preguntas lleguen al proveedor de IA, no uses el chat. El aviso integral, con tus derechos ARCO y cómo revocar tu consentimiento, es el de esta página. Para ejercerlos, escribe a arco@lowtidesec.com.",
+    "El responsable de tus datos, que se definirá en el convenio entre el Tecnológico de Monterrey e IKUSI, trata tu nombre, correo, empresa y rol, los registros de acceso y, cuando exista el chat, tus preguntas, para darte acceso a LowTide, proteger tu cuenta, dejar rastro de cada análisis y responder tus dudas sobre los hallazgos. No los usamos para nada más. Cuando exista el chat, si no quieres que tus preguntas lleguen al proveedor de IA, no lo uses. El aviso integral, con tus derechos ARCO y cómo revocar tu consentimiento, es el de esta página. Para ejercerlos, escribe a arco@lowtidesec.com.",
   apartados: [
     {
       titulo: "Quién es el responsable",
       parrafos: [
-        "El titular de los datos de los usuarios del portal y de quien firma la carta se definirá en el convenio entre el Tecnológico de Monterrey e IKUSI. Mientras se define, todo lo de este aviso se atiende en arco@lowtidesec.com.",
+        "El titular de los datos de los usuarios del portal y de quien firma la carta, con su domicilio, está por definir en el convenio entre el Tecnológico de Monterrey e IKUSI. Mientras se define, todo lo de este aviso se atiende en arco@lowtidesec.com.",
         "Los datos de los empleados de una empresa que aparecen en sus hallazgos son responsabilidad de esa empresa, que informa a sus empleados en su propio aviso de privacidad.",
       ],
     },
@@ -51,8 +51,8 @@ export const PRIVACIDAD: DocumentoLegal & { simplificado: string } = {
     {
       titulo: "Quién más recibe los datos",
       parrafos: [
-        "Los tratan por cuenta del responsable el equipo Kernel Loco, que opera el portal, Cloudflare (chat, DNS, túnel y el reenvío de los correos de arco@lowtidesec.com), Groq (respaldo del chat) y Microsoft (Azure para el hospedaje y Microsoft 365 del Tecnológico de Monterrey para el buzón que guarda las solicitudes ARCO). Son empresas de Estados Unidos y pueden tratar los datos fuera de México.",
-        "Al chat solo llegan el título, la categoría y la severidad de los hallazgos, sin correos, y la pregunta que escribes. Ninguno de sus proveedores entrena con las preguntas ni las guarda después de responder. No escribas datos personales en el chat.",
+        "Los tratan por cuenta del responsable el equipo Kernel Loco, que opera el portal, Cloudflare (DNS, túnel, el reenvío de los correos de arco@lowtidesec.com y, cuando exista el chat, su modelo de IA), Groq (respaldo del chat, cuando exista) y Microsoft (Azure para el hospedaje y Microsoft 365 del Tecnológico de Monterrey para el buzón que guarda las solicitudes ARCO). Son empresas de Estados Unidos y pueden tratar los datos fuera de México.",
+        "El chat todavía no existe. Cuando exista, solo le llegarán el título, la categoría y la severidad de los hallazgos, sin correos, y la pregunta que escribas, y ninguno de sus proveedores entrenará con las preguntas ni las guardará después de responder. No escribas datos personales en el chat.",
         "No hay transferencias a terceros, salvo lo que resuelva la revisión legal pendiente.",
       ],
     },
@@ -61,14 +61,15 @@ export const PRIVACIDAD: DocumentoLegal & { simplificado: string } = {
       parrafos: [
         "Puedes pedir el acceso, la rectificación, la cancelación o la oposición al tratamiento de tus datos escribiendo a arco@lowtidesec.com. La solicitud trae tu nombre y un medio para responderte, tu identificación o la de tu representante con su poder, qué datos (salvo para el acceso), qué derecho y lo que ayude a localizarlos.",
         "La respuesta llega en un máximo de 20 días hábiles y, si procede, se hace efectiva en los 15 siguientes. Cada plazo se puede ampliar una vez por un periodo igual. Es gratis, salvo el costo de copias o envío.",
+        "Si pides la cancelación, tu cuenta se desactiva y se borran la huella de tu contraseña y tu semilla de verificación. Tus demás datos quedan en bloqueo y al terminar el bloqueo se anonimizan tu nombre y tu correo. Hoy el sistema todavía no deja anonimizarlos, así que se conservan.",
         "Si eres empleado de una empresa cliente, la responsable de tus datos es tu empresa. Si tu solicitud llega al equipo, se le reenvía a ella.",
-        "Si no recibes respuesta o no estás conforme con ella, puedes acudir a la Secretaría Anticorrupción y Buen Gobierno.",
+        "Si no recibes respuesta o no estás conforme con ella, puedes acudir a la Secretaría Anticorrupción y Buen Gobierno. Si hubo respuesta, tienes 15 días desde que se te comunicó.",
       ],
     },
     {
       titulo: "Cómo revocar tu consentimiento",
       parrafos: [
-        "Se pide a arco@lowtidesec.com, sin efectos retroactivos. Al revocar, la cuenta se desactiva y sus datos pasan a bloqueo, solo como prueba de lo que hizo cada persona, y al final se suprimen o se anonimizan.",
+        "Se pide a arco@lowtidesec.com, sin efectos retroactivos. Al revocar, la cuenta se desactiva y sus datos pasan a bloqueo, solo como prueba de lo que hizo cada persona, y al final se suprimen o se anonimizan. Hoy el sistema todavía no deja suprimir ni anonimizar lo que está en bloqueo, así que esos datos se conservan.",
         "Si revoca quien firmó la carta, el equipo avisa a la empresa ese mismo día. La carta sigue vigente mientras la empresa o el equipo no la revoquen y no venza.",
       ],
     },
@@ -102,7 +103,7 @@ export const TERMINOS: DocumentoLegal = {
     {
       titulo: "Qué dominios se analizan",
       parrafos: [
-        "Solo los de la propia empresa, con carta firmada y vigente y el registro TXT de verificación en su DNS. La base de datos lo exige antes de cada análisis.",
+        "Solo los de la propia empresa, con carta firmada y vigente y el registro TXT de verificación en su DNS. La base de datos lo exige antes de cada análisis y frena una revocación desde que el equipo la registra.",
       ],
     },
     {
@@ -128,7 +129,7 @@ export const TERMINOS: DocumentoLegal = {
       titulo: "Al terminar",
       parrafos: [
         "Al vencer o revocarse la última carta de la empresa, la cuenta se desactiva. Si en 30 días (propuesta) se carga una carta nueva, se reactiva cuando esta empiece.",
-        "Si no llega una carta nueva, al cerrar el curso o antes si la empresa pide por escrito borrar todos sus datos, la cuenta se desactiva, se borran la huella de su contraseña y su semilla de verificación, y su nombre y correo quedan en bloqueo y al final se anonimizan. Los hallazgos, activos y reportes de la empresa se borrarán en 30 días (propuesta), con confirmación.",
+        "Si en esos 30 días (propuesta) no llega una carta nueva, al cerrar el curso o antes si la empresa pide por escrito borrar todos sus datos, lo que pase primero, la cuenta se desactiva, se borran la huella de su contraseña y su semilla de verificación, y su nombre y correo quedan en bloqueo y al final se anonimizan. Los hallazgos, activos y reportes de la empresa se borrarán en 30 días (propuesta), con confirmación.",
         "Hoy el sistema todavía no desactiva ni reactiva las cuentas solo al terminar la carta, y no deja borrar ni anonimizar lo que está en bloqueo ni los hallazgos que ya entraron en un score.",
       ],
     },

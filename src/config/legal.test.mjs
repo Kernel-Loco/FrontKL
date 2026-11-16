@@ -45,7 +45,22 @@ test("el aviso trae lo que pide la ley: responsable, datos, finalidades, ARCO, r
     assert.ok(titulos.includes(t), `falta el apartado ${t}`);
   }
   assert.match(PRIVACIDAD.simplificado, /arco@lowtidesec\.com/);
-  assert.match(textos(PRIVACIDAD, "P").map(([, t]) => t).join(" "), /20 días hábiles/);
+  const aviso = textos(PRIVACIDAD, "P").map(([, t]) => t).join(" ");
+  assert.match(aviso, /20 días hábiles/);
+  assert.match(aviso, /domicilio, está por definir/);
+  assert.match(aviso, /15 días desde que se te comunicó/);
+});
+
+test("no promete lo que hoy no se puede: chat, supresión ni anonimización", () => {
+  const aviso = textos(PRIVACIDAD, "P").map(([, t]) => t).join(" ");
+  assert.ok(!/(si usas el chat|al chat solo llegan)/i.test(aviso), "habla del chat como si existiera");
+  const revocar = PRIVACIDAD.apartados.find((a) => a.titulo === "Cómo revocar tu consentimiento").parrafos.join(" ");
+  assert.match(revocar, /Hoy el sistema todavía no deja suprimir ni anonimizar/);
+  const arco = PRIVACIDAD.apartados.find((a) => a.titulo === "Tus derechos ARCO").parrafos.join(" ");
+  assert.match(arco, /cancelación[^.]*\.[^.]*\. Hoy el sistema todavía no deja anonimizarlos/);
+  const terminos = textos(TERMINOS, "T").map(([, t]) => t).join(" ");
+  assert.match(terminos, /frena una revocación desde que el equipo la registra/);
+  assert.match(terminos, /Si en esos 30 días \(propuesta\) no llega una carta nueva/);
 });
 
 test("el producto se llama LowTide", () => {
