@@ -81,7 +81,17 @@ export function ScoringWeightsView({ weights }: { weights: ScoringWeights }) {
             <tbody>
               {weights.rules.map((rule) => (
                 <tr key={rule.code} className={TR}>
-                  <td className={`${TD} font-mono text-[13px]`}>{rule.code}</td>
+                  <td className={`${TD} max-w-sm text-[13px]`}>
+                    {rule.title ? (
+                      <>
+                        <span className="text-lt-text">{rule.title}</span>
+                        <span className="block font-mono text-[11px] text-lt-faint">{rule.code}</span>
+                        {rule.meaning && <span className="block text-xs leading-relaxed text-lt-muted">{rule.meaning}</span>}
+                      </>
+                    ) : (
+                      <span className="font-mono">{rule.code}</span>
+                    )}
+                  </td>
                   <td className={`${TD} text-lt-muted`}>{CATEGORY_LABELS[rule.category]}</td>
                   <td className={TD}>{SEVERITY_LABELS[rule.base_severity]}</td>
                   <td className={`${TD} text-right tabular-nums`}>{rule.weight}</td>

@@ -103,6 +103,8 @@ export interface DomainFinding {
   epss: number | null;
   in_kev: boolean;
   evidence: Record<string, unknown>;
+  /** Lo entrega el backend. El simulado no lo trae. */
+  frameworks?: Frameworks;
   caracteristicas: Caracteristicas;
   detected_at: string;
   last_scan_id: string | null;
@@ -293,6 +295,22 @@ export interface ActionPlanSimulation {
   partial_coverage: boolean;
 }
 
+// ---------------------------------------------------------------- marcos de referencia (#83, RC-131)
+
+/** Técnica de MITRE ATT&CK, control de ISO 27001:2022 y salvaguarda de CIS v8.1 de la regla del hallazgo. */
+export interface Frameworks {
+  mitre_attack: {
+    version: string;
+    technique_id: string | null;
+    technique_name: string | null;
+    source_url: string | null;
+    /** Sin técnica: por qué la regla no mapea a ATT&CK. */
+    unmapped_reason: string | null;
+  };
+  iso_27001_2022: { version: string; control_id: string; control_name: string; source_url: string | null };
+  cis_controls_v8_1: { version: string; safeguard_id: string; safeguard_name: string; source_url: string | null };
+}
+
 // ---------------------------------------------------------------- explicación (explicacion.json)
 
 export interface ExplanationFactor {
@@ -315,9 +333,14 @@ export interface FindingExplanation {
   base_severity: Severity;
   category: Category;
   rule_code: string;
+  /** Nombre y significado de la regla (scoring_rule_texts). El simulado no los trae. */
+  rule_title?: string;
+  meaning?: string;
   score_id: string;
   computed_at: string;
   method: ScoreMethod;
+  /** Versión del modelo del score, solo con `method = "ml"`. */
+  model_version?: string | null;
   penalty: number;
   max_penalty: number;
   factors: ExplanationFactor[];
@@ -331,6 +354,10 @@ export interface FindingExplanation {
   model_prediction?: Severity | null;
   /** Solo con `method = "ml"` (#35). */
   shap: ShapContribution[] | null;
+  /** Modelo que dio la confianza y el SHAP. Puede venir también con `method = "rules"`, si el modelo no se integró. */
+  explanation_model_version?: string | null;
+  /** Lo entrega el backend. El simulado no lo trae. */
+  frameworks?: Frameworks;
 }
 
 // ---------------------------------------------------------------- pesos (pesos.json)
@@ -341,6 +368,10 @@ export interface ScoringRule {
   base_severity: Severity;
   weight: number;
   max_penalty: number;
+  /** Nombre, significado y recomendación de la regla (scoring_rule_texts). El simulado no los trae. */
+  title?: string;
+  meaning?: string;
+  recommendation?: string;
 }
 
 /** `GET /api/v1/scoring/weights` */

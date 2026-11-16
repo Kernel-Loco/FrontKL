@@ -16,7 +16,7 @@ import { SeverityBadge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { InlineAlert } from "@/components/ui/InlineAlert";
-import { CATEGORY_LABELS, SCAN_BLOCK_REASON_LABELS } from "@/config/labels";
+import { CATEGORY_LABELS, MODEL_FALLBACK_LABELS, SCAN_BLOCK_REASON_LABELS } from "@/config/labels";
 import { can, canAccessSection } from "@/config/permissions";
 import { formatDate, formatDateTime } from "@/lib/format";
 import { ServiceError } from "@/services/errors";
@@ -158,6 +158,13 @@ export default async function DomainDetailPage({ params }: Props) {
                   previousReason={points.length >= 2 ? points[points.length - 2]!.reason : null}
                 />
               </div>
+              <p className="mt-3 text-center text-xs text-lt-muted">
+                Calculado con {score.method === "ml" ? `el modelo de ML${score.model_version ? ` ${score.model_version}` : ""}` : "reglas"}
+                {score.method === "rules" && score.model_fallback_reason
+                  ? `: ${MODEL_FALLBACK_LABELS[score.model_fallback_reason] ?? score.model_fallback_reason}`
+                  : ""}
+                .
+              </p>
               {score.floor_applied && (
                 <InlineAlert tone="warning" className="mt-4">
                   Subido a {score.floor} por {score.critical_open} hallazgo{score.critical_open === 1 ? "" : "s"} crítico
