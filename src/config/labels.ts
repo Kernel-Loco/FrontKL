@@ -214,10 +214,7 @@ export const AUDIT_ACTION_LABELS: Record<string, string> = {
   "platform.organization_switch_failed": "Un cambio de empresa del superadmin no se aplicó",
 };
 
+/** Alcances de una llave de API. El backend solo da `read` (BackKL cirdan/auth/api_keys.py, RC-129). */
 export const API_SCOPE_LABELS: Record<string, string> = {
-  "findings:read": "Leer hallazgos",
-  "scores:read": "Leer scores",
-  "domains:read": "Leer dominios",
-  "reports:read": "Leer reportes",
-  "scans:write": "Lanzar escaneos",
+  read: "Solo lectura",
 };

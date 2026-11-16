@@ -10,19 +10,26 @@ import { InlineAlert } from "@/components/ui/InlineAlert";
 import { API_SCOPE_LABELS } from "@/config/labels";
 import { mensajeDeExito } from "@/config/simulado";
 import { formatDate, formatDateTime } from "@/lib/format";
-import { API_KEY_MAX_DAYS, API_KEY_OWN_USE_ERROR, API_SCOPES, createApiKey, revokeApiKey } from "@/services/adminService";
+import { API_KEY_MAX_DAYS, API_KEY_NAME_MAX, API_KEY_OWN_USE_ERROR, API_KEY_SCOPE, contarActivas, marcarRevocada } from "@/lib/llavesApi";
+import { createApiKey, revokeApiKey } from "@/services/adminService";
 import { getErrorMessage } from "@/services/errors";
-import type { ApiKey } from "@/types";
+import type { ApiKey, ApiKeyCreated, ApiKeyStatus } from "@/types";
 
-function keyStatus(key: ApiKey): { label: string; tone: "teal" | "red" | "gray" } {
-  if (key.revoked_at) return { label: "Revocada", tone: "red" };
-  if (key.expires_at < new Date().toISOString()) return { label: "Vencida", tone: "gray" };
-  return { label: "Activa", tone: "teal" };
+const STATUS: Record<ApiKeyStatus, { label: string; tone: "teal" | "red" | "gray" }> = {
+  active: { label: "Activa", tone: "teal" },
+  expired: { label: "Vencida", tone: "gray" },
+  revoked: { label: "Revocada", tone: "red" },
+};
+
+/** La fila de la lista, sin la llave completa: `key` solo se guarda en el aviso de copiar. */
+function sinLlave(created: ApiKeyCreated): ApiKey {
+  const fila: Omit<ApiKeyCreated, "key"> & { key?: string } = { ...created };
+  delete fila.key;
+  return fila;
 }
 
-export function ApiKeysManager({ initial }: { initial: ApiKey[] }) {
+export function ApiKeysManager({ initial, domains }: { initial: ApiKey[]; domains: string[] }) {
   const [keys, setKeys] = useState(initial);
-  const [scopes, setScopes] = useState<string[]>(["findings:read", "scores:read"]);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ownUseError, setOwnUseError] = useState<string | null>(null);
@@ -35,7 +42,7 @@ export function ApiKeysManager({ initial }: { initial: ApiKey[] }) {
     event.preventDefault();
     const form = event.currentTarget;
     const data = new FormData(form);
-    setSecret(null);
+    // La llave recién creada sigue a la vista hasta que otra la reemplace: un envío que falla no la borra.
     setError(null);
     if (data.get("own_use") !== "on") {
       setOwnUseError(API_KEY_OWN_USE_ERROR);
@@ -46,16 +53,17 @@ export function ApiKeysManager({ initial }: { initial: ApiKey[] }) {
     try {
       const created = await createApiKey({
         name: String(data.get("name") ?? ""),
-        scopes,
+        domain: String(data.get("domain") ?? ""),
         expires_in_days: Number(data.get("days")),
         own_use: true,
       });
-      setKeys((current) => [created.api_key, ...current]);
-      setSecret({ name: created.api_key.name, value: created.secret });
+      setKeys((current) => [sinLlave(created), ...current]);
+      setSecret({ name: created.name, value: created.key });
       setCopied(false);
       form.reset();
     } catch (err) {
-      setError(getErrorMessage(err));
+      // 403 sin plan con API y 409 con 20 vigentes traen su mensaje en el detail de la API.
+      setError(getErrorMessage(err, { apiMessageOn403: true }));
     } finally {
       setCreating(false);
     }
@@ -63,9 +71,11 @@ export function ApiKeysManager({ initial }: { initial: ApiKey[] }) {
 
   const onRevoke = async (id: string) => {
     setRevokingId(id);
+    setError(null);
     try {
-      const revoked = await revokeApiKey(id);
-      setKeys((current) => current.map((k) => (k.id === id ? revoked : k)));
+      await revokeApiKey(id);
+      const ahora = new Date().toISOString();
+      setKeys((current) => current.map((k) => (k.id === id ? marcarRevocada(k, ahora) : k)));
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -89,24 +99,19 @@ export function ApiKeysManager({ initial }: { initial: ApiKey[] }) {
       <Card title="Crear llave" description={`Para conectar LowTide con los sistemas de tu propia empresa. Vigencia máxima de ${API_KEY_MAX_DAYS} días.`} icon={<KeyRound aria-hidden="true" className="h-4 w-4" />}>
         <form onSubmit={onCreate} noValidate className="space-y-4">
           <Field label="Nombre" htmlFor="key-name">
-            <input id="key-name" name="name" placeholder="SIEM corporativo" className={INPUT} autoComplete="off" />
+            <input id="key-name" name="name" placeholder="SIEM corporativo" className={INPUT} autoComplete="off" maxLength={API_KEY_NAME_MAX} />
           </Field>
-          <fieldset>
-            <legend className="mb-2 text-xs font-medium text-lt-muted">Permisos</legend>
-            <div className="space-y-2">
-              {API_SCOPES.map((s) => (
-                <label key={s} className="flex items-center gap-2.5 text-[13px] text-lt-text">
-                  <input
-                    type="checkbox"
-                    className={CHECKBOX}
-                    checked={scopes.includes(s)}
-                    onChange={(e) => setScopes((c) => (e.target.checked ? [...c, s] : c.filter((x) => x !== s)))}
-                  />
-                  {API_SCOPE_LABELS[s]} <code className="font-mono text-[11px] text-lt-faint">{s}</code>
-                </label>
+          <Field label="Dominio" htmlFor="key-domain">
+            <select id="key-domain" name="domain" defaultValue="" className={INPUT}>
+              <option value="">Todos los dominios de la empresa</option>
+              {domains.map((fqdn) => (
+                <option key={fqdn} value={fqdn}>{fqdn}</option>
               ))}
-            </div>
-          </fieldset>
+            </select>
+          </Field>
+          <p className="text-xs text-lt-muted">
+            Permiso: {API_SCOPE_LABELS[API_KEY_SCOPE]}. La llave solo consulta datos, no lanza escaneos ni cambia nada.
+          </p>
           <Field label="Vigencia (días)" htmlFor="key-days">
             <input id="key-days" name="days" type="number" min={1} max={API_KEY_MAX_DAYS} defaultValue={90} className={`${INPUT} w-28`} />
           </Field>
@@ -143,13 +148,13 @@ export function ApiKeysManager({ initial }: { initial: ApiKey[] }) {
         )}
       </Card>
 
-      <Card title="Llaves" padded={false} action={`${keys.filter((k) => keyStatus(k).label === "Activa").length} activas`}>
+      <Card title="Llaves" padded={false} action={`${contarActivas(keys)} activas`}>
         <TableWrap>
           <table className="w-full min-w-[640px]">
             <thead>
               <tr>
                 <th scope="col" className={TH}>Llave</th>
-                <th scope="col" className={TH}>Permisos</th>
+                <th scope="col" className={TH}>Alcance</th>
                 <th scope="col" className={TH}>Vence</th>
                 <th scope="col" className={TH}>Último uso</th>
                 <th scope="col" className={TH}>Estado</th>
@@ -157,16 +162,25 @@ export function ApiKeysManager({ initial }: { initial: ApiKey[] }) {
               </tr>
             </thead>
             <tbody>
+              {keys.length === 0 && (
+                <tr className={TR}>
+                  <td colSpan={6} className={`${TD} text-[13px] text-lt-muted`}>Todavía no hay llaves.</td>
+                </tr>
+              )}
               {keys.map((k) => {
-                const status = keyStatus(k);
+                const status = STATUS[k.status] ?? STATUS.expired;
                 return (
                   <tr key={k.id} className={TR}>
                     <td className={TD}>
                       <span className="block font-medium">{k.name}</span>
                       <code className="font-mono text-[11px] text-lt-faint">{k.key_prefix}…</code>
+                      <span className="block text-[11px] text-lt-faint">
+                        Creada por {k.created_by} el {formatDate(k.created_at)}
+                      </span>
                     </td>
-                    <td className={`${TD} max-w-48`}>
-                      <div className="flex flex-wrap gap-1">
+                    <td className={`${TD} max-w-56`}>
+                      <span className="block font-mono text-[13px] text-lt-text">{k.domain ?? "Todos los dominios"}</span>
+                      <div className="mt-1 flex flex-wrap gap-1">
                         {k.scopes.map((s) => (
                           <Badge key={s} tone="gray">{API_SCOPE_LABELS[s] ?? s}</Badge>
                         ))}
@@ -176,7 +190,7 @@ export function ApiKeysManager({ initial }: { initial: ApiKey[] }) {
                     <td className={`${TD} whitespace-nowrap text-[13px] text-lt-muted`}>{k.last_used_at ? formatDateTime(k.last_used_at) : "Nunca"}</td>
                     <td className={TD}><Badge tone={status.tone} dot>{status.label}</Badge></td>
                     <td className={`${TD} text-right`}>
-                      {status.label === "Activa" &&
+                      {k.status === "active" &&
                         (confirmId === k.id ? (
                           <span className="inline-flex gap-1">
                             <ActionButton variant="danger" size="sm" loading={revokingId === k.id} onClick={() => onRevoke(k.id)}>Confirmar</ActionButton>

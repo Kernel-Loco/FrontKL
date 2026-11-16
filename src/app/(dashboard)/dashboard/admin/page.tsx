@@ -11,9 +11,10 @@ import { Badge } from "@/components/ui/Badge";
 import { AvisoSimulado } from "@/components/ui/AvisoSimulado";
 import { Card } from "@/components/ui/Card";
 import { ROLE_LABELS, SECTIONS } from "@/config/permissions";
+import { contarActivas } from "@/lib/llavesApi";
 import { ROLES } from "@/types";
-import { getApiKeys, getAuditLog, getIntegrations } from "@/services/adminService";
-import { getDomains } from "@/services/queries";
+import { getAuditLog, getIntegrations } from "@/services/adminService";
+import { getApiKeys, getDomains } from "@/services/queries";
 import { getUsers } from "@/services/userService";
 
 export const metadata: Metadata = { title: "Administración" };
@@ -23,14 +24,13 @@ export default async function AdminOverviewPage() {
   if (forbidden) return forbidden;
 
   const [users, domains, keys, integrations, audit] = await Promise.all([getUsers(), getDomains(), getApiKeys(), getIntegrations(), getAuditLog()]);
-  const now = new Date().toISOString();
-  const activeKeys = keys.items.filter((k) => !k.revoked_at && k.expires_at > now).length;
+  const activeKeys = contarActivas(keys.items);
   const attention = domains.items.filter((d) => d.status !== "removed" && !d.scan_eligibility.can_scan);
 
   return (
     <div className="space-y-8">
       <PageHeader title="Administración" description="Estado de la organización: usuarios, dominios, accesos e integraciones." />
-      <AvisoSimulado datos={["getUsers", "getApiKeys", "getIntegrations", "getAuditLog"]} datosDe="usuarios, llaves de API, integraciones y actividad reciente" />
+      <AvisoSimulado datos={["getUsers", "getIntegrations", "getAuditLog"]} datosDe="usuarios, integraciones y actividad reciente" />
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <KpiTile label="Usuarios activos" value={users.items.filter((u) => u.is_active).length} hint={`${users.total} en total`} />
         <KpiTile label="Dominios" value={domains.items.filter((d) => d.status !== "removed").length} hint={`${attention.length} requieren atención`} />
