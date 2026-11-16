@@ -42,7 +42,7 @@ export function shapDisplay(contribution: number): string {
  */
 export const SHAP_TONE = {
   toward: { text: "text-lt-indigo-soft", bar: "bg-lt-indigo" },
-  away: { text: "text-lt-muted", bar: "bg-lt-faint" },
+  away: { text: "text-lt-muted", bar: "bg-lt-muted" },
 } as const;
 
 export function shapTone(contribution: number): { text: string; bar: string } {
