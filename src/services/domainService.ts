@@ -4,9 +4,8 @@
 import { apiClient } from "@/lib/apiClient";
 import { PREFIJO_FALSO } from "@/config/simulado";
 import { mockDelay } from "@/lib/mock";
-import { mockDomains } from "@/mocks/api/contrato";
 import { mockTxtVerifications } from "@/mocks/api/provisional";
-import type { Domain, DomainRegistrationRequest, FindingExplanation, TxtVerification } from "@/types";
+import type { Domain, DomainRegistrationRequest, FindingExplanation, ListResponse, TxtVerification } from "@/types";
 import { ServiceError } from "./errors";
 
 /** «¿Por qué es crítico?» de un hallazgo (GET /findings/{id}/explanation). */
@@ -28,7 +27,9 @@ export async function registerDomain(
   await mockDelay(700);
   const fqdn = request.fqdn.trim().toLowerCase().replace(/\.$/, "");
   if (!FQDN.test(fqdn)) throw new ServiceError("invalid", "Escribe un dominio válido, como ejemplo.com.");
-  if (mockDomains.items.some((d) => d.fqdn === fqdn)) throw new ServiceError("duplicate", "Ese dominio ya está registrado.");
+  // El duplicado se busca en los dominios reales de la organización (GET /domains), no en los del contrato.
+  const { items } = await apiClient.get<ListResponse<Domain>>("/domains");
+  if (items.some((d) => d.fqdn === fqdn)) throw new ServiceError("duplicate", "Ese dominio ya está registrado.");
   if (letter.type !== "application/pdf") throw new ServiceError("invalid", "La carta de autorización debe ser un PDF.");
   const token = crypto.randomUUID().replace(/-/g, "").slice(0, 12);
   const domain: Domain = {

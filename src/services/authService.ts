@@ -18,7 +18,6 @@ import type {
   PasswordResetRequest,
   PasswordResetVerifyRequest,
   PasswordResetVerifyResponse,
-  RegisterRequest,
   User,
 } from "@/types";
 import { ServiceError } from "./errors";
@@ -63,16 +62,10 @@ export async function changePassword(payload: PasswordChangeRequest): Promise<vo
   await apiClient.post<void>("/auth/password", payload);
 }
 
-// --- Aún sin backend: las cuentas las crea un Administrador y la recuperación por correo llega después.
+// --- Aún sin backend: la recuperación por correo llega después. El login ya no la enlaza; las
+// pantallas de /forgot-password quedan para cuando exista POST /auth/password-reset.
 
-const NO_SIGNUP = "El registro abierto no está disponible: un Administrador te invita desde «Usuarios y roles».";
 const NO_RESET = "La recuperación por correo todavía no está disponible. Pide a un Administrador que restablezca tu contraseña.";
-
-export async function register(payload: RegisterRequest): Promise<User> {
-  // TODO: invitaciones de usuarios (POST /users/invitations) en lugar de registro abierto.
-  void payload;
-  throw new ServiceError("signup_disabled", NO_SIGNUP);
-}
 
 export async function requestPasswordReset(payload: PasswordResetRequest): Promise<void> {
   // TODO: conectar con backend → POST /auth/password-reset (responde igual exista o no el correo).

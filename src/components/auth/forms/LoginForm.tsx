@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -77,11 +76,6 @@ export function LoginForm() {
         placeholder="••••••••••••"
         autoComplete="current-password"
         error={errors.password?.message}
-        labelAction={
-          <Link href="/forgot-password" className="rounded-sm text-xs font-medium text-lt-primary hover:underline">
-            ¿Olvidaste tu contraseña?
-          </Link>
-        }
         {...register("password")}
       />
       <Captcha renew={attempts} onChange={onCaptcha} />

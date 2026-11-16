@@ -29,9 +29,3 @@ export const SESSION_REFRESH_INTERVAL_MS = 30_000;
 
 /** Evento que lanza apiClient cuando una petición autenticada sale bien: el servidor renovó la inactividad. */
 export const API_ACTIVITY_EVENT = "lowtide-api-activity";
-
-/**
- * Vida de la cookie mock: el timeout más un margen, para que la cookie no
- * expire antes de que el aviso de inactividad pueda mostrarse.
- */
-export const SESSION_COOKIE_MAX_AGE_S = Math.ceil(IDLE_TIMEOUT_MS / 1000) + 120;

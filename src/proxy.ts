@@ -4,7 +4,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { SESSION_COOKIE } from "@/lib/session/shared";
 
-const GUEST_ONLY = ["/login", "/signup"];
+const GUEST_ONLY = ["/login"];
 
 function matches(pathname: string, base: string) {
   return pathname === base || pathname.startsWith(`${base}/`);
@@ -29,5 +29,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/", "/dashboard/:path*", "/login/:path*", "/signup"],
+  matcher: ["/", "/dashboard/:path*", "/login/:path*"],
 };
