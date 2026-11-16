@@ -7,7 +7,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   browserSupportsWebAuthn,
-  browserSupportsWebAuthnAutofill,
   startAuthentication,
   WebAuthnAbortService,
 } from "@simplewebauthn/browser";
@@ -16,7 +15,7 @@ import { Notice } from "@/components/auth/Notice";
 import { Button } from "@/components/Button";
 import { TextInput } from "@/components/TextInput";
 import { writeFlow } from "@/lib/flowStorage";
-import { autofillRefreshMs, canRearmAutofill, ceremonyErrorMessage, isCeremonyAborted } from "@/lib/passkeys";
+import { ceremonyErrorMessage, isCeremonyAborted } from "@/lib/passkeys";
 import { loginSchema, type LoginValues } from "@/lib/validation";
 import { login, passkeyLoginOptions, passkeyLoginVerify } from "@/services/authService";
 import { getErrorMessage } from "@/services/errors";
@@ -38,10 +37,7 @@ export function LoginForm() {
   // Cuenta los intentos que llegaron a la API: cada uno gasta su captcha y el widget resuelve otro.
   const [attempts, setAttempts] = useState(0);
   const [passkeyBusy, setPasskeyBusy] = useState(false);
-  // Cada vuelta arma de nuevo el autollenado de passkeys: el botón lo corta y una entrada fallida gasta su reto.
-  const [autofillRound, setAutofillRound] = useState(0);
-  // Vueltas del autollenado tras un fallo, con tope (canRearmAutofill), y si el botón tiene su passkey abierta.
-  const autofillRetries = useRef(0);
+  // Frena un segundo clic antes de que React pinte el botón como ocupado.
   const buttonActive = useRef(false);
   // En el servidor no hay WebAuthn: el botón aparece solo en un navegador que lo admite, sin romper la hidratación.
   const supportsPasskeys = useSyncExternalStore(noSubscribe, browserSupportsWebAuthn, () => false);
@@ -62,58 +58,9 @@ export function LoginForm() {
     router.refresh();
   };
 
-  // Autollenado: el navegador ofrece las passkeys guardadas al tocar el campo del correo.
-  useEffect(() => {
-    let active = true;
-    let timer: number | undefined;
-    // Renueva el reto antes de que venza en el servidor. Con la pestaña oculta espera a que se vea, y nunca corta el
-    // botón: al terminar, el botón vuelve a armar el autollenado.
-    const refresh = () => {
-      if (!active || buttonActive.current) return;
-      if (document.visibilityState === "hidden") {
-        document.addEventListener("visibilitychange", refresh, { once: true });
-        return;
-      }
-      setAutofillRound((n) => n + 1);
-    };
-    (async () => {
-      if (!(await browserSupportsWebAuthnAutofill()) || !active) return;
-      let options;
-      try {
-        options = await passkeyLoginOptions();
-      } catch {
-        return; // sin passkeys en el servidor (503) o con la IP frenada (429): el correo y la contraseña siguen igual
-      }
-      // Si el botón ya abrió su passkey, el autollenado no la corta (startAuthentication aborta la ceremonia anterior).
-      if (!active || buttonActive.current) return;
-      timer = window.setTimeout(refresh, autofillRefreshMs(options.expires_in_seconds));
-      try {
-        const credential = await startAuthentication({ optionsJSON: options.options, useBrowserAutofill: true });
-        window.clearTimeout(timer);
-        setFormError(null);
-        await passkeyLoginVerify({ login_token: options.login_token, credential });
-        setNavigating(true);
-        router.replace("/dashboard");
-        router.refresh();
-      } catch (error) {
-        window.clearTimeout(timer);
-        if (!active || isCeremonyAborted(error)) return;
-        setFormError(passkeyMessage(error));
-        // Sin bucle: una falla del navegador que se repite al instante no lo vuelve a armar, y hay un tope de vueltas.
-        if (!canRearmAutofill(error, autofillRetries.current)) return;
-        // Con el diálogo del botón abierto no se rearma: el cleanup cortaría su ceremonia. El botón lo rearma al terminar.
-        if (buttonActive.current) return;
-        autofillRetries.current += 1;
-        setAutofillRound((n) => n + 1);
-      }
-    })();
-    return () => {
-      active = false;
-      window.clearTimeout(timer);
-      document.removeEventListener("visibilitychange", refresh);
-      WebAuthnAbortService.cancelCeremony();
-    };
-  }, [router, autofillRound]);
+  // Sin autollenado de passkeys en el correo, para no encimarse con el menú del gestor de contraseñas (RC-331, 16 nov).
+  // Al salir de la página se corta la ceremonia que el botón haya dejado abierta.
+  useEffect(() => () => WebAuthnAbortService.cancelCeremony(), []);
 
   const onPasskey = async () => {
     if (buttonActive.current) return;
@@ -124,8 +71,6 @@ export function LoginForm() {
       await enterWithPasskey();
     } catch (error) {
       if (!isCeremonyAborted(error)) setFormError(passkeyMessage(error));
-      buttonActive.current = false;
-      setAutofillRound((n) => n + 1);
     } finally {
       buttonActive.current = false;
       setPasskeyBusy(false);
@@ -171,8 +116,7 @@ export function LoginForm() {
         label="Correo"
         type="email"
         placeholder="nombre@organizacion.com"
-        // "webauthn" deja que el navegador ofrezca las passkeys guardadas en este campo (RC-331).
-        autoComplete="username webauthn"
+        autoComplete="username"
         error={errors.email?.message}
         {...register("email")}
       />
