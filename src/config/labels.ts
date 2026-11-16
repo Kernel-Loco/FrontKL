@@ -63,6 +63,13 @@ export const SCORE_METHOD_LABELS: Record<ScoreMethod, string> = {
   ml: "Modelo de ML",
 };
 
+/** Por qué el score salió por reglas y no por el modelo (domain_scores.model_fallback_reason). */
+export const MODEL_FALLBACK_LABELS: Record<string, string> = {
+  macro_f1_no_supera_reglas: "el modelo todavía no supera a las reglas",
+  artefacto_ml_no_disponible: "el modelo no está disponible",
+  inferencia_ml_no_disponible: "el modelo no pudo calcular este score",
+};
+
 export const SCORE_REASON_LABELS: Record<ScoreReason, string> = {
   scan: "Escaneo",
   intel_update: "Recálculo por información de amenazas nueva",

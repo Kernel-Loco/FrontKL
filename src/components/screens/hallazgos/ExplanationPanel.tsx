@@ -5,6 +5,7 @@ import { SeverityBadge } from "@/components/ui/Badge";
 import { InlineAlert } from "@/components/ui/InlineAlert";
 import { Spinner } from "@/components/Spinner";
 import { EXPOSICION_LABELS, SENSIBILIDAD_LABELS } from "@/config/labels";
+import { marcosDelHallazgo, MARCOS_ATRIBUCION } from "@/lib/marcos";
 import { getFindingExplanation } from "@/services/domainService";
 import { getErrorMessage } from "@/services/errors";
 import { SHAP_LABELS, shapDisplay, shapLegend, shapPhrase, shapTone } from "@/lib/shap";
@@ -86,6 +87,12 @@ export function ExplanationPanel({ finding }: { finding: DomainFinding }) {
       ) : (
         explanation && (
           <>
+            {explanation.rule_title && (
+              <p className="mt-4 text-sm text-lt-text">
+                Regla: {explanation.rule_title}
+                {explanation.meaning && <span className="block text-xs leading-relaxed text-lt-muted">{explanation.meaning}</span>}
+              </p>
+            )}
             <p className="mt-4 text-sm leading-relaxed text-lt-muted">{explanation.summary}</p>
             {topShap.length > 0 ? (
               <>
@@ -148,10 +155,39 @@ export function ExplanationPanel({ finding }: { finding: DomainFinding }) {
               <p className="text-sm font-semibold text-lt-text">Recomendación</p>
               <p className="mt-1 text-sm leading-relaxed text-lt-muted">{explanation.recommendation}</p>
             </div>
+            {(explanation.model_version || explanation.explanation_model_version) && (
+              <p className="mt-3 text-[11px] text-lt-faint">
+                {explanation.model_version && <>Modelo del score: {explanation.model_version}. </>}
+                {explanation.explanation_model_version && <>Modelo de la confianza y el SHAP: {explanation.explanation_model_version}.</>}
+              </p>
+            )}
+            {marcosDelHallazgo(explanation.frameworks ?? finding.frameworks).length > 0 && (
+              <div className="mt-5 border-t border-lt-border pt-4">
+                <p className="text-xs font-semibold text-lt-text">Marcos de referencia</p>
+                <dl className="mt-2 space-y-1.5 text-xs">
+                  {marcosDelHallazgo(explanation.frameworks ?? finding.frameworks).map((m) => (
+                    <div key={m.marco} className="flex gap-2">
+                      <dt className="shrink-0 text-lt-faint">{m.marco}:</dt>
+                      <dd className="min-w-0 break-words text-lt-text">
+                        {m.url ? <a href={m.url} target="_blank" rel="noopener noreferrer" className="underline">{m.texto}</a> : m.texto}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+                <p className="mt-2 text-[10px] leading-relaxed text-lt-faint">{MARCOS_ATRIBUCION}</p>
+              </div>
+            )}
           </>
         )
       )}
 
+      {(finding.cve_id || finding.cvss != null) && (
+        <p className="mt-5 text-xs text-lt-text">
+          {finding.cve_id && <span className="font-mono">{finding.cve_id}</span>}
+          {finding.cve_id && finding.cvss != null && " · "}
+          {finding.cvss != null && <span>CVSS {finding.cvss.toFixed(1)}</span>}
+        </p>
+      )}
       <dl className="mt-5 grid grid-cols-2 gap-3 border-t border-lt-border pt-4 text-xs">
         <div>
           <dt className="text-lt-faint">Tipo</dt>
