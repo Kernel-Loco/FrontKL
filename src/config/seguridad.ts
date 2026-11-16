@@ -116,7 +116,7 @@ export const SEGURIDAD = {
         },
         {
           tema: "Que la aplicación gane privilegios en la base",
-          texto: "Solo cuatro funciones de la base corren con privilegios elevados y cada una hace lo mínimo: la del inicio de sesión devuelve 4 columnas, la de las llaves de API busca una llave por su huella y dos reservan y ajustan el cupo diario de cada fuente. El ajuste acepta cualquier cantidad: el tope diario lo cuida la aplicación, no la base. Todas tienen pruebas automáticas.",
+          texto: "Solo cuatro funciones de la base corren con privilegios elevados y cada una hace lo mínimo: la del inicio de sesión devuelve 4 columnas, la de las llaves de API busca una llave por su huella y dos reservan y ajustan el cupo diario de cada fuente. La reserva respeta el tope diario dentro de la base. El ajuste de lo gastado al terminar acepta cualquier cantidad y no revisa el tope. Todas tienen pruebas automáticas.",
         },
         {
           tema: "Saber qué software usa otra empresa",

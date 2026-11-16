@@ -61,7 +61,7 @@ export const PRIVACIDAD: DocumentoLegal & { simplificado: string } = {
       parrafos: [
         "Puedes pedir el acceso, la rectificación, la cancelación o la oposición al tratamiento de tus datos escribiendo a arco@lowtidesec.com. La solicitud trae tu nombre y un medio para responderte, tu identificación o la de tu representante con su poder, qué datos (salvo para el acceso), qué derecho y lo que ayude a localizarlos.",
         "La respuesta llega en un máximo de 20 días hábiles y, si procede, se hace efectiva en los 15 siguientes. Cada plazo se puede ampliar una vez por un periodo igual. Es gratis, salvo el costo de copias o envío.",
-        "Si pides la cancelación, tu cuenta se desactiva y se borran la huella de tu contraseña y tu semilla de verificación. Tus demás datos quedan en bloqueo y al terminar el bloqueo se anonimizan tu nombre y tu correo. Hoy el sistema todavía no deja anonimizarlos, así que se conservan.",
+        "Si pides la cancelación, tu cuenta se desactiva, se borran la huella de tu contraseña y tu semilla de verificación y tus demás datos quedan en bloqueo. Al terminar el bloqueo se anonimizan tu nombre y tu correo y se te avisa. Hoy el sistema solo desactiva la cuenta: todavía no borra la huella ni la semilla, no separa lo que queda en bloqueo ni anonimiza, así que tus datos se conservan.",
         "Si eres empleado de una empresa cliente, la responsable de tus datos es tu empresa. Si tu solicitud llega al equipo, se le reenvía a ella.",
         "Si no recibes respuesta o no estás conforme con ella, puedes acudir a la Secretaría Anticorrupción y Buen Gobierno. Si hubo respuesta, tienes 15 días desde que se te comunicó.",
       ],

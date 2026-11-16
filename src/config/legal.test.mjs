@@ -57,7 +57,7 @@ test("no promete lo que hoy no se puede: chat, supresión ni anonimización", ()
   const revocar = PRIVACIDAD.apartados.find((a) => a.titulo === "Cómo revocar tu consentimiento").parrafos.join(" ");
   assert.match(revocar, /Hoy el sistema todavía no deja suprimir ni anonimizar/);
   const arco = PRIVACIDAD.apartados.find((a) => a.titulo === "Tus derechos ARCO").parrafos.join(" ");
-  assert.match(arco, /cancelación[^.]*\.[^.]*\. Hoy el sistema todavía no deja anonimizarlos/);
+  assert.match(arco, /cancelación[^.]*\.[^.]*\. Hoy el sistema solo desactiva la cuenta: todavía no borra la huella ni la semilla, no separa lo que queda en bloqueo ni anonimiza/);
   const terminos = textos(TERMINOS, "T").map(([, t]) => t).join(" ");
   assert.match(terminos, /frena una revocación desde que el equipo la registra/);
   assert.match(terminos, /Si en esos 30 días \(propuesta\) no llega una carta nueva/);
