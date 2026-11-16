@@ -35,7 +35,10 @@ export async function apiErrorFromResponse(response: Response): Promise<ApiError
 }
 
 // Rutas de /auth donde un 401 es una respuesta normal (credenciales o código incorrectos), no una sesión vencida.
+// Las passkeys de la cuenta (/auth/passkeys y su registro, RC-331) sí piden sesión; entrar con passkey no.
 function isSessionProtected(path: string) {
+  if (path.startsWith("/auth/passkeys/login/")) return false;
+  if (path === "/auth/passkeys" || path.startsWith("/auth/passkeys/")) return true;
   return !path.startsWith("/auth/") || path === "/auth/me";
 }
 

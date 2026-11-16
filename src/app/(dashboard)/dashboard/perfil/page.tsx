@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { ChangePasswordForm } from "@/components/screens/perfil/ChangePasswordForm";
 import { MfaSetup } from "@/components/screens/perfil/MfaSetup";
+import { PasskeysSection } from "@/components/screens/perfil/PasskeysSection";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { ROLE_DESCRIPTIONS, ROLE_LABELS } from "@/config/permissions";
@@ -49,6 +50,9 @@ export default async function PerfilPage() {
         </Card>
         <Card title="Cambiar contraseña">
           <ChangePasswordForm />
+        </Card>
+        <Card title="Passkeys">
+          <PasskeysSection mfaEnabled={profile.mfa_enabled} />
         </Card>
         {!profile.mfa_enabled && (
           <Card title="Activar la verificación en dos pasos">

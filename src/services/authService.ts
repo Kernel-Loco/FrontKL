@@ -13,6 +13,13 @@ import type {
   MfaSetupResponse,
   MfaVerifyRequest,
   MfaVerifyResponse,
+  Passkey,
+  PasskeyList,
+  PasskeyLoginOptionsResponse,
+  PasskeyLoginVerifyRequest,
+  PasskeyRegisterOptionsRequest,
+  PasskeyRegisterOptionsResponse,
+  PasskeyRegisterVerifyRequest,
   PasswordChangeRequest,
   PasswordResetConfirmRequest,
   PasswordResetRequest,
@@ -39,6 +46,33 @@ export async function startMfaSetup(payload: MfaSetupRequest): Promise<MfaSetupR
 /** Guarda el secreto del alta solo si el código de la app es válido. */
 export async function enableMfa(payload: MfaEnableRequest): Promise<MfaEnableResponse> {
   return apiClient.post<MfaEnableResponse>("/auth/mfa/enable", payload);
+}
+
+// --- Passkeys (RC-331). Las opciones y las respuestas de WebAuthn viajan como JSON sin tocarlas.
+
+export async function passkeyLoginOptions(): Promise<PasskeyLoginOptionsResponse> {
+  return apiClient.post<PasskeyLoginOptionsResponse>("/auth/passkeys/login/options");
+}
+
+/** Revisa la firma de la passkey y, si sirve, la API crea la sesión (cookie). La passkey cuenta como MFA. */
+export async function passkeyLoginVerify(payload: PasskeyLoginVerifyRequest): Promise<MfaVerifyResponse> {
+  return apiClient.post<MfaVerifyResponse>("/auth/passkeys/login/verify", payload);
+}
+
+export async function passkeyRegisterOptions(payload: PasskeyRegisterOptionsRequest): Promise<PasskeyRegisterOptionsResponse> {
+  return apiClient.post<PasskeyRegisterOptionsResponse>("/auth/passkeys/register/options", payload);
+}
+
+export async function passkeyRegisterVerify(payload: PasskeyRegisterVerifyRequest): Promise<Passkey> {
+  return apiClient.post<Passkey>("/auth/passkeys/register/verify", payload);
+}
+
+export async function listPasskeys(): Promise<PasskeyList> {
+  return apiClient.get<PasskeyList>("/auth/passkeys");
+}
+
+export async function deletePasskey(id: string): Promise<void> {
+  await apiClient.delete<void>(`/auth/passkeys/${encodeURIComponent(id)}`);
 }
 
 export async function logout(): Promise<void> {
