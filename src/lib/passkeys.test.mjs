@@ -3,13 +3,11 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
+import * as passkeys from "./passkeys.ts";
 import {
-  autofillRefreshMs,
-  canRearmAutofill,
   ceremonyErrorMessage,
   cleanPasskeyName,
   isCeremonyAborted,
-  MAX_AUTOFILL_RETRIES,
   PASSKEYS_CHANGED,
   passwordChangedMessage,
   registrationMustRestart,
@@ -45,12 +43,15 @@ test("4. solo un reto vencido o gastado manda a empezar de nuevo", () => {
   assert.equal(registrationMustRestart(409, "Esa passkey ya está registrada."), false);
 });
 
-test("5. el correo del login acepta el autollenado de passkeys y hay botón", () => {
+test("5. el correo del login ofrece solo contraseñas y la passkey va con el botón", () => {
   const form = leer("../components/auth/forms/LoginForm.tsx");
-  assert.match(form, /autoComplete="username webauthn"/);
-  assert.match(form, /useBrowserAutofill: true/);
+  // Sin autollenado de passkeys: en el correo no se encima con el menú del gestor de contraseñas (16 nov).
+  assert.match(form, /autoComplete="username"/);
+  assert.doesNotMatch(form, /webauthn"/);
+  assert.doesNotMatch(form, /useBrowserAutofill/);
+  assert.doesNotMatch(form, /browserSupportsWebAuthnAutofill/);
   assert.match(form, /Entrar con passkey/);
-  // Al salir de la página se cancela la ceremonia pendiente del autollenado.
+  // Al salir de la página se cancela la ceremonia que el botón haya dejado abierta.
   assert.match(form, /WebAuthnAbortService\.cancelCeremony\(\)/);
 });
 
@@ -69,20 +70,18 @@ test("7. las rutas de passkeys de la cuenta piden sesión y entrar con passkey n
   assert.match(client, /path === "\/auth\/passkeys"/);
 });
 
-test("8. el autollenado solo se vuelve a armar tras la API o una cancelación, con tope", () => {
-  const api = new Error("La passkey no es válida.");
-  const cancel = { name: "NotAllowedError", code: "ERROR_PASSTHROUGH_SEE_CAUSE_PROPERTY" };
-  assert.equal(canRearmAutofill(api, 0), true);
-  assert.equal(canRearmAutofill(cancel, 0), true);
-  assert.equal(canRearmAutofill({ name: "SecurityError", code: "ERROR_INVALID_RP_ID" }, 0), false);
-  assert.equal(canRearmAutofill({ name: "NotSupportedError" }, 0), false);
-  assert.equal(canRearmAutofill(api, MAX_AUTOFILL_RETRIES), false);
-  assert.equal(canRearmAutofill(cancel, MAX_AUTOFILL_RETRIES - 1), true);
+test("8. el login pide el reto de la passkey solo al dar clic en el botón", () => {
+  const form = leer("../components/auth/forms/LoginForm.tsx");
+  assert.equal(form.match(/passkeyLoginOptions\(/g)?.length, 1);
+  assert.equal(form.match(/enterWithPasskey\(/g)?.length, 1);
+  assert.match(form, /const enterWithPasskey = async \(\) => \{\s+const \{ options, login_token \} = await passkeyLoginOptions\(\);/);
+  assert.match(form, /onClick=\{onPasskey\}/);
 });
 
-test("9. el reto del autollenado se renueva antes de vencer", () => {
-  assert.equal(autofillRefreshMs(300), 285_000);
-  assert.equal(autofillRefreshMs(20), 30_000);
+test("9. las ayudas ya no traen el autollenado", () => {
+  for (const nombre of ["MAX_AUTOFILL_RETRIES", "canRearmAutofill", "autofillRefreshMs"]) {
+    assert.equal(nombre in passkeys, false, nombre);
+  }
 });
 
 test("10. tras gastar el código, la falla pide esperar el siguiente", () => {
@@ -94,11 +93,11 @@ test("10. tras gastar el código, la falla pide esperar el siguiente", () => {
   assert.match(withNextCodeHint(null), /^Se canceló la passkey\. Para intentarlo/);
 });
 
-test("11. el login no deja que el autollenado corte el botón y renueva el reto", () => {
+test("11. el login frena un segundo clic del botón de passkey", () => {
   const form = leer("../components/auth/forms/LoginForm.tsx");
-  assert.match(form, /buttonActive\.current\) return/);
-  assert.match(form, /canRearmAutofill\(error, autofillRetries\.current\)/);
-  assert.match(form, /autofillRefreshMs\(options\.expires_in_seconds\)/);
+  assert.match(form, /if \(buttonActive\.current\) return;\s+buttonActive\.current = true;/);
+  // Tras cada intento el botón se suelta, haya salido bien o no.
+  assert.match(form, /finally \{\s+buttonActive\.current = false;/);
   const mfa = leer("../components/screens/perfil/MfaSetup.tsx");
   assert.match(mfa, /passkeys_removed/);
 });

@@ -10,7 +10,7 @@ function fields(error: unknown): CeremonyError {
   return typeof error === "object" && error !== null ? (error as CeremonyError) : {};
 }
 
-/** La ceremonia se canceló porque empezó otra (el botón corta el autollenado) o porque la página se fue. */
+/** La ceremonia se canceló porque empezó otra (otro startAuthentication) o porque la página se fue. */
 export function isCeremonyAborted(error: unknown): boolean {
   const { name, code } = fields(error);
   return code === "ERROR_CEREMONY_ABORTED" || name === "AbortError";
@@ -47,7 +47,6 @@ export function registrationMustRestart(status: number, message: string): boolea
   return status === 400 && /venció|ya se usó|Empieza de nuevo/.test(message);
 }
 
-/** Veces que el autollenado se vuelve a armar solo tras un fallo, por carga de la página. */
 /** Evento de window que avisa a la lista del perfil que la API borró passkeys fuera de ella. */
 export const PASSKEYS_CHANGED = "lowtide:passkeys-changed";
 
@@ -56,27 +55,6 @@ export function passwordChangedMessage(passkeysRemoved: number): string {
   if (passkeysRemoved <= 0) return "Tu contraseña se actualizó.";
   const passkeys = passkeysRemoved === 1 ? "tu passkey" : `tus ${passkeysRemoved} passkeys`;
   return `Tu contraseña se actualizó. Se ${passkeysRemoved === 1 ? "borró" : "borraron"} ${passkeys}: puedes registrar otra con la contraseña nueva.`;
-}
-
-export const MAX_AUTOFILL_RETRIES = 3;
-
-/**
- * Si el autollenado se vuelve a armar tras este fallo. Solo tras uno de la API (el reto ya se gastó) o tras una
- * cancelación de la persona, y como máximo MAX_AUTOFILL_RETRIES veces. Las demás fallas del navegador (dominio, RP ID,
- * sin soporte) se repiten al instante: volver a armarlo sería un bucle que gasta las opciones de la IP.
- */
-export function canRearmAutofill(error: unknown, retries: number): boolean {
-  if (retries >= MAX_AUTOFILL_RETRIES) return false;
-  if (ceremonyErrorMessage(error) === undefined) return true;
-  return fields(error).name === "NotAllowedError";
-}
-
-/**
- * Cuándo renovar el reto del autollenado: unos 15 s antes de que venza en el servidor. El navegador no corta una
- * ceremonia con mediation conditional, así que sin esto el reto queda muerto mientras la página siga abierta.
- */
-export function autofillRefreshMs(expiresInSeconds: number): number {
-  return Math.max(expiresInSeconds - 15, 30) * 1000;
 }
 
 /**
