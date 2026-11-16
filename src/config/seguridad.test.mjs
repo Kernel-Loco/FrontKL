@@ -46,6 +46,8 @@ test("solo cita controles que ya funcionan: los textos son los del resumen revis
     "Los textos ya no son los del resumen revisado. Un control planeado, parcial o con riesgo abierto no entra: " +
       "copia de nuevo los del resumen vigente y actualiza la huella.",
   );
+  const cupo = controles.map((c) => c.texto).find((t) => /cupo diario de cada fuente/.test(t));
+  assert.match(cupo, /La reserva respeta el tope diario dentro de la base\. El ajuste de lo gastado al terminar acepta cualquier cantidad y no revisa el tope\./);
 });
 
 test("no trae claves de Jira, números de PR, rutas del repo ni el nombre clave", () => {

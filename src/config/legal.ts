@@ -130,7 +130,7 @@ export const TERMINOS: DocumentoLegal = {
       parrafos: [
         "Al vencer o revocarse la última carta de la empresa, la cuenta se desactiva. Si en 30 días (propuesta) se carga una carta nueva, se reactiva cuando esta empiece.",
         "Si en esos 30 días (propuesta) no llega una carta nueva, al cerrar el curso o antes si la empresa pide por escrito borrar todos sus datos, lo que pase primero, la cuenta se desactiva, se borran la huella de su contraseña y su semilla de verificación, y su nombre y correo quedan en bloqueo y al final se anonimizan. Los hallazgos, activos y reportes de la empresa se borrarán en 30 días (propuesta), con confirmación.",
-        "Hoy el sistema todavía no desactiva ni reactiva las cuentas solo al terminar la carta, y no deja borrar ni anonimizar lo que está en bloqueo ni los hallazgos que ya entraron en un score.",
+        "Hoy el sistema todavía no desactiva ni reactiva las cuentas solo al terminar la carta. Al desactivar una cuenta todavía no borra la huella ni la semilla, y no deja borrar ni anonimizar lo que está en bloqueo ni los hallazgos que ya entraron en un score.",
       ],
     },
     {

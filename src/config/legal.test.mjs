@@ -61,6 +61,8 @@ test("no promete lo que hoy no se puede: chat, supresión ni anonimización", ()
   const terminos = textos(TERMINOS, "T").map(([, t]) => t).join(" ");
   assert.match(terminos, /frena una revocación desde que el equipo la registra/);
   assert.match(terminos, /Si en esos 30 días \(propuesta\) no llega una carta nueva/);
+  const alTerminar = TERMINOS.apartados.find((a) => a.titulo === "Al terminar").parrafos.join(" ");
+  assert.match(alTerminar, /se borran la huella[^.]*\.[^.]*\. Hoy el sistema[^.]*\. Al desactivar una cuenta todavía no borra la huella ni la semilla/);
 });
 
 test("el producto se llama LowTide", () => {
