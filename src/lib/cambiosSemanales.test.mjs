@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { mockScoreHistory } from "../mocks/api/contrato.ts";
-import { latestScan, weeklyChangeNotes } from "./cambiosSemanales.ts";
+import { lastScanSummary, latestScan, weeklyChangeNotes } from "./cambiosSemanales.ts";
 
 const leer = (ruta) => readFileSync(new URL(ruta, import.meta.url), "utf8");
 const cambios = (extra) => ({
@@ -41,8 +41,20 @@ test("3. el mock trae weekly_changes como el ejemplo historico.json del contrato
   assert.equal(latestScan([recalculo]), null);
 });
 
+test("3b. el aviso no afirma una comparación que la API no hizo", () => {
+  const [escaneo] = mockScoreHistory.items;
+  // Primer escaneo (previous_scan_id null): sin «frente al escaneo anterior»
+  assert.equal(lastScanSummary(escaneo), "3 hallazgos nuevos.");
+  const sinCambios = { ...escaneo, weekly_changes: null };
+  assert.doesNotMatch(lastScanSummary(sinCambios), /^Sin /);
+  assert.match(lastScanSummary(sinCambios), /no marcó/);
+  // Un escaneo de antes de RC-55 no contó sus hallazgos nuevos: no se dice que no hubo
+  assert.match(lastScanSummary({ ...sinCambios, new_findings: null }), /no contó sus hallazgos nuevos/);
+});
+
 test("4. el histórico pinta los cambios del último escaneo y de cada fila", () => {
   const pagina = leer("../app/(dashboard)/dashboard/historico/page.tsx");
-  assert.match(pagina, /weeklyChangeNotes\(lastScan\?\.weekly_changes \?\? null\)/);
+  assert.match(pagina, /\{lastScanSummary\(lastScan\)\}/);
+  assert.match(pagina, /weekly_changes: point\.weekly_changes \?\? null,/);
   assert.match(pagina, /weeklyChangeNotes\(point\.weekly_changes \?\? null\)\.map\(\(note\) =>/);
 });

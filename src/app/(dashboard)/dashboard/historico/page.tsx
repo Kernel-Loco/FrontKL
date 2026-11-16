@@ -16,7 +16,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { InlineAlert } from "@/components/ui/InlineAlert";
 import { BAND_LABELS, SCORE_METHOD_LABELS, SCORE_REASON_LABELS } from "@/config/labels";
 import { can, canAccessSection, SECTIONS } from "@/config/permissions";
-import { latestScan, weeklyChangeNotes } from "@/lib/cambiosSemanales";
+import { lastScanSummary, latestScan, weeklyChangeNotes } from "@/lib/cambiosSemanales";
 import { formatDate } from "@/lib/format";
 import { getDomainFindings, getDomains, getDomainScore, getScoreHistory } from "@/services/queries";
 import { getReports } from "@/services/reportService";
@@ -97,7 +97,7 @@ export default async function HistoricoPage({ searchParams }: Props) {
     partial_coverage: point.partial_coverage,
     new_findings: point.reason !== "scan" ? null : point.new_findings,
     resolved_findings: point.reason !== "scan" ? null : point.resolved_findings,
-    weekly_changes: weeklyChangeNotes(point.weekly_changes ?? null).map((n) => n.text).join("; ") || null,
+    weekly_changes: point.weekly_changes ?? null,
     categories: point.categories,
   }));
   const canOpenDetail = canAccessSection(user.role, "detalle");
@@ -136,9 +136,7 @@ export default async function HistoricoPage({ searchParams }: Props) {
       {lastScan && (
         <InlineAlert tone={lastScanNotes.length > 0 ? "warning" : "info"}>
           <strong>Cambios del último escaneo ({formatDate(lastScan.computed_at)}).</strong>{" "}
-          {lastScanNotes.length > 0
-            ? `${lastScanNotes.map((n) => n.text).join(", ")} frente al escaneo anterior.`
-            : "Sin activos ni hallazgos nuevos y sin crecimiento del inventario de más de 20 % frente al escaneo anterior."}
+          {lastScanSummary(lastScan)}
         </InlineAlert>
       )}
 

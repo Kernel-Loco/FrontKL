@@ -31,6 +31,17 @@ export function weeklyChangeNotes(changes: WeeklyChanges | null): WeeklyChangeNo
   return notes;
 }
 
+/**
+ * El texto del aviso del último escaneo. Solo dice lo que la API marcó: sin weekly_changes no afirma que no hubo
+ * crecimiento (sin escaneo anterior en 7 días no se calcula) ni que no hubo hallazgos nuevos si el escaneo no los contó.
+ */
+export function lastScanSummary(point: ScoreHistoryPoint): string {
+  const notes = weeklyChangeNotes(point.weekly_changes ?? null);
+  if (notes.length > 0) return `${notes.map((n) => n.text).join(", ")}.`;
+  const base = "La API no marcó activos nuevos, hallazgos nuevos ni crecimiento del inventario de más de 20 % en la semana.";
+  return point.new_findings === null ? `${base} Este escaneo no contó sus hallazgos nuevos.` : base;
+}
+
 /** El último escaneo del histórico (no un recálculo), o null si no hay. Los puntos van del más viejo al más nuevo. */
 export function latestScan(points: ScoreHistoryPoint[]): ScoreHistoryPoint | null {
   for (let i = points.length - 1; i >= 0; i -= 1) if (points[i]!.reason === "scan") return points[i]!;
