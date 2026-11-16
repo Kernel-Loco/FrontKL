@@ -601,7 +601,7 @@ export interface IntegrationRequest {
 
 // ---------------------------------------------------------------- Provisional: bitácora (audit_log)
 
-export type AuditActorType = "user" | "system" | "api_key";
+export type AuditActorType = "user" | "system" | "api_key" | "platform";
 
 /** `GET /api/v1/audit-log` (solo Admin), del más nuevo al más viejo. */
 export interface AuditEntry {

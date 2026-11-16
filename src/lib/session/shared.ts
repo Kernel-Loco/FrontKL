@@ -8,6 +8,7 @@ const ROLE_FROM_API: Record<ApiRole, Role> = { analyst: "analista", manager: "ge
 
 export function toUser(user: ApiUser): User {
   const { idle_timeout_seconds: idle, absolute_expires_in_seconds: absolute } = user;
+  const platformAdmin = user.platform_admin === true;
   const hasLimits = typeof idle === "number" && idle > 0 && typeof absolute === "number";
   return {
     id: user.id,
@@ -17,6 +18,9 @@ export function toUser(user: ApiUser): User {
     organization_name: user.organization_name,
     mfa_enabled: user.mfa_enabled,
     last_login_at: user.last_login_at,
+    platform_admin: platformAdmin,
+    ...(platformAdmin && user.home_organization_name && { home_organization_name: user.home_organization_name }),
+    outside_home: platformAdmin && !!user.home_organization_id && user.home_organization_id !== user.organization_id,
     ...(hasLimits && { session_limits: { idle_timeout_seconds: idle, absolute_expires_in_seconds: absolute } }),
   };
 }

@@ -193,6 +193,7 @@ export const AUDIT_ACTOR_LABELS: Record<AuditActorType, string> = {
   user: "Usuario",
   system: "Sistema",
   api_key: "Llave de API",
+  platform: "Superadmin de LowTide",
 };
 
 /** Acciones de la bitácora (audit_log.action). Las que no estén aquí se muestran con su código. */
@@ -208,6 +209,9 @@ export const AUDIT_ACTION_LABELS: Record<string, string> = {
   "api_key.created": "Creó una llave de API",
   "api_key.revoked": "Revocó una llave de API",
   "chain.verified": "Verificó la integridad de la bitácora",
+  "platform.organization_switched": "Cambió de empresa activa (superadmin)",
+  "platform.organization_entered": "El superadmin de LowTide entró a la empresa",
+  "platform.organization_switch_failed": "Un cambio de empresa del superadmin no se aplicó",
 };
 
 export const API_SCOPE_LABELS: Record<string, string> = {
