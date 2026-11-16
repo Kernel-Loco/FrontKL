@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { LogOut, X } from "lucide-react";
 import { getNavigation, isNavItemActive, ROLE_LABELS, type SectionId } from "@/config/permissions";
+import { leaveSession } from "@/lib/session/logout";
 import { logout } from "@/services/authService";
 import type { User } from "@/types";
 import { ThemeToggle, type ThemeMode } from "./ThemeToggle";
@@ -25,20 +26,20 @@ function initials(name: string) {
     .join("");
 }
 
-/** Sin `user` la API no respondió al validar la sesión: menú de analista (el de menos permisos), sin perfil ni salida. */
+/** Sin `user` la API no respondió al validar la sesión: menú de analista (el de menos permisos), sin perfil, con salida. */
 const OFFLINE_ROLE = "analista";
 
 function SidebarContent({ user, badges, theme, onThemeToggle, onNavigate }: { user: User | null; badges: NavBadges; theme: ThemeMode; onThemeToggle: () => void; onNavigate?: () => void }) {
   const pathname = usePathname();
   const role = user?.role ?? OFFLINE_ROLE;
-  const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
 
+  // Cierra la sesión en el servidor si la API responde y, responda o no, sale por /auth/expirada, que borra la
+  // cookie. Con user null también se muestra: es la única salida mientras la API no valide la sesión (RC-225).
   const handleLogout = async () => {
     setLoggingOut(true);
     await logout();
-    router.replace("/login?notice=logout");
-    router.refresh();
+    leaveSession("logout");
   };
 
   return (
@@ -98,33 +99,31 @@ function SidebarContent({ user, badges, theme, onThemeToggle, onNavigate }: { us
       <div className="mx-3 mb-4 border-t border-lt-border px-3 pt-4">
         <ThemeToggle theme={theme} onToggle={onThemeToggle} className="mb-3 w-full justify-start px-2 py-2 text-lt-muted hover:bg-lt-raised hover:text-lt-text" />
         {user && (
-          <>
-            <Link
-              href="/dashboard/perfil"
-              onClick={onNavigate}
-              className="-mx-2 flex items-center gap-3 rounded-lg px-2 py-1.5 hover:bg-lt-raised"
-              aria-label={`Mi perfil: ${user.full_name}, ${ROLE_LABELS[user.role]}`}
-            >
-              <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-lt-nav text-xs font-bold text-lt-indigo-soft">
-                {initials(user.full_name)}
-              </span>
-              <span aria-hidden="true" className="min-w-0 leading-tight">
-                <span className="block truncate text-sm font-semibold text-lt-text">{user.full_name}</span>
-                <span className="block text-xs text-lt-indigo-soft">{ROLE_LABELS[user.role]}</span>
-              </span>
-            </Link>
-            <button
-              type="button"
-              onClick={handleLogout}
-              disabled={loggingOut}
-              aria-busy={loggingOut || undefined}
-              className="mt-3 flex items-center gap-2 rounded-md px-1 py-1 text-sm text-lt-muted hover:text-lt-text disabled:opacity-60"
-            >
-              {loggingOut ? <Spinner /> : <LogOut aria-hidden="true" className="h-4 w-4" />}
-              Cerrar sesión
-            </button>
-          </>
+          <Link
+            href="/dashboard/perfil"
+            onClick={onNavigate}
+            className="-mx-2 flex items-center gap-3 rounded-lg px-2 py-1.5 hover:bg-lt-raised"
+            aria-label={`Mi perfil: ${user.full_name}, ${ROLE_LABELS[user.role]}`}
+          >
+            <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-lt-nav text-xs font-bold text-lt-indigo-soft">
+              {initials(user.full_name)}
+            </span>
+            <span aria-hidden="true" className="min-w-0 leading-tight">
+              <span className="block truncate text-sm font-semibold text-lt-text">{user.full_name}</span>
+              <span className="block text-xs text-lt-indigo-soft">{ROLE_LABELS[user.role]}</span>
+            </span>
+          </Link>
         )}
+        <button
+          type="button"
+          onClick={handleLogout}
+          disabled={loggingOut}
+          aria-busy={loggingOut || undefined}
+          className="mt-3 flex items-center gap-2 rounded-md px-1 py-1 text-sm text-lt-muted hover:text-lt-text disabled:opacity-60"
+        >
+          {loggingOut ? <Spinner /> : <LogOut aria-hidden="true" className="h-4 w-4" />}
+          Cerrar sesión
+        </button>
       </div>
     </>
   );
