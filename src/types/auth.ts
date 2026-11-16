@@ -50,6 +50,8 @@ export interface Session {
 export interface LoginRequest {
   email: string;
   password: string;
+  /** Resultado del widget ALTCHA (RC-154). Cada uno sirve para un solo intento. */
+  captcha: string;
 }
 
 /** Con MFA activo, el login pide el código; sin MFA, ya trae la sesión (cookie) y el usuario. */
@@ -62,6 +64,29 @@ export interface MfaVerifyRequest {
 
 export interface MfaVerifyResponse {
   user: ApiUser;
+}
+
+/** Alta de TOTP, paso 1 (POST /auth/mfa/setup, RC-154): pide la contraseña actual. */
+export interface MfaSetupRequest {
+  current_password: string;
+}
+
+/** Secreto nuevo que todavía no se guarda: la API lo guarda solo con un código válido en /auth/mfa/enable. */
+export interface MfaSetupResponse {
+  otpauth_uri: string;
+  /** El mismo secreto en base32, para escribirlo a mano si la cámara no lee el QR. */
+  secret: string;
+  /** QR dibujado por la API, como data:image/svg+xml. */
+  qr_svg: string;
+  expires_in_seconds: number;
+}
+
+export interface MfaEnableRequest {
+  code: string;
+}
+
+export interface MfaEnableResponse {
+  mfa_enabled: true;
 }
 
 export interface RegisterRequest {
