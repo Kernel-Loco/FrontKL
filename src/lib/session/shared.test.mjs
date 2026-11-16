@@ -35,3 +35,29 @@ test("toUser sin los campos, o con alguno inválido, no inventa vencimientos", (
   assert.equal(toUser({ ...base, absolute_expires_in_seconds: 100 }).session_limits, undefined);
   assert.equal(toUser({ ...base, idle_timeout_seconds: 0, absolute_expires_in_seconds: 100 }).session_limits, undefined);
 });
+
+test("toUser de una cuenta normal: sin superadmin ni empresa propia (RC-332)", () => {
+  const user = toUser(base);
+  assert.equal(user.platform_admin, false);
+  assert.equal(user.outside_home, false);
+  assert.equal("home_organization_name" in user, false);
+});
+
+test("toUser del superadmin en su empresa y en una ajena (RC-332)", () => {
+  const superadmin = { ...base, platform_admin: true, home_organization_id: "o1", home_organization_name: "LowTide" };
+  const enCasa = toUser(superadmin);
+  assert.equal(enCasa.platform_admin, true);
+  assert.equal(enCasa.outside_home, false);
+  assert.equal(enCasa.home_organization_name, "LowTide");
+  const fuera = toUser({ ...superadmin, organization_id: "o2", organization_name: "Grupo Olmardo", role: "admin" });
+  assert.equal(fuera.outside_home, true);
+  assert.equal(fuera.organization_name, "Grupo Olmardo");
+  assert.equal(fuera.role, "admin");
+});
+
+test("toUser no da superadmin si la API manda la empresa propia sin la bandera", () => {
+  const user = toUser({ ...base, platform_admin: false, home_organization_id: "o9", home_organization_name: "Otra" });
+  assert.equal(user.platform_admin, false);
+  assert.equal(user.outside_home, false);
+  assert.equal("home_organization_name" in user, false);
+});

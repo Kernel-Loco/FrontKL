@@ -11,16 +11,16 @@
     "revisar:simulado": "node scripts/revisar-simulado.mjs"
   },
   "dependencies": {
-    "@hookform/resolvers": "^7.0.3",
+    "@hookform/resolvers": "^7.0.6",
     "@simplewebauthn/browser": "14.0.0",
     "altcha": "3.6.0",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.9",
-    "lucide-react": "^1.70.0",
+    "lucide-react": "^1.72.0",
     "next": "16.4.6",
     "react": "19.3.1",
     "react-dom": "19.3.1",
-    "react-hook-form": "^7.91.0",
+    "react-hook-form": "^7.92.0",
     "zod": "^4.6.7"
   },
   "devDependencies": {
