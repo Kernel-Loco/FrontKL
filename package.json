@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^7.0.6",
+    "@simplewebauthn/browser": "14.0.0",
     "altcha": "3.6.0",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.9",

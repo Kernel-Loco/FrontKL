@@ -1,5 +1,11 @@
 // Tipos de autenticación. Los nombres de campos (snake_case) replican los
 // esquemas Pydantic que expondrá FastAPI, para no tener que mapearlos.
+import type {
+  AuthenticationResponseJSON,
+  PublicKeyCredentialCreationOptionsJSON,
+  PublicKeyCredentialRequestOptionsJSON,
+  RegistrationResponseJSON,
+} from "@simplewebauthn/browser";
 
 export const ROLES = ["analista", "gerente", "admin"] as const;
 
@@ -125,6 +131,55 @@ export interface MfaEnableRequest {
 
 export interface MfaEnableResponse {
   mfa_enabled: true;
+  /** Passkeys que la API borró al activar TOTP (RC-331): la cuenta queda con el código de la app. */
+  passkeys_removed: number;
+}
+
+/** Passkey de la cuenta (GET /auth/passkeys, RC-331). La API nunca devuelve la llave pública ni el id de la credencial. */
+export interface Passkey {
+  id: string;
+  name: string;
+  created_at: string;
+  last_used_at: string | null;
+  /** La guarda un gestor que la sincroniza entre equipos (iCloud, Google, Bitwarden...). */
+  backed_up: boolean;
+  transports: string[] | null;
+}
+
+export interface PasskeyList {
+  passkeys: Passkey[];
+  /** False si el servidor no tiene WEBAUTHN_RP_ID u orígenes que sirvan: no se pueden registrar ni usar. */
+  available: boolean;
+  max: number;
+}
+
+/** Registrar passkey, paso 1: la contraseña actual y, si la cuenta tiene TOTP, un código de la app. */
+export interface PasskeyRegisterOptionsRequest {
+  current_password: string;
+  code?: string;
+}
+
+/** Las opciones de WebAuthn son JSON que la página pasa tal cual a @simplewebauthn/browser. */
+export interface PasskeyRegisterOptionsResponse {
+  options: PublicKeyCredentialCreationOptionsJSON;
+  expires_in_seconds: number;
+}
+
+export interface PasskeyRegisterVerifyRequest {
+  credential: RegistrationResponseJSON;
+  name: string;
+}
+
+export interface PasskeyLoginOptionsResponse {
+  options: PublicKeyCredentialRequestOptionsJSON;
+  /** Identifica el reto de un solo uso que guarda la API. Se manda de vuelta en /passkeys/login/verify. */
+  login_token: string;
+  expires_in_seconds: number;
+}
+
+export interface PasskeyLoginVerifyRequest {
+  login_token: string;
+  credential: AuthenticationResponseJSON;
 }
 
 export interface RegisterRequest {

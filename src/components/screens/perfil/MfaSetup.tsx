@@ -4,6 +4,7 @@ import { useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { CodeInput } from "@/components/CodeInput";
 import { ActionButton } from "@/components/ui/ActionButton";
+import { Card } from "@/components/ui/Card";
 import { Field, INPUT } from "@/components/ui/Field";
 import { InlineAlert } from "@/components/ui/InlineAlert";
 import { ApiError } from "@/lib/apiClient";
@@ -18,7 +19,7 @@ type Step = "password" | "scan" | "done";
  * Alta de TOTP (RC-154): 1) contraseña actual, 2) QR y código de 6 dígitos de la app. La API guarda el secreto solo
  * cuando el código es válido; mientras tanto la cuenta sigue sin MFA.
  */
-export function MfaSetup() {
+export function MfaSetup({ onDone }: { onDone?: () => void }) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const [step, setStep] = useState<Step>("password");
@@ -27,6 +28,8 @@ export function MfaSetup() {
   const [codeKey, setCodeKey] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Passkeys que se borraron al activar TOTP: se avisa para que nadie las busque al entrar.
+  const [removed, setRemoved] = useState(0);
 
   const onPassword = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -55,9 +58,11 @@ export function MfaSetup() {
     setBusy(true);
     setError(null);
     try {
-      await enableMfa({ code });
+      const { passkeys_removed } = await enableMfa({ code });
+      setRemoved(passkeys_removed);
       setSetup(null);
       setStep("done");
+      onDone?.();
       router.refresh();
     } catch (err) {
       const message = getErrorMessage(err);
@@ -74,7 +79,13 @@ export function MfaSetup() {
   };
 
   if (step === "done") {
-    return <InlineAlert tone="success">Listo: desde ahora LowTide te pide el código de tu app al iniciar sesión.</InlineAlert>;
+    return (
+      <InlineAlert tone="success">
+        Listo: desde ahora LowTide te pide el código de tu app al iniciar sesión.
+        {removed > 0 &&
+          ` Se ${removed === 1 ? "borró tu passkey" : `borraron tus ${removed} passkeys`}. Puedes registrar otra con tu contraseña y un código.`}
+      </InlineAlert>
+    );
   }
 
   if (step === "scan" && setup) {
@@ -130,5 +141,19 @@ export function MfaSetup() {
       {error && <InlineAlert tone="error">{error}</InlineAlert>}
       <ActionButton type="submit" loading={busy}>Mostrar código QR</ActionButton>
     </form>
+  );
+}
+
+/**
+ * Tarjeta del alta de TOTP. Tras activarlo, router.refresh() trae la cuenta con MFA: la tarjeta sigue en pantalla con
+ * el aviso de listo y el de las passkeys borradas hasta que se recargue la página (R3 de RC-331).
+ */
+export function MfaSetupCard({ mfaEnabled }: { mfaEnabled: boolean }) {
+  const [done, setDone] = useState(false);
+  if (mfaEnabled && !done) return null;
+  return (
+    <Card title="Activar la verificación en dos pasos">
+      <MfaSetup onDone={() => setDone(true)} />
+    </Card>
   );
 }
