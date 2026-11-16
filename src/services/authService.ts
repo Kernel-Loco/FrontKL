@@ -13,7 +13,15 @@ import type {
   MfaSetupResponse,
   MfaVerifyRequest,
   MfaVerifyResponse,
+  Passkey,
+  PasskeyList,
+  PasskeyLoginOptionsResponse,
+  PasskeyLoginVerifyRequest,
+  PasskeyRegisterOptionsRequest,
+  PasskeyRegisterOptionsResponse,
+  PasskeyRegisterVerifyRequest,
   PasswordChangeRequest,
+  PasswordChangeResponse,
   PasswordResetConfirmRequest,
   PasswordResetRequest,
   PasswordResetVerifyRequest,
@@ -40,6 +48,33 @@ export async function enableMfa(payload: MfaEnableRequest): Promise<MfaEnableRes
   return apiClient.post<MfaEnableResponse>("/auth/mfa/enable", payload);
 }
 
+// --- Passkeys (RC-331). Las opciones y las respuestas de WebAuthn viajan como JSON sin tocarlas.
+
+export async function passkeyLoginOptions(): Promise<PasskeyLoginOptionsResponse> {
+  return apiClient.post<PasskeyLoginOptionsResponse>("/auth/passkeys/login/options");
+}
+
+/** Revisa la firma de la passkey y, si sirve, la API crea la sesión (cookie). La passkey cuenta como MFA. */
+export async function passkeyLoginVerify(payload: PasskeyLoginVerifyRequest): Promise<MfaVerifyResponse> {
+  return apiClient.post<MfaVerifyResponse>("/auth/passkeys/login/verify", payload);
+}
+
+export async function passkeyRegisterOptions(payload: PasskeyRegisterOptionsRequest): Promise<PasskeyRegisterOptionsResponse> {
+  return apiClient.post<PasskeyRegisterOptionsResponse>("/auth/passkeys/register/options", payload);
+}
+
+export async function passkeyRegisterVerify(payload: PasskeyRegisterVerifyRequest): Promise<Passkey> {
+  return apiClient.post<Passkey>("/auth/passkeys/register/verify", payload);
+}
+
+export async function listPasskeys(): Promise<PasskeyList> {
+  return apiClient.get<PasskeyList>("/auth/passkeys");
+}
+
+export async function deletePasskey(id: string): Promise<void> {
+  await apiClient.delete<void>(`/auth/passkeys/${encodeURIComponent(id)}`);
+}
+
 export async function logout(): Promise<void> {
   try {
     await apiClient.post<void>("/auth/logout");
@@ -58,8 +93,9 @@ export async function getCurrentUser(): Promise<User | null> {
   }
 }
 
-export async function changePassword(payload: PasswordChangeRequest): Promise<void> {
-  await apiClient.post<void>("/auth/password", payload);
+/** Cambia la contraseña. La API borra las passkeys de la cuenta y dice cuántas (RC-331). */
+export async function changePassword(payload: PasswordChangeRequest): Promise<PasswordChangeResponse> {
+  return apiClient.post<PasswordChangeResponse>("/auth/password", payload);
 }
 
 // --- Aún sin backend: la recuperación por correo llega después. El login ya no la enlaza; las

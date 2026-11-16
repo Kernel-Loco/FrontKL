@@ -4,12 +4,13 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LogOut, X } from "lucide-react";
-import { getNavigation, isNavItemActive, ROLE_LABELS, type SectionId } from "@/config/permissions";
+import { canSwitchOrganization, getNavigation, isNavItemActive, ROLE_LABELS, type SectionId } from "@/config/permissions";
 import { leaveSession } from "@/lib/session/logout";
 import { logout } from "@/services/authService";
 import type { User } from "@/types";
 import { ThemeToggle, type ThemeMode } from "./ThemeToggle";
 import { Logo } from "./Logo";
+import { OrganizationSwitcher } from "./OrganizationSwitcher";
 import { Spinner } from "./Spinner";
 
 export const MOBILE_NAV_ID = "mobile-navigation";
@@ -50,13 +51,19 @@ function SidebarContent({ user, badges, theme, onThemeToggle, onNavigate }: { us
         </Link>
       </div>
       <div className="mx-6 mb-2 border-b border-lt-border px-1 pb-4">
-        <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-lt-faint">Empresa activa</p>
-        {user ? (
-          <p title={user.organization_name} className="mt-1 truncate text-sm font-semibold text-lt-text">
-            {user.organization_name}
-          </p>
+        {user && canSwitchOrganization(user) ? (
+          <OrganizationSwitcher user={user} />
         ) : (
-          <p className="mt-1 text-sm font-semibold text-lt-amber">Sin conexión con el servicio</p>
+          <>
+            <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-lt-faint">Empresa activa</p>
+            {user ? (
+              <p title={user.organization_name} className="mt-1 truncate text-sm font-semibold text-lt-text">
+                {user.organization_name}
+              </p>
+            ) : (
+              <p className="mt-1 text-sm font-semibold text-lt-amber">Sin conexión con el servicio</p>
+            )}
+          </>
         )}
       </div>
       <nav aria-label="Navegación principal" className="flex-1 space-y-7 overflow-y-auto px-3 py-2">

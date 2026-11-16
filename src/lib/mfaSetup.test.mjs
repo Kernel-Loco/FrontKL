@@ -28,8 +28,12 @@ test("3. un QR vencido o una cuenta ya activa vuelven al primer paso; un código
 
 test("4. el perfil sin MFA muestra el alta con QR y código, y con MFA no", () => {
   const pagina = leer("../app/(dashboard)/dashboard/perfil/page.tsx");
-  assert.match(pagina, /!profile\.mfa_enabled && \(\s*<Card title="Activar la verificación en dos pasos">\s*<MfaSetup \/>/);
+  assert.match(pagina, /<MfaSetupCard mfaEnabled=\{profile\.mfa_enabled\} \/>/);
   const alta = leer("../components/screens/perfil/MfaSetup.tsx");
+  // La tarjeta se esconde con MFA, salvo justo después de activarlo: ahí queda el aviso de listo (R3 de RC-331).
+  assert.match(alta, /if \(mfaEnabled && !done\) return null;/);
+  assert.match(alta, /<Card title="Activar la verificación en dos pasos">\s*<MfaSetup onDone=\{\(\) => setDone\(true\)\} \/>/);
+  assert.match(alta, /onDone\?\.\(\);\s*router\.refresh\(\);/, "onDone va antes del refresh");
   assert.match(alta, /startMfaSetup\(\{ current_password: current \}\)/);
   assert.match(alta, /enableMfa\(\{ code \}\)/);
   assert.match(alta, /<CodeInput[^>]*length=\{6\}/);

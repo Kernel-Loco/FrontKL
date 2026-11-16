@@ -601,7 +601,7 @@ export interface IntegrationRequest {
 
 // ---------------------------------------------------------------- Provisional: bitácora (audit_log)
 
-export type AuditActorType = "user" | "system" | "api_key";
+export type AuditActorType = "user" | "system" | "api_key" | "platform";
 
 /** `GET /api/v1/audit-log` (solo Admin), del más nuevo al más viejo. */
 export interface AuditEntry {
@@ -621,4 +621,9 @@ export interface AuditEntry {
 export interface PasswordChangeRequest {
   current_password: string;
   new_password: string;
+}
+
+export interface PasswordChangeResponse {
+  /** Passkeys que la API borró al cambiar la contraseña (RC-331): se registraron con la anterior. */
+  passkeys_removed: number;
 }
