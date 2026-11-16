@@ -27,6 +27,8 @@ export function MfaSetup() {
   const [codeKey, setCodeKey] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Passkeys que se borraron al activar TOTP: se avisa para que nadie las busque al entrar.
+  const [removed, setRemoved] = useState(0);
 
   const onPassword = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -55,7 +57,8 @@ export function MfaSetup() {
     setBusy(true);
     setError(null);
     try {
-      await enableMfa({ code });
+      const { passkeys_removed } = await enableMfa({ code });
+      setRemoved(passkeys_removed);
       setSetup(null);
       setStep("done");
       router.refresh();
@@ -74,7 +77,13 @@ export function MfaSetup() {
   };
 
   if (step === "done") {
-    return <InlineAlert tone="success">Listo: desde ahora LowTide te pide el código de tu app al iniciar sesión.</InlineAlert>;
+    return (
+      <InlineAlert tone="success">
+        Listo: desde ahora LowTide te pide el código de tu app al iniciar sesión.
+        {removed > 0 &&
+          ` Se ${removed === 1 ? "borró tu passkey" : `borraron tus ${removed} passkeys`}. Puedes registrar otra con tu contraseña y un código.`}
+      </InlineAlert>
+    );
   }
 
   if (step === "scan" && setup) {

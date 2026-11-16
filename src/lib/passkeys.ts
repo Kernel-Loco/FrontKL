@@ -46,3 +46,30 @@ export function cleanPasskeyName(value: string): string {
 export function registrationMustRestart(status: number, message: string): boolean {
   return status === 400 && /venció|ya se usó|Empieza de nuevo/.test(message);
 }
+
+/** Veces que el autollenado se vuelve a armar solo tras un fallo, por carga de la página. */
+export const MAX_AUTOFILL_RETRIES = 3;
+
+/**
+ * Si el autollenado se vuelve a armar tras este fallo. Solo tras uno de la API (el reto ya se gastó) o tras una
+ * cancelación de la persona, y como máximo MAX_AUTOFILL_RETRIES veces. Las demás fallas del navegador (dominio, RP ID,
+ * sin soporte) se repiten al instante: volver a armarlo sería un bucle que gasta las opciones de la IP.
+ */
+export function canRearmAutofill(error: unknown, retries: number): boolean {
+  if (retries >= MAX_AUTOFILL_RETRIES) return false;
+  if (ceremonyErrorMessage(error) === undefined) return true;
+  return fields(error).name === "NotAllowedError";
+}
+
+/**
+ * Cuándo renovar el reto del autollenado: unos 15 s antes de que venza en el servidor. El navegador no corta una
+ * ceremonia con mediation conditional, así que sin esto el reto queda muerto mientras la página siga abierta.
+ */
+export function autofillRefreshMs(expiresInSeconds: number): number {
+  return Math.max(expiresInSeconds - 15, 30) * 1000;
+}
+
+/** El registro ya gastó el código TOTP: cualquier falla después pide esperar al siguiente código. */
+export function withNextCodeHint(message: string | null): string {
+  return `${message ?? "Se canceló la passkey."} Para intentarlo otra vez, espera el siguiente código de tu app.`;
+}

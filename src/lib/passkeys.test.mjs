@@ -3,7 +3,16 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { ceremonyErrorMessage, cleanPasskeyName, isCeremonyAborted, registrationMustRestart } from "./passkeys.ts";
+import {
+  autofillRefreshMs,
+  canRearmAutofill,
+  ceremonyErrorMessage,
+  cleanPasskeyName,
+  isCeremonyAborted,
+  MAX_AUTOFILL_RETRIES,
+  registrationMustRestart,
+  withNextCodeHint,
+} from "./passkeys.ts";
 
 const leer = (ruta) => readFileSync(new URL(ruta, import.meta.url), "utf8");
 
@@ -56,4 +65,34 @@ test("7. las rutas de passkeys de la cuenta piden sesión y entrar con passkey n
   const client = leer("./apiClient.ts");
   assert.match(client, /startsWith\("\/auth\/passkeys\/login\/"\)\) return false/);
   assert.match(client, /path === "\/auth\/passkeys"/);
+});
+
+test("8. el autollenado solo se vuelve a armar tras la API o una cancelación, con tope", () => {
+  const api = new Error("La passkey no es válida.");
+  const cancel = { name: "NotAllowedError", code: "ERROR_PASSTHROUGH_SEE_CAUSE_PROPERTY" };
+  assert.equal(canRearmAutofill(api, 0), true);
+  assert.equal(canRearmAutofill(cancel, 0), true);
+  assert.equal(canRearmAutofill({ name: "SecurityError", code: "ERROR_INVALID_RP_ID" }, 0), false);
+  assert.equal(canRearmAutofill({ name: "NotSupportedError" }, 0), false);
+  assert.equal(canRearmAutofill(api, MAX_AUTOFILL_RETRIES), false);
+  assert.equal(canRearmAutofill(cancel, MAX_AUTOFILL_RETRIES - 1), true);
+});
+
+test("9. el reto del autollenado se renueva antes de vencer", () => {
+  assert.equal(autofillRefreshMs(300), 285_000);
+  assert.equal(autofillRefreshMs(20), 30_000);
+});
+
+test("10. tras gastar el código, la falla pide esperar el siguiente", () => {
+  assert.match(withNextCodeHint("Se canceló la passkey o se agotó el tiempo."), /agotó el tiempo\. Para intentarlo otra vez, espera el siguiente código/);
+  assert.match(withNextCodeHint(null), /^Se canceló la passkey\. Para intentarlo/);
+});
+
+test("11. el login no deja que el autollenado corte el botón y renueva el reto", () => {
+  const form = leer("../components/auth/forms/LoginForm.tsx");
+  assert.match(form, /buttonActive\.current\) return/);
+  assert.match(form, /canRearmAutofill\(error, autofillRetries\.current\)/);
+  assert.match(form, /autofillRefreshMs\(options\.expires_in_seconds\)/);
+  const mfa = leer("../components/screens/perfil/MfaSetup.tsx");
+  assert.match(mfa, /passkeys_removed/);
 });

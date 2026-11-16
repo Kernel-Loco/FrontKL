@@ -9,7 +9,13 @@ import { Field, INPUT } from "@/components/ui/Field";
 import { InlineAlert } from "@/components/ui/InlineAlert";
 import { ApiError } from "@/lib/apiClient";
 import { formatDateTime } from "@/lib/format";
-import { ceremonyErrorMessage, cleanPasskeyName, isCeremonyAborted, registrationMustRestart } from "@/lib/passkeys";
+import {
+  ceremonyErrorMessage,
+  cleanPasskeyName,
+  isCeremonyAborted,
+  registrationMustRestart,
+  withNextCodeHint,
+} from "@/lib/passkeys";
 import { deletePasskey, listPasskeys, passkeyRegisterOptions, passkeyRegisterVerify } from "@/services/authService";
 import { getErrorMessage } from "@/services/errors";
 import type { PasskeyList } from "@/types";
@@ -65,18 +71,32 @@ export function PasskeysSection({ mfaEnabled }: { mfaEnabled: boolean }) {
     setBusy(true);
     setError(null);
     setNotice(null);
+    // Con TOTP, la API gasta el código en cuanto da las opciones: desde ahí, otro intento necesita el siguiente código.
+    let codeSpent = false;
     try {
       const { options } = await passkeyRegisterOptions({ current_password: current, ...(mfaEnabled && { code }) });
+      codeSpent = mfaEnabled;
       const credential = await startRegistration({ optionsJSON: options });
       await passkeyRegisterVerify({ credential, name });
       setAdding(false);
       setNotice(`Listo: ya puedes entrar con la passkey '${name}'.`);
       await load();
     } catch (err) {
-      if (!isCeremonyAborted(err)) setError(message(err));
-      // Cada intento vuelve a pedir contraseña y código: el código ya se gastó y el reto vence o se gasta en el paso 2.
+      const aborted = isCeremonyAborted(err);
       if (err instanceof ApiError && registrationMustRestart(err.status, err.message)) {
-        setError("La solicitud venció o ya se usó. Escribe otra vez tu contraseña y un código nuevo.");
+        // Cada intento vuelve a pedir contraseña y, con TOTP, un código: el reto vence o se gasta en el paso 2.
+        setError(mfaEnabled
+          ? "La solicitud venció o ya se usó. Escribe otra vez tu contraseña y un código nuevo."
+          : "La solicitud venció o ya se usó. Escribe otra vez tu contraseña.");
+      } else if (codeSpent) {
+        setError(withNextCodeHint(aborted ? null : message(err)));
+      } else if (!aborted) {
+        setError(message(err));
+      }
+      // 409: ya hay 10 (quizá desde otra pestaña). La lista al día cambia el formulario por el aviso del tope.
+      if (err instanceof ApiError && err.status === 409) {
+        setAdding(false);
+        await load();
       }
       setCode("");
       setCodeKey((key) => key + 1);
@@ -95,6 +115,11 @@ export function PasskeysSection({ mfaEnabled }: { mfaEnabled: boolean }) {
       setNotice("Se borró la passkey. Ya no sirve para entrar.");
       await load();
     } catch (err) {
+      // 404: ya no existe (se borró en otra pestaña o al activar TOTP). Se cierra la confirmación y la lista se pone al día.
+      if (err instanceof ApiError && err.status === 404) {
+        setConfirming(null);
+        await load();
+      }
       setError(getErrorMessage(err));
     } finally {
       setBusy(false);

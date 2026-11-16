@@ -93,6 +93,8 @@ export interface MfaEnableRequest {
 
 export interface MfaEnableResponse {
   mfa_enabled: true;
+  /** Passkeys que la API borró al activar TOTP (RC-331): la cuenta queda con el código de la app. */
+  passkeys_removed: number;
 }
 
 /** Passkey de la cuenta (GET /auth/passkeys, RC-331). La API nunca devuelve la llave pública ni el id de la credencial. */
