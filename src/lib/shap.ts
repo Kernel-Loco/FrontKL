@@ -19,10 +19,34 @@ export function predictedClassText(prediction: Severity | null | undefined): str
   return clase ? `severidad ${clase}` : "la severidad que predijo el modelo";
 }
 
+/** Un aporte de 0 o más acerca a la clase predicha. La frase, el signo y el color usan esta misma regla. */
+export function shapPushesToward(contribution: number): boolean {
+  return contribution >= 0;
+}
+
 /** Cómo mueve un aporte SHAP la predicción: hacia la clase predicha o lejos de ella. */
 export function shapDirection(contribution: number, prediction: Severity | null | undefined): string {
   const clase = predictedClassText(prediction);
-  return contribution >= 0 ? `acerca la predicción a ${clase}` : `aleja la predicción de ${clase}`;
+  return shapPushesToward(contribution) ? `acerca la predicción a ${clase}` : `aleja la predicción de ${clase}`;
+}
+
+/** Aporte con signo y dos decimales para «Ver detalle SHAP»: 0 sale '+0.00' y -0.003 sale '−0.00', como su frase. */
+export function shapDisplay(contribution: number): string {
+  return `${shapPushesToward(contribution) ? "+" : "−"}${Math.abs(contribution).toFixed(2)}`;
+}
+
+/**
+ * Colores del detalle SHAP. No son los de severidad (SEVERITY_TONE de tones.ts: naranja es alta y azul es baja),
+ * porque el signo no dice más o menos riesgo: dice hacia la clase predicha o lejos de ella. En un hallazgo predicho
+ * baja, el factor que lo acerca a baja salía naranja.
+ */
+export const SHAP_TONE = {
+  toward: { text: "text-lt-indigo-soft", bar: "bg-lt-indigo" },
+  away: { text: "text-lt-muted", bar: "bg-lt-faint" },
+} as const;
+
+export function shapTone(contribution: number): { text: string; bar: string } {
+  return shapPushesToward(contribution) ? SHAP_TONE.toward : SHAP_TONE.away;
 }
 
 /** Una frase por característica para «Lo que más influyó». */

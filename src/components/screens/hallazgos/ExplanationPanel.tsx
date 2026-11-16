@@ -7,26 +7,37 @@ import { Spinner } from "@/components/Spinner";
 import { EXPOSICION_LABELS, SENSIBILIDAD_LABELS } from "@/config/labels";
 import { getFindingExplanation } from "@/services/domainService";
 import { getErrorMessage } from "@/services/errors";
-import { SHAP_LABELS, shapLegend, shapPhrase } from "@/lib/shap";
+import { SHAP_LABELS, shapDisplay, shapLegend, shapPhrase, shapTone } from "@/lib/shap";
 import type { DomainFinding, FindingExplanation } from "@/types";
 
 interface Factor {
   label: string;
   value: number;
   display: string;
+  tone: { text: string; bar: string };
 }
+
+// Puntos de una regla: más puntos es más riesgo, así que sí van con los colores de severidad alta y baja.
+const POINTS_TONE = { up: { text: "text-lt-orange", bar: "bg-lt-orange" }, down: { text: "text-lt-blue", bar: "bg-lt-blue" } };
 
 function factorsOf(explanation: FindingExplanation): Factor[] {
   if (explanation.method === "ml" && explanation.shap?.length) {
+    // SHAP de la clase predicha: signo y color salen de shap.ts, con la misma regla que la frase (RC-71).
     return [...explanation.shap]
       .sort((a, b) => Math.abs(b.contribution) - Math.abs(a.contribution))
       .map((s) => ({
         label: SHAP_LABELS[s.feature] ?? s.feature.replace(/_/g, " "),
-      value: s.contribution,
-      display: `${s.contribution > 0 ? "+" : "−"}${Math.abs(s.contribution).toFixed(2)}`,
+        value: s.contribution,
+        display: shapDisplay(s.contribution),
+        tone: shapTone(s.contribution),
       }));
   }
-  return explanation.factors.map((f) => ({ label: f.label, value: f.points, display: `${f.points > 0 ? "+" : "−"}${Math.abs(f.points)} pts` }));
+  return explanation.factors.map((f) => ({
+    label: f.label,
+    value: f.points,
+    display: `${f.points > 0 ? "+" : "−"}${Math.abs(f.points)} pts`,
+    tone: f.points >= 0 ? POINTS_TONE.up : POINTS_TONE.down,
+  }));
 }
 
 /** Panel «¿Por qué es crítico?» del hallazgo elegido. */
@@ -94,11 +105,11 @@ export function ExplanationPanel({ finding }: { finding: DomainFinding }) {
                       <li key={f.label}>
                         <div className="mb-1 flex justify-between gap-3 text-[13px]">
                           <span className="text-lt-text">{f.label}</span>
-                          <span className={`tabular-nums ${f.value >= 0 ? "text-lt-orange" : "text-lt-blue"}`}>{f.display}</span>
+                          <span className={`tabular-nums ${f.tone.text}`}>{f.display}</span>
                         </div>
                         <div className="h-1.5 overflow-hidden rounded-full bg-lt-raised">
                           <div
-                            className={`h-full rounded-full ${f.value >= 0 ? "bg-lt-orange" : "bg-lt-blue"}`}
+                            className={`h-full rounded-full ${f.tone.bar}`}
                             style={{ width: `${(Math.abs(f.value) / max) * 100}%` }}
                           />
                         </div>
@@ -115,11 +126,11 @@ export function ExplanationPanel({ finding }: { finding: DomainFinding }) {
                     <li key={f.label}>
                       <div className="mb-1 flex justify-between gap-3 text-[13px]">
                         <span className="text-lt-text">{f.label}</span>
-                        <span className={`tabular-nums ${f.value >= 0 ? "text-lt-orange" : "text-lt-blue"}`}>{f.display}</span>
+                        <span className={`tabular-nums ${f.tone.text}`}>{f.display}</span>
                       </div>
                       <div className="h-1.5 overflow-hidden rounded-full bg-lt-raised">
                         <div
-                          className={`h-full rounded-full ${f.value >= 0 ? "bg-lt-orange" : "bg-lt-blue"}`}
+                          className={`h-full rounded-full ${f.tone.bar}`}
                           style={{ width: `${(Math.abs(f.value) / max) * 100}%` }}
                         />
                       </div>
