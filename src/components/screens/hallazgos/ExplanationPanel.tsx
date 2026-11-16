@@ -7,6 +7,7 @@ import { Spinner } from "@/components/Spinner";
 import { EXPOSICION_LABELS, SENSIBILIDAD_LABELS } from "@/config/labels";
 import { getFindingExplanation } from "@/services/domainService";
 import { getErrorMessage } from "@/services/errors";
+import { SHAP_LABELS, shapLegend, shapPhrase } from "@/lib/shap";
 import type { DomainFinding, FindingExplanation } from "@/types";
 
 interface Factor {
@@ -14,13 +15,6 @@ interface Factor {
   value: number;
   display: string;
 }
-
-const SHAP_LABELS: Record<string, string> = {
-  tipo: "Tipo de hallazgo",
-  antiguedad_dias: "Antigüedad",
-  exposicion: "Exposición",
-  sensibilidad: "Sensibilidad",
-};
 
 function factorsOf(explanation: FindingExplanation): Factor[] {
   if (explanation.method === "ml" && explanation.shap?.length) {
@@ -33,29 +27,6 @@ function factorsOf(explanation: FindingExplanation): Factor[] {
       }));
   }
   return explanation.factors.map((f) => ({ label: f.label, value: f.points, display: `${f.points > 0 ? "+" : "−"}${Math.abs(f.points)} pts` }));
-}
-
-function shapPhrase(feature: string, value: string | number, characteristics: DomainFinding["caracteristicas"], contribution: number) {
-  const direction = contribution >= 0 ? "aumenta" : "reduce";
-  const label = SHAP_LABELS[feature] ?? feature.replace(/_/g, " ");
-
-  switch (feature) {
-    case "tipo":
-      return `El tipo de hallazgo (${characteristics.tipo.replace(/_/g, " ")}) ${direction} el riesgo.`;
-    case "antiguedad_dias": {
-      const days = Number(value);
-      const age = Number.isFinite(days) ? `${days} ${days === 1 ? "día" : "días"}` : String(value);
-      return `La exposición lleva ${age}; este factor ${direction} el riesgo.`;
-    }
-    case "exposicion":
-      return characteristics.exposicion === "directa"
-        ? `El activo responde directamente desde internet; esto ${direction} el riesgo.`
-        : `El dato está disponible públicamente; esto ${direction} el riesgo.`;
-    case "sensibilidad":
-      return `La información expuesta tiene sensibilidad ${characteristics.sensibilidad}; esto ${direction} el riesgo.`;
-    default:
-      return `${label} (${String(value)}) ${direction} el riesgo.`;
-  }
 }
 
 /** Panel «¿Por qué es crítico?» del hallazgo elegido. */
@@ -111,12 +82,13 @@ export function ExplanationPanel({ finding }: { finding: DomainFinding }) {
                 <ol className="mt-3 space-y-2">
                   {topShap.map((factor, index) => (
                     <li key={`${factor.feature}-${index}`} className="text-sm leading-relaxed text-lt-text">
-                      {shapPhrase(factor.feature, factor.value, c, factor.contribution)}
+                      {shapPhrase(factor.feature, factor.value, c, factor.contribution, explanation.model_prediction)}
                     </li>
                   ))}
                 </ol>
                 <details className="mt-4 border-t border-lt-border pt-3">
                   <summary className="cursor-pointer text-xs text-lt-muted hover:text-lt-text">Ver detalle SHAP</summary>
+                  <p className="mt-2 text-[11px] text-lt-faint">{shapLegend(explanation.model_prediction)}</p>
                   <ul className="mt-3 space-y-3">
                     {factors.map((f) => (
                       <li key={f.label}>
