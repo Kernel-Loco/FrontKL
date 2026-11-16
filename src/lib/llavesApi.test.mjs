@@ -4,7 +4,17 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { API_KEY_MAX_DAYS, API_KEY_NAME_MAX, API_KEY_OWN_USE_ERROR, contarActivas, cuerpoDeLlave, marcarRevocada, validarLlave } from "./llavesApi.ts";
+import {
+  API_KEY_MAX_DAYS,
+  API_KEY_NAME_MAX,
+  API_KEY_OWN_USE_ERROR,
+  contarActivas,
+  cuerpoDeLlave,
+  estadoVisible,
+  largoDelNombre,
+  marcarRevocada,
+  validarLlave,
+} from "./llavesApi.ts";
 
 const leer = (ruta) => readFileSync(new URL(ruta, import.meta.url), "utf8");
 const pedido = (cambios = {}) => ({ name: "SIEM corporativo", expires_in_days: 30, own_use: true, ...cambios });
@@ -55,7 +65,53 @@ test("3. revocar marca la fila sin cambiar la fecha si ya estaba revocada, y sol
   assert.equal(revocada.status, "revoked");
   const vieja = fila({ revoked_at: "2026-11-02T00:00:00Z", status: "revoked" });
   assert.equal(marcarRevocada(vieja, "2026-11-16T10:00:00Z"), vieja);
-  assert.equal(contarActivas([fila(), revocada, fila({ status: "expired" })]), 1);
+  const antesDeVencer = Date.parse("2026-11-16T00:00:00Z");
+  assert.equal(contarActivas([fila(), revocada, fila({ status: "expired" })], antesDeVencer), 1);
+});
+
+test("6. el nombre se mide en caracteres, como len() de Python en el max_length de LlaveIn", () => {
+  const conEmoji = `SIEM ${"\u{1F511}".repeat(40)}`;
+  assert.equal(largoDelNombre(conEmoji), 45);
+  assert.equal(conEmoji.length, 85);
+  assert.equal(validarLlave(pedido({ name: conEmoji })), null);
+  assert.match(validarLlave(pedido({ name: "\u{1F511}".repeat(API_KEY_NAME_MAX + 1) })), /80/);
+  assert.doesNotMatch(leer("../components/screens/admin/ApiKeysManager.tsx"), /maxLength=/);
+});
+
+test("7. una llave que vence con la página abierta se ve y se cuenta como vencida", () => {
+  const llave = fila({ expires_at: "2026-11-16T10:05:00Z" });
+  const antes = Date.parse("2026-11-16T10:00:00Z");
+  const despues = Date.parse("2026-11-16T10:30:00Z");
+  assert.equal(estadoVisible(llave, antes), "active");
+  assert.equal(estadoVisible(llave, despues), "expired");
+  assert.equal(estadoVisible(llave, Date.parse(llave.expires_at)), "expired");
+  assert.equal(estadoVisible(fila({ status: "revoked", revoked_at: "2026-11-02T00:00:00Z" }), despues), "revoked");
+  assert.equal(contarActivas([llave], antes), 1);
+  assert.equal(contarActivas([llave], despues), 0);
+  const pantalla = leer("../components/screens/admin/ApiKeysManager.tsx");
+  assert.match(pantalla, /const estado = estadoVisible\(k, ahora\)/);
+  assert.match(pantalla, /estado === "active" &&/);
+  assert.match(pantalla, /contarActivas\(keys, ahora\)/);
+  assert.match(pantalla, /setInterval\(tick, RELOJ_MS\)/);
+});
+
+test("8. revocar la llave del aviso lo quita, refresca la ruta y cada revocación lleva su id y su error", () => {
+  const pantalla = leer("../components/screens/admin/ApiKeysManager.tsx");
+  assert.match(pantalla, /setSecret\(\(current\) => \(current\?\.id === id \? null : current\)\)/);
+  assert.equal(pantalla.match(/^\s*router\.refresh\(\);/gm)?.length, 2);
+  assert.match(pantalla, /quedan\.delete\(id\)/);
+  assert.match(pantalla, /setConfirmId\(\(current\) => \(current === id \? null : current\)\)/);
+  assert.doesNotMatch(pantalla, /revokingId|setRevokingId\(null\)|setConfirmId\(null\);\r?\n\s*\}/);
+  assert.doesNotMatch(pantalla, /\bsetError\(/);
+  assert.match(pantalla, /setRevokeErrors\(\(current\) => \(\{ \.\.\.current, \[id\]: getErrorMessage\(err\) \}\)\)/);
+  assert.match(pantalla, /setCopyError\("No se pudo copiar/);
+});
+
+test("9. si GET /domains falla, Acceso API sigue con la lista y la revocación", () => {
+  const pagina = leer("../app/(dashboard)/dashboard/admin/api/page.tsx");
+  assert.doesNotMatch(pagina, /Promise\.all\(\[getApiKeys\(\), getDomains\(\)\]\)/);
+  assert.match(pagina, /getDomains\(\)\.catch\(\(error: unknown\) => \{\s*if \(error instanceof ServiceError\) return null;\s*throw error;/);
+  assert.match(leer("../components/screens/admin/ApiKeysManager.tsx"), /domains === null &&/);
 });
 
 test("4. el servicio llama a /api-keys de la API y ya no simula", () => {
@@ -70,10 +126,9 @@ test("4. el servicio llama a /api-keys de la API y ya no simula", () => {
 
 test("5. la pantalla muestra `key`, no la deja en la lista y no borra la llave si otro envío falla", () => {
   const pantalla = leer("../components/screens/admin/ApiKeysManager.tsx");
-  assert.match(pantalla, /setSecret\(\{ name: created\.name, value: created\.key \}\)/);
+  assert.match(pantalla, /setSecret\(\{ id: created\.id, name: created\.name, value: created\.key \}\)/);
   assert.match(pantalla, /setKeys\(\(current\) => \[sinLlave\(created\), \.\.\.current\]\)/);
   assert.doesNotMatch(pantalla, /setSecret\(null\)/);
   assert.match(pantalla, /getErrorMessage\(err, \{ apiMessageOn403: true \}\)/);
   assert.match(pantalla, /name="domain"/);
-  assert.match(pantalla, /k\.status === "active"/);
 });

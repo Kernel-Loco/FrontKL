@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import { KeyRound } from "lucide-react";
 import { ActionButton } from "@/components/ui/ActionButton";
 import { Badge } from "@/components/ui/Badge";
@@ -10,7 +11,7 @@ import { InlineAlert } from "@/components/ui/InlineAlert";
 import { API_SCOPE_LABELS } from "@/config/labels";
 import { mensajeDeExito } from "@/config/simulado";
 import { formatDate, formatDateTime } from "@/lib/format";
-import { API_KEY_MAX_DAYS, API_KEY_NAME_MAX, API_KEY_OWN_USE_ERROR, API_KEY_SCOPE, contarActivas, marcarRevocada } from "@/lib/llavesApi";
+import { API_KEY_MAX_DAYS, API_KEY_OWN_USE_ERROR, API_KEY_SCOPE, contarActivas, estadoVisible, marcarRevocada } from "@/lib/llavesApi";
 import { createApiKey, revokeApiKey } from "@/services/adminService";
 import { getErrorMessage } from "@/services/errors";
 import type { ApiKey, ApiKeyCreated, ApiKeyStatus } from "@/types";
@@ -28,22 +29,46 @@ function sinLlave(created: ApiKeyCreated): ApiKey {
   return fila;
 }
 
-export function ApiKeysManager({ initial, domains }: { initial: ApiKey[]; domains: string[] }) {
+/** Cada cuánto se vuelve a calcular el estado a la vista, para que una llave que vence con la página abierta lo muestre. */
+const RELOJ_MS = 30_000;
+
+export function ApiKeysManager({ initial, domains }: { initial: ApiKey[]; domains: string[] | null }) {
+  const router = useRouter();
   const [keys, setKeys] = useState(initial);
+  // router.refresh() trae otra lista del servidor: se toma en lugar de la local, que solo se cambió a mano.
+  const [base, setBase] = useState(initial);
+  if (base !== initial) {
+    setBase(initial);
+    setKeys(initial);
+  }
+  // 0 hasta montar: el primer dibujo usa el estado del servidor y no choca con el HTML que ya llegó.
+  const [ahora, setAhora] = useState(0);
   const [creating, setCreating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [copyError, setCopyError] = useState<string | null>(null);
+  const [revokeErrors, setRevokeErrors] = useState<Record<string, string>>({});
   const [ownUseError, setOwnUseError] = useState<string | null>(null);
-  const [secret, setSecret] = useState<{ name: string; value: string } | null>(null);
+  const [secret, setSecret] = useState<{ id: string; name: string; value: string } | null>(null);
   const [copied, setCopied] = useState(false);
   const [confirmId, setConfirmId] = useState<string | null>(null);
-  const [revokingId, setRevokingId] = useState<string | null>(null);
+  const [revoking, setRevoking] = useState<ReadonlySet<string>>(() => new Set());
+
+  useEffect(() => {
+    const tick = () => setAhora(Date.now());
+    const primero = setTimeout(tick, 0);
+    const reloj = setInterval(tick, RELOJ_MS);
+    return () => {
+      clearTimeout(primero);
+      clearInterval(reloj);
+    };
+  }, []);
 
   const onCreate = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const form = event.currentTarget;
     const data = new FormData(form);
     // La llave recién creada sigue a la vista hasta que otra la reemplace: un envío que falla no la borra.
-    setError(null);
+    setCreateError(null);
     if (data.get("own_use") !== "on") {
       setOwnUseError(API_KEY_OWN_USE_ERROR);
       return;
@@ -58,39 +83,54 @@ export function ApiKeysManager({ initial, domains }: { initial: ApiKey[]; domain
         own_use: true,
       });
       setKeys((current) => [sinLlave(created), ...current]);
-      setSecret({ name: created.name, value: created.key });
+      setSecret({ id: created.id, name: created.name, value: created.key });
       setCopied(false);
+      setCopyError(null);
       form.reset();
+      router.refresh();
     } catch (err) {
       // 403 sin plan con API y 409 con 20 vigentes traen su mensaje en el detail de la API.
-      setError(getErrorMessage(err, { apiMessageOn403: true }));
+      setCreateError(getErrorMessage(err, { apiMessageOn403: true }));
     } finally {
       setCreating(false);
     }
   };
 
   const onRevoke = async (id: string) => {
-    setRevokingId(id);
-    setError(null);
+    if (revoking.has(id)) return;
+    setRevoking((current) => new Set(current).add(id));
+    setRevokeErrors((current) => {
+      const otros = { ...current };
+      delete otros[id];
+      return otros;
+    });
     try {
       await revokeApiKey(id);
-      const ahora = new Date().toISOString();
-      setKeys((current) => current.map((k) => (k.id === id ? marcarRevocada(k, ahora) : k)));
+      const revocadaEn = new Date().toISOString();
+      setKeys((current) => current.map((k) => (k.id === id ? marcarRevocada(k, revocadaEn) : k)));
+      // La llave revocada ya no sirve: si es la del aviso de copiar, el aviso se va con su valor.
+      setSecret((current) => (current?.id === id ? null : current));
+      router.refresh();
     } catch (err) {
-      setError(getErrorMessage(err));
+      setRevokeErrors((current) => ({ ...current, [id]: getErrorMessage(err) }));
     } finally {
-      setRevokingId(null);
-      setConfirmId(null);
+      setRevoking((current) => {
+        const quedan = new Set(current);
+        quedan.delete(id);
+        return quedan;
+      });
+      setConfirmId((current) => (current === id ? null : current));
     }
   };
 
   const copy = async () => {
     if (!secret) return;
+    setCopyError(null);
     try {
       await navigator.clipboard.writeText(secret.value);
       setCopied(true);
     } catch {
-      setError("No se pudo copiar. Selecciona la llave y cópiala a mano.");
+      setCopyError("No se pudo copiar. Selecciona la llave y cópiala a mano.");
     }
   };
 
@@ -99,15 +139,27 @@ export function ApiKeysManager({ initial, domains }: { initial: ApiKey[]; domain
       <Card title="Crear llave" description={`Para conectar LowTide con los sistemas de tu propia empresa. Vigencia máxima de ${API_KEY_MAX_DAYS} días.`} icon={<KeyRound aria-hidden="true" className="h-4 w-4" />}>
         <form onSubmit={onCreate} noValidate className="space-y-4">
           <Field label="Nombre" htmlFor="key-name">
-            <input id="key-name" name="name" placeholder="SIEM corporativo" className={INPUT} autoComplete="off" maxLength={API_KEY_NAME_MAX} />
+            {/* Sin maxLength: el atributo cuenta unidades UTF-16 y el backend cuenta caracteres (validarLlave). */}
+            <input id="key-name" name="name" placeholder="SIEM corporativo" className={INPUT} autoComplete="off" />
           </Field>
           <Field label="Dominio" htmlFor="key-domain">
-            <select id="key-domain" name="domain" defaultValue="" className={INPUT}>
+            <select
+              id="key-domain"
+              name="domain"
+              defaultValue=""
+              className={INPUT}
+              {...(domains === null ? { "aria-describedby": "key-domain-error" } : {})}
+            >
               <option value="">Todos los dominios de la empresa</option>
-              {domains.map((fqdn) => (
+              {(domains ?? []).map((fqdn) => (
                 <option key={fqdn} value={fqdn}>{fqdn}</option>
               ))}
             </select>
+            {domains === null && (
+              <p id="key-domain-error" className="mt-1.5 text-xs text-lt-amber">
+                No se pudieron cargar los dominios. Para una llave de un solo dominio, recarga la página.
+              </p>
+            )}
           </Field>
           <p className="text-xs text-lt-muted">
             Permiso: {API_SCOPE_LABELS[API_KEY_SCOPE]}. La llave solo consulta datos, no lanza escaneos ni cambia nada.
@@ -132,7 +184,7 @@ export function ApiKeysManager({ initial, domains }: { initial: ApiKey[]; domain
               </p>
             )}
           </div>
-          {error && <InlineAlert tone="error">{error}</InlineAlert>}
+          {createError && <InlineAlert tone="error">{createError}</InlineAlert>}
           <ActionButton type="submit" loading={creating} className="w-full">
             Crear llave
           </ActionButton>
@@ -144,11 +196,12 @@ export function ApiKeysManager({ initial, domains }: { initial: ApiKey[]; domain
               <code className="min-w-0 flex-1 break-all font-mono text-[11px] text-lt-text">{secret.value}</code>
               <ActionButton variant="secondary" size="sm" onClick={copy}>{copied ? "Copiada" : "Copiar"}</ActionButton>
             </div>
+            {copyError && <InlineAlert tone="error">{copyError}</InlineAlert>}
           </div>
         )}
       </Card>
 
-      <Card title="Llaves" padded={false} action={`${contarActivas(keys)} activas`}>
+      <Card title="Llaves" padded={false} action={`${contarActivas(keys, ahora)} activas`}>
         <TableWrap>
           <table className="w-full min-w-[640px]">
             <thead>
@@ -168,7 +221,10 @@ export function ApiKeysManager({ initial, domains }: { initial: ApiKey[]; domain
                 </tr>
               )}
               {keys.map((k) => {
-                const status = STATUS[k.status] ?? STATUS.expired;
+                const estado = estadoVisible(k, ahora);
+                const status = STATUS[estado] ?? STATUS.expired;
+                const enCurso = revoking.has(k.id);
+                const revokeError = revokeErrors[k.id];
                 return (
                   <tr key={k.id} className={TR}>
                     <td className={TD}>
@@ -190,10 +246,12 @@ export function ApiKeysManager({ initial, domains }: { initial: ApiKey[]; domain
                     <td className={`${TD} whitespace-nowrap text-[13px] text-lt-muted`}>{k.last_used_at ? formatDateTime(k.last_used_at) : "Nunca"}</td>
                     <td className={TD}><Badge tone={status.tone} dot>{status.label}</Badge></td>
                     <td className={`${TD} text-right`}>
-                      {k.status === "active" &&
-                        (confirmId === k.id ? (
+                      {estado === "active" &&
+                        (enCurso ? (
+                          <ActionButton variant="danger" size="sm" loading>Revocando</ActionButton>
+                        ) : confirmId === k.id ? (
                           <span className="inline-flex gap-1">
-                            <ActionButton variant="danger" size="sm" loading={revokingId === k.id} onClick={() => onRevoke(k.id)}>Confirmar</ActionButton>
+                            <ActionButton variant="danger" size="sm" onClick={() => onRevoke(k.id)}>Confirmar</ActionButton>
                             <ActionButton variant="ghost" size="sm" onClick={() => setConfirmId(null)}>No</ActionButton>
                           </span>
                         ) : (
@@ -201,6 +259,11 @@ export function ApiKeysManager({ initial, domains }: { initial: ApiKey[]; domain
                             Revocar<span className="sr-only"> {k.name}</span>
                           </ActionButton>
                         ))}
+                      {revokeError && (
+                        <p role="alert" className="mt-1.5 text-left text-xs font-medium text-lt-red">
+                          No se revocó: {revokeError}
+                        </p>
+                      )}
                     </td>
                   </tr>
                 );

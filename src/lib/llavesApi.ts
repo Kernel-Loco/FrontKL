@@ -1,6 +1,6 @@
 // Reglas de las llaves de API del portal contra BackKL cirdan/api/llaves.py (RC-129). Solo importa tipos, que node
 // borra al quitar los tipos: así node --test la importa directo (src/lib/llavesApi.test.mjs).
-import type { ApiKey, ApiKeyRequest } from "@/types";
+import type { ApiKey, ApiKeyRequest, ApiKeyStatus } from "@/types";
 
 /** Igual que DIAS_MAXIMO de llaves.py y el CHECK de api_keys.expires_at. */
 export const API_KEY_MAX_DAYS = 90;
@@ -14,12 +14,17 @@ export const API_KEY_OWN_USE_ERROR = "Confirma que la llave es solo para los sis
 // Los mismos que rechaza _texto de llaves.py: menores que 32 y el 127.
 const CONTROL = /[\u0000-\u001f\u007f]/;
 
+/** Largo como lo cuenta len() de Python en el max_length de LlaveIn: por code point, no por unidad UTF-16 de JS. */
+export function largoDelNombre(nombre: string): number {
+  return [...nombre].length;
+}
+
 /** Mensaje para mostrar si la petición no pasaría la validación del backend, o null si pasa. */
 export function validarLlave(request: ApiKeyRequest): string | null {
   if (request.own_use !== true) return API_KEY_OWN_USE_ERROR;
   const nombre = request.name.trim();
   if (!nombre) return "Ponle un nombre a la llave.";
-  if (nombre.length > API_KEY_NAME_MAX) return `El nombre va hasta ${API_KEY_NAME_MAX} caracteres.`;
+  if (largoDelNombre(nombre) > API_KEY_NAME_MAX) return `El nombre va hasta ${API_KEY_NAME_MAX} caracteres.`;
   if (CONTROL.test(nombre)) return "El nombre no puede llevar caracteres de control.";
   const dias = request.expires_in_days;
   if (!Number.isInteger(dias) || dias < 1 || dias > API_KEY_MAX_DAYS) return `La vigencia va de 1 a ${API_KEY_MAX_DAYS} días.`;
@@ -43,7 +48,16 @@ export function marcarRevocada(key: ApiKey, ahora: string): ApiKey {
   return { ...key, revoked_at: ahora, status: "revoked" };
 }
 
-/** Llaves vigentes: el mismo estado que calcula LISTA_SQL de llaves.py. */
-export function contarActivas(keys: readonly ApiKey[]): number {
-  return keys.filter((k) => k.status === "active").length;
+/**
+ * Estado a la vista. LISTA_SQL de llaves.py lo calcula con su now() al pedir la lista, así que una llave que vence con
+ * la página abierta se pasa a 'expired' con la hora del navegador. ahora va en milisegundos, como Date.now().
+ */
+export function estadoVisible(key: ApiKey, ahora: number): ApiKeyStatus {
+  if (key.status === "active" && Date.parse(key.expires_at) <= ahora) return "expired";
+  return key.status;
+}
+
+/** Llaves vigentes a la hora dada, con el mismo estado que muestra la tabla. */
+export function contarActivas(keys: readonly ApiKey[], ahora: number = Date.now()): number {
+  return keys.filter((k) => estadoVisible(k, ahora) === "active").length;
 }
