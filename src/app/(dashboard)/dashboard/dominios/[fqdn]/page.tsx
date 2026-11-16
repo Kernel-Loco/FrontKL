@@ -9,6 +9,7 @@ import { DomainTabs, domainTabs } from "@/components/screens/detalle/DomainTabs"
 import { KriPanel } from "@/components/screens/detalle/KriPanel";
 import { RiskGauge } from "@/components/screens/detalle/RiskGauge";
 import { ReportButton } from "@/components/screens/shared/ReportButton";
+import { SiemExportButton } from "@/components/screens/shared/SiemExportButton";
 import { ScanButton } from "@/components/screens/shared/ScanButton";
 import { exportBlockReasons, failedScanAt, unscoredLabel } from "@/components/screens/shared/domainState";
 import { TEXT_LINK } from "@/components/ui/ActionButton";
@@ -132,6 +133,7 @@ export default async function DomainDetailPage({ params }: Props) {
             {can(user.role, "request_report") && (
               <ReportButton key={fqdn} domain={fqdn} disabledReason={reportBlocked} />
             )}
+            {can(user.role, "request_report") && <SiemExportButton key={`siem-${fqdn}`} domain={fqdn} />}
             {can(user.role, "request_scan") && <ScanButton domains={domains.items} fixedDomain={fqdn} label="Escanear ahora" />}
           </>
         }
