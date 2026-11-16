@@ -189,6 +189,23 @@ export interface ScoreHistoryPoint extends ScoreBase {
   /** Hallazgos que el escaneo abrió y que resolvió. 0 en un recálculo y null si su escaneo no los contó (antes de RC-55). */
   new_findings: number | null;
   resolved_findings: number | null;
+  /** Cambios frente al escaneo anterior (#37, RC-73). null en un recálculo y en un escaneo sin novedades. */
+  weekly_changes: WeeklyChanges | null;
+}
+
+/**
+ * `weekly_changes` de cirdan/score/cambios.py: activos y hallazgos nuevos del escaneo y crecimiento del inventario
+ * frente al escaneo anterior de los últimos 7 días. `assets_growth_percent` es null sin un escaneo anterior en esos 7 días.
+ */
+export interface WeeklyChanges {
+  previous_scan_id: string | null;
+  previous_scan_at: string | null;
+  assets_before: number | null;
+  assets_now: number | null;
+  new_assets: number;
+  assets_growth_percent: number | null;
+  new_findings: number;
+  alerts: { new_asset: boolean; new_finding: boolean; assets_growth_over_20_percent: boolean };
 }
 
 /** `GET /api/v1/domains/{fqdn}/score/history`, del más viejo al más nuevo. */

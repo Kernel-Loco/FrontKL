@@ -16,6 +16,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { InlineAlert } from "@/components/ui/InlineAlert";
 import { BAND_LABELS, SCORE_METHOD_LABELS, SCORE_REASON_LABELS } from "@/config/labels";
 import { can, canAccessSection, SECTIONS } from "@/config/permissions";
+import { lastScanSummary, latestScan, weeklyChangeNotes } from "@/lib/cambiosSemanales";
 import { formatDate } from "@/lib/format";
 import { getDomainFindings, getDomains, getDomainScore, getScoreHistory } from "@/services/queries";
 import { getReports } from "@/services/reportService";
@@ -77,6 +78,9 @@ export default async function HistoricoPage({ searchParams }: Props) {
   ];
   const newestFirst = points.map((p, i) => ({ point: p, change: i > 0 ? p.score - points[i - 1]!.score : 0, first: i === 0 })).reverse();
   const hasPartialCoverage = points.some((point) => point.partial_coverage);
+  // Activo nuevo, hallazgo nuevo o inventario más de 20 % arriba frente al escaneo anterior (#37, RC-73).
+  const lastScan = latestScan(points);
+  const lastScanNotes = weeklyChangeNotes(lastScan?.weekly_changes ?? null);
   const exportRows = points.map((point) => ({
     score_id: point.score_id,
     domain: fqdn,
@@ -93,6 +97,7 @@ export default async function HistoricoPage({ searchParams }: Props) {
     partial_coverage: point.partial_coverage,
     new_findings: point.reason !== "scan" ? null : point.new_findings,
     resolved_findings: point.reason !== "scan" ? null : point.resolved_findings,
+    weekly_changes: point.weekly_changes ?? null,
     categories: point.categories,
   }));
   const canOpenDetail = canAccessSection(user.role, "detalle");
@@ -128,6 +133,13 @@ export default async function HistoricoPage({ searchParams }: Props) {
         {points.length > 0 ? <ScoreChart points={points} /> : <EmptyState title="Sin escaneos todavía" />}
       </Card>
 
+      {lastScan && (
+        <InlineAlert tone={lastScanNotes.length > 0 ? "warning" : "info"}>
+          <strong>Cambios del último escaneo ({formatDate(lastScan.computed_at)}).</strong>{" "}
+          {lastScanSummary(lastScan)}
+        </InlineAlert>
+      )}
+
       {points.length > 0 && (
         <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
           <Card title="Escaneos" padded={false}>
@@ -152,6 +164,9 @@ export default async function HistoricoPage({ searchParams }: Props) {
                         {point.reason !== "scan" && (
                           <span className="block whitespace-normal text-xs text-lt-muted">{SCORE_REASON_LABELS[point.reason]}</span>
                         )}
+                        {weeklyChangeNotes(point.weekly_changes ?? null).map((note) => (
+                          <span key={note.kind} className="mt-1 block whitespace-normal text-xs text-lt-amber">{note.text}</span>
+                        ))}
                       </td>
                       <td className={`${TD} font-semibold tabular-nums`}>{point.score}</td>
                       <td className={TD}>{first || point.reason === "correction" ? <span className="text-lt-faint">—</span> : <Delta value={change} />}</td>
