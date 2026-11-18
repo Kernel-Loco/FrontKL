@@ -6,9 +6,9 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { SEGURIDAD } from "./seguridad.ts";
 
-// Huella de las fronteras y los controles del resumen de seguridad para clientes del 10 de noviembre de 2026, que
+// Huella de las fronteras y los controles del resumen de seguridad para clientes del 16 de noviembre de 2026, que
 // se revisó contra el modelo de amenazas: solo trae controles que ya funcionan.
-const HUELLA_DEL_RESUMEN = "f3a19c91f56f7670df5e68a338518389729dec824c473aeaba3a62fd4968ba9b";
+const HUELLA_DEL_RESUMEN = "cea54f8a3e9e66cf4fc27c2848115a4ca189bc0f9c5f9de79f3cb33385691017";
 
 const controles = SEGURIDAD.grupos.flatMap((grupo) => grupo.controles);
 
@@ -46,6 +46,8 @@ test("solo cita controles que ya funcionan: los textos son los del resumen revis
     "Los textos ya no son los del resumen revisado. Un control planeado, parcial o con riesgo abierto no entra: " +
       "copia de nuevo los del resumen vigente y actualiza la huella.",
   );
+  const cupo = controles.map((c) => c.texto).find((t) => /cupo diario de cada fuente/.test(t));
+  assert.match(cupo, /La reserva respeta el tope diario dentro de la base\. El ajuste de lo gastado al terminar acepta cualquier cantidad y no revisa el tope\./);
 });
 
 test("no trae claves de Jira, números de PR, rutas del repo ni el nombre clave", () => {
