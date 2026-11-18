@@ -32,7 +32,6 @@ export const FUNCIONES_SIMULADAS: readonly FuncionDeServicio[] = [
   "registerDomain",
   "verifyTxt",
   // Políticas de alerta (settingsService.ts)
-  "getSettings",
   "getAlertPolicies",
   "updateAlertPolicies",
   // Reportes (reportService.ts)

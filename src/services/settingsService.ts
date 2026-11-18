@@ -1,14 +1,8 @@
 // Políticas de alerta de la organización (provisional: aún no está en el contrato #21). Solo Admin.
 import { mockDelay } from "@/lib/mock";
-import { mockAlertPolicies, mockSettings } from "@/mocks/api/provisional";
-import type { AlertPolicies, OrgSettings } from "@/types";
+import { mockAlertPolicies } from "@/mocks/api/provisional";
+import type { AlertPolicies } from "@/types";
 import { ServiceError } from "./errors";
-
-export async function getSettings(): Promise<OrgSettings> {
-  // TODO: conectar con backend → GET /settings
-  await mockDelay(250);
-  return structuredClone(mockSettings);
-}
 
 export async function getAlertPolicies(): Promise<AlertPolicies> {
   // TODO: conectar con backend → GET /alert-policies

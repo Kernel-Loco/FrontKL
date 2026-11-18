@@ -1,7 +1,7 @@
 // Copia de los JSON de ejemplo del contrato de API v1 de BackKL (docs/api_v1/, #21), con los
 // datos demo de Acme Demo. Los campos marcados «Propuesto» en src/types/api.ts todavía no están
 // en BackKL: van aquí con valores coherentes con la base y hay que agregarlos al contrato.
-import type { DomainFindings, DomainScore, FindingExplanation, ListResponse, Domain, ScoreHistory, ScoringWeights } from "@/types";
+import type { DomainScore, ListResponse, Domain, ScoreHistory, ScoringWeights } from "@/types";
 
 /** docs/api_v1/dominios.json */
 export const mockDomains: ListResponse<Domain> = {
@@ -166,142 +166,6 @@ export const mockDomains: ListResponse<Domain> = {
   "total": 5
 };
 
-/** docs/api_v1/hallazgos.json */
-export const mockFindings: DomainFindings = {
-  "domain": "acme-demo.mx",
-  "items": [
-    {
-      "id": "80000000-0000-4000-8000-000000000001",
-      "title": "12 correos de la empresa aparecen en brechas de datos públicas",
-      "asset": "acme-demo.mx",
-      "asset_type": "domain",
-      "category": "data_leaks",
-      "rule_code": "breach_exposure",
-      "source": "hibp",
-      "severity": "critical",
-      "base_severity": "critical",
-      "status": "open",
-      "recurrence": "new",
-      "cve_id": null,
-      "cvss": null,
-      "epss": null,
-      "in_kev": false,
-      "evidence": {
-        "emails_exposed": 12,
-        "breach_name": "DemoBreach-2026",
-        "breach_date": "2026-06-18",
-        "data_classes": [
-          "Email addresses",
-          "Passwords",
-          "Usernames"
-        ]
-      },
-      "caracteristicas": {
-        "tipo": "correos_en_brecha",
-        "antiguedad_dias": 104,
-        "exposicion": "publica",
-        "sensibilidad": "alta"
-      },
-      "detected_at": "2026-09-30T14:22:10-06:00",
-      "last_scan_id": "60000000-0000-4000-8000-000000000001"
-    },
-    {
-      "id": "80000000-0000-4000-8000-000000000002",
-      "title": "El subdominio dev.acme-demo.mx tiene el certificado TLS vencido",
-      "asset": "dev.acme-demo.mx",
-      "asset_type": "subdomain",
-      "category": "infrastructure",
-      "rule_code": "cert_expired",
-      "source": "shodan",
-      "severity": "high",
-      "base_severity": "high",
-      "status": "open",
-      "recurrence": "new",
-      "cve_id": null,
-      "cvss": null,
-      "epss": null,
-      "in_kev": false,
-      "evidence": {
-        "port": 443,
-        "not_after": "2026-09-12"
-      },
-      "caracteristicas": {
-        "tipo": "certificado_vencido",
-        "antiguedad_dias": 18,
-        "exposicion": "publica",
-        "sensibilidad": "media"
-      },
-      "detected_at": "2026-09-30T14:22:30-06:00",
-      "last_scan_id": "60000000-0000-4000-8000-000000000001"
-    },
-    {
-      "id": "80000000-0000-4000-8000-000000000003",
-      "title": "El sitio usa una versión vieja de su CMS con vulnerabilidades conocidas",
-      "asset": "www.acme-demo.mx",
-      "asset_type": "subdomain",
-      "category": "infrastructure",
-      "rule_code": "outdated_software",
-      "source": "shodan",
-      "severity": "high",
-      "base_severity": "high",
-      "status": "open",
-      "recurrence": "new",
-      "cve_id": null,
-      "cvss": null,
-      "epss": null,
-      "in_kev": false,
-      "evidence": {
-        "port": 443,
-        "cms_version_status": "outdated"
-      },
-      "caracteristicas": {
-        "tipo": "software_desactualizado",
-        "antiguedad_dias": 28,
-        "exposicion": "directa",
-        "sensibilidad": "media"
-      },
-      "detected_at": "2026-09-30T14:22:30-06:00",
-      "last_scan_id": "60000000-0000-4000-8000-000000000001"
-    },
-    {
-      "id": "80000000-0000-4000-8000-000000000004",
-      "title": "Falta el registro DMARC en acme-demo.mx",
-      "asset": "acme-demo.mx",
-      "asset_type": "domain",
-      "category": "configuration",
-      "rule_code": "dmarc_missing",
-      "source": "dns",
-      "severity": "medium",
-      "base_severity": "medium",
-      "status": "open",
-      "recurrence": "recurring",
-      "cve_id": null,
-      "cvss": null,
-      "epss": null,
-      "in_kev": false,
-      "evidence": {
-        "record": "_dmarc.acme-demo.mx",
-        "observed": "NXDOMAIN"
-      },
-      "caracteristicas": {
-        "tipo": "dmarc_faltante",
-        "antiguedad_dias": 28,
-        "exposicion": "publica",
-        "sensibilidad": "media"
-      },
-      "detected_at": "2026-09-02T10:30:00-06:00",
-      "last_scan_id": "60000000-0000-4000-8000-000000000001"
-    }
-  ],
-  "total": 4
-};
-
-export const mockFindingsByDomain: Record<string, DomainFindings> = {
-  [mockFindings.domain]: mockFindings,
-  "acme-tienda.mx": { domain: "acme-tienda.mx", items: [], total: 0 },
-  "acme-portal.mx": { domain: "acme-portal.mx", items: [], total: 0 }
-};
-
 /** docs/api_v1/score.json */
 export const mockScore: DomainScore = {
   "domain": "acme-demo.mx",
@@ -439,38 +303,6 @@ export const mockScoreHistory: ScoreHistory = {
     }
   ],
   "total": 2
-};
-
-/** docs/api_v1/explicacion.json */
-export const mockExplanation: FindingExplanation = {
-  "finding_id": "80000000-0000-4000-8000-000000000001",
-  "domain": "acme-demo.mx",
-  "title": "12 correos de la empresa aparecen en brechas de datos públicas",
-  "severity": "critical",
-  "base_severity": "critical",
-  "category": "data_leaks",
-  "rule_code": "breach_exposure",
-  "score_id": "a0000000-0000-4000-8000-000000000004",
-  "computed_at": "2026-10-29T20:16:09-06:00",
-  "method": "rules",
-  "penalty": 40.0,
-  "max_penalty": 40.0,
-  "factors": [
-    {
-      "label": "Severidad 100 x peso 1 (tope 40)",
-      "points": 40.0
-    }
-  ],
-  "caracteristicas": {
-    "tipo": "correos_en_brecha",
-    "antiguedad_dias": 104,
-    "exposicion": "publica",
-    "sensibilidad": "alta"
-  },
-  "summary": "Es crítico porque alguien de fuera puede usar ya esas contraseñas para entrar a cuentas de la empresa, sin pasos extra.",
-  "recommendation": "Pide a todo el personal que cambie ya la contraseña y las preguntas de seguridad de las cuentas que abrió con su correo de trabajo y de cualquier cuenta donde repita esa contraseña, sobre todo la de la empresa, y que cierre las sesiones abiertas. Activa la verificación en dos pasos en las cuentas de la empresa y, si quieres saber qué correos aparecen, consulta la búsqueda por dominio de Have I Been Pwned, que te pide verificar el dominio en ese servicio.",
-  "confidence": null,
-  "shap": null
 };
 
 /** docs/api_v1/pesos.json */
