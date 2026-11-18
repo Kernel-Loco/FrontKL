@@ -44,7 +44,7 @@ export default async function DomainDetailPage({ params }: Props) {
     getScoreHistory(fqdn),
     getDomainAssets(fqdn),
     // Si /scans falla, el detalle sigue con la fecha del dominio.
-    getScans().catch((error: unknown) => {
+    getScans({ domain: fqdn, limit: 5 }).catch((error: unknown) => {
       if (error instanceof ServiceError) return null;
       throw error;
     }),
@@ -58,7 +58,8 @@ export default async function DomainDetailPage({ params }: Props) {
   // El reporte solo se frena sin carta vigente, como la API (403). Los demás motivos solo frenan el escaneo.
   const reportBlocked = exportBlockReasons(reasons).map((r) => SCAN_BLOCK_REASON_LABELS[r]).join(" · ") || undefined;
 
-  // /scans trae los últimos 50 de la empresa, del más nuevo al más viejo; un dominio tiene a lo más un escaneo activo.
+  // /scans?domain trae los 5 más nuevos del dominio (RC-318): un dominio tiene a lo más un escaneo activo, así que entre
+  // ellos está el último terminado. El filtro queda por si la API todavía no filtra y devuelve los de toda la empresa.
   const ownScans = scans?.items.filter((s) => s.domain === fqdn) ?? [];
   const running = ownScans[0]?.status === "queued" || ownScans[0]?.status === "running";
   const failedAt = failedScanAt(domain, ownScans.find((s) => s.finished_at));
