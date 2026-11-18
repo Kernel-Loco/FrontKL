@@ -7,6 +7,8 @@ el párrafo «Datos reales» de [Inicio de sesión](#inicio-de-sesión-con-el-ba
 
 El backend (base de datos, API y recolectores OSINT) está en [BackKL](https://github.com/Kernel-Loco/BackKL).
 
+Cirdan es el nombre clave del proyecto y se queda a propósito en el código (RC-209): en las rutas `cirdan/` de BackKL que citan los comentarios, en el registro TXT `cirdan-verification=<token>` que publica el cliente y en el prefijo `CIRDAN_FAKE_` de los datos simulados. Lo demás que ve la persona usuaria dice LowTide. Por qué no se renombró, en el [README de BackKL](https://github.com/Kernel-Loco/BackKL#readme).
+
 ## Requisitos
 
 - Node.js 20 desde la 20.19, 22 desde la 22.13 o 24 en adelante. Las series 21 y 23 no sirven. El equipo usa Node 22, así que revisa que sea 22.13 o más reciente. Next 16 pide 20.9, pero `npm run lint` usa ESLint 10, que pide esas versiones. Con Node 18 no arranca.
