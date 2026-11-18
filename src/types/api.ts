@@ -75,7 +75,8 @@ export interface Domain {
 
 export type FindingStatus = "open" | "resolved" | "accepted_risk" | "false_positive";
 export type Recurrence = "new" | "recurring";
-export type AssetType = "domain" | "subdomain" | "ip" | "service" | "certificate" | "email";
+/** Los siete tipos del CHECK de assets.asset_type (BackKL db/migraciones/015_tipo_activo_api_doc.sql). */
+export type AssetType = "domain" | "subdomain" | "ip" | "service" | "certificate" | "email" | "api_doc";
 
 /** Las 4 características del reto, con las claves del contrato de plugin (#13). */
 export interface Caracteristicas {
