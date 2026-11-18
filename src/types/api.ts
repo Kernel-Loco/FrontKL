@@ -534,16 +534,25 @@ export interface Integration {
   events: string[];
 }
 
-/** La llave completa solo se muestra una vez al crearla; aquí solo viaja su prefijo. */
+/** Estado que calcula la API: revocada, vencida o vigente (LISTA_SQL de BackKL cirdan/api/llaves.py). */
+export type ApiKeyStatus = "active" | "expired" | "revoked";
+
+/** `GET /api/v1/api-keys` (solo Admin, RC-129). La llave completa solo viaja al crearla; aquí solo su prefijo. */
 export interface ApiKey {
   id: string;
   name: string;
   key_prefix: string;
+  /** Sin dominio, la llave lee todos los de la empresa. */
+  domain: string | null;
+  /** Hoy siempre ["read"]: los GET de datos de /api/v1. */
   scopes: string[];
+  /** Correo de quien la creó. */
+  created_by: string;
   created_at: string;
   expires_at: string;
   last_used_at: string | null;
   revoked_at: string | null;
+  status: ApiKeyStatus;
 }
 
 /** `GET /api/v1/settings` */
@@ -601,12 +610,13 @@ export interface AlertPolicies {
   policies: AlertPolicy[];
 }
 
-// ---------------------------------------------------------------- Provisional: llaves de API y webhooks
+// ---------------------------------------------------------------- Llaves de API (RC-129) y webhooks (provisional)
 
-/** `POST /api/v1/api-keys`. Vigencia máxima de 90 días. */
+/** `POST /api/v1/api-keys` (solo Admin). Vigencia de 1 a 90 días. El alcance lo pone la API: solo lectura. */
 export interface ApiKeyRequest {
   name: string;
-  scopes: string[];
+  /** FQDN de un dominio de la empresa. Sin él, la llave lee todos. */
+  domain?: string;
   expires_in_days: number;
   /**
    * Declaración del Administrador de que la llave es para un sistema de su propia empresa, no de un
@@ -616,10 +626,9 @@ export interface ApiKeyRequest {
   own_use: true;
 }
 
-/** La llave completa solo viaja en esta respuesta; después solo se ve su prefijo. */
-export interface ApiKeyCreated {
-  api_key: ApiKey;
-  secret: string;
+/** Respuesta 201 de `POST /api/v1/api-keys`: la fila de la lista más `key`, la llave completa, que solo viaja aquí. */
+export interface ApiKeyCreated extends ApiKey {
+  key: string;
 }
 
 /** `POST /api/v1/integrations` */

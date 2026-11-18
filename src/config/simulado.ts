@@ -20,10 +20,7 @@ export const FUNCIONES_SIMULADAS: readonly FuncionDeServicio[] = [
   "getUsers",
   "inviteUser",
   "changeUserRole",
-  // Llaves de API, webhooks y bitácora (adminService.ts)
-  "getApiKeys",
-  "createApiKey",
-  "revokeApiKey",
+  // Webhooks y bitácora (adminService.ts). Las llaves de API ya van a la API (RC-129).
   "getIntegrations",
   "createIntegration",
   "setIntegrationEnabled",

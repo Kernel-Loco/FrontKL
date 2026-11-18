@@ -4,6 +4,7 @@
 // scanService.ts, que corren en el navegador.
 import { apiGet } from "@/lib/apiServer";
 import type {
+  ApiKey,
   Asset,
   ActionPlan,
   Domain,
@@ -30,6 +31,9 @@ export const getActionPlan = (fqdn: string) => apiGet<ActionPlan>(`/domains/${pa
 
 /** Provisional: aún no está en el contrato #21. */
 export const getDomainAssets = (fqdn: string) => apiGet<ListResponse<Asset>>(`/domains/${path(fqdn)}/assets`);
+
+/** Solo Admin (RC-129). Nunca trae la llave completa, solo su prefijo. */
+export const getApiKeys = () => apiGet<ListResponse<ApiKey>>("/api-keys");
 
 /** Solo Admin. */
 export const getTxtVerifications = () => apiGet<ListResponse<TxtVerification>>("/domains/txt");
