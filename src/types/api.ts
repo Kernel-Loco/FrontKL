@@ -23,7 +23,8 @@ export interface ApiErrorBody {
 // ---------------------------------------------------------------- score y criterio (#29)
 
 export type Band = "low" | "medium" | "high" | "critical";
-/** Letra del score final (#114): A 0–19, B 20–39, C 40–59, D 60–79, F 80–100. No hay E. La da la API. */
+/** Letra del score final (#114). Con la plantilla: A 0–19, B 20–39, C 40–59, D 60–79, F 80–100. No hay E. La da la API
+ * con los cortes de bandas del juego de cada score (RC-237). */
 export type Grade = "A" | "B" | "C" | "D" | "F";
 export type Category = "infrastructure" | "digital_identity" | "configuration" | "data_leaks";
 export type ScoreMethod = "rules" | "ml";
@@ -374,6 +375,20 @@ export interface ScoringRule {
   recommendation?: string;
 }
 
+/** Dónde empiezan las bandas medio, alto y crítico de un juego de reglas (RC-237). El bajo empieza en 0. */
+export interface BandCutoffs {
+  medium: number;
+  high: number;
+  critical: number;
+}
+
+/** Rango de una banda como lo manda la API. */
+export interface BandRange {
+  band: Band;
+  from: number;
+  to: number;
+}
+
 /** `GET /api/v1/scoring/weights` */
 export interface ScoringWeights {
   rule_set_version: number;
@@ -381,7 +396,11 @@ export interface ScoringWeights {
   activated_at: string;
   validated_by: string | null;
   category_weights: Record<Category, number>;
-  bands: { band: Band; from: number; to: number }[];
+  /** Los del juego activo de la organización (RC-237). `bands`, `grades` y `floor` salen de ellos. */
+  band_cutoffs: BandCutoffs;
+  /** Los de la plantilla global: 40, 60 y 80. */
+  band_cutoffs_template: BandCutoffs;
+  bands: BandRange[];
   grades: { grade: Grade; from: number; to: number }[];
   floor: { one_critical: number; two_or_more_critical: number; counts_statuses: FindingStatus[] };
   alert_threshold_default: number;
@@ -392,6 +411,7 @@ export interface ScoringWeights {
 export interface ScoringWeightsUpdateResult {
   rule_set_version: number;
   category_weights: Record<Category, number>;
+  band_cutoffs: BandCutoffs;
   recalculated_domains: number;
   unchanged: boolean;
 }
