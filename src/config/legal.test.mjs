@@ -11,7 +11,7 @@ import * as LEGAL from "./legal.ts";
 const { ARCO, AVISO_INTEGRAL, AVISO_SIMPLIFICADO, POLITICA, TERMINOS } = LEGAL;
 
 // Huella de los textos copiados de las secciones 5.2, 5.7 y 11 de la política 2.2 del 17 nov 2026 de BackKL.
-const HUELLA_DE_LA_POLITICA = "c395c5dba5a6eee1835cfe2003184cac065fb60884b0d03cc4f69ab0e768f209";
+const HUELLA_DE_LA_POLITICA = "58a1f16c658c15e4130b3933e3eefd21a02d3489ad55f97312e4296db38cf486";
 
 const leer = (ruta) => readFileSync(new URL(ruta, import.meta.url), "utf8");
 
