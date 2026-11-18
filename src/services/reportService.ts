@@ -1,5 +1,5 @@
-// Reportes. El ejecutivo del dominio (#45, RC-70) viene de la API. La lista de reportes guardados sigue
-// provisional: aún no está en el contrato #21.
+// Reportes. El ejecutivo del dominio (#45, RC-70) viene de la API, con su letra y su score. La lista de reportes guardados
+// sigue provisional (no está en el contrato #21) y ya no trae un PDF simulado (RC-232).
 import { apiClient } from "@/lib/apiClient";
 import { mockDelay } from "@/lib/mock";
 import { mockReports } from "@/mocks/api/provisional";

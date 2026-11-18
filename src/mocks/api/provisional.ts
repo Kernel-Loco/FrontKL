@@ -85,13 +85,15 @@ export const mockScans: ListResponse<Scan> = {
   total: 4,
 };
 
-/** Reportes de Acme Demo (tabla reports). */
+/**
+ * Reportes de Acme Demo (tabla reports). Sin el PDF: el reporte ejecutivo, con su letra, sale de la API con
+ * ReportButton (RC-70, RC-232).
+ */
 export const mockReports: ListResponse<Report> = {
   items: [
-    { id: "b2000000-0000-4000-8000-000000000002", kind: "pdf_report", domain: null, period_start: "2026-09-01", period_end: "2026-09-30", status: "ready", generated_at: "2026-09-30T14:45:00-06:00", download_url: "#" },
     { id: "b2000000-0000-4000-8000-000000000001", kind: "weekly_summary", domain: "acme-demo.mx", period_start: "2026-09-23", period_end: "2026-09-30", status: "ready", generated_at: "2026-09-30T14:40:00-06:00", download_url: "#" },
   ],
-  total: 2,
+  total: 1,
 };
 
 /** Usuarios de Acme Demo (los de la semilla de la base; las tres primeras son las cuentas de demo). */
