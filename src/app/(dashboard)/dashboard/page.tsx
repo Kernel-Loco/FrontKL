@@ -10,8 +10,8 @@ import { InlineAlert } from "@/components/ui/InlineAlert";
 import { scoredDomains, unscoredLabel } from "@/components/screens/shared/domainState";
 import { BAND_TONE } from "@/components/ui/tones";
 import { can, canAccessSection } from "@/config/permissions";
-import { scoreBand } from "@/lib/format";
-import { getDomainFindings, getDomainScore, getDomains, getScans } from "@/services/queries";
+import { bandaEnRangos } from "@/lib/bandas";
+import { getDomainFindings, getDomainScore, getDomains, getScans, getScoringWeights } from "@/services/queries";
 import type { Scan } from "@/types";
 
 export const metadata: Metadata = { title: "Dashboard" };
@@ -20,10 +20,12 @@ export default async function DashboardPage() {
   const { user, forbidden } = await checkSectionAccess("dashboard");
   if (forbidden) return forbidden;
 
-  const [domains, scans] = await Promise.all([getDomains(), getScans()]);
+  const [domains, scans, weights] = await Promise.all([getDomains(), getScans(), getScoringWeights()]);
   const visible = domains.items.filter((d) => d.status !== "removed");
   const scored = scoredDomains(visible);
   const average = scored.length ? Math.round(scored.reduce((sum, d) => sum + (d.score ?? 0), 0) / scored.length) : null;
+  // El promedio no es un score guardado: su color sale de las bandas del juego activo de la empresa (RC-237).
+  const averageBand = average !== null ? bandaEnRangos(average, weights.bands) : null;
   const running = scans.items.filter((s) => s.status === "queued" || s.status === "running").length;
 
   // El gráfico incluye todos los dominios activos; el panel de cambios, los que tienen score o un escaneo terminado.
@@ -79,7 +81,7 @@ export default async function DashboardPage() {
       />
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <KpiTile label="Dominios monitoreados" value={visible.filter((d) => d.status === "verified").length} />
-        <KpiTile label="Riesgo promedio" value={average ?? "—"} tone={average !== null ? BAND_TONE[scoreBand(average)] : undefined} />
+        <KpiTile label="Riesgo promedio" value={average ?? "—"} tone={averageBand ? BAND_TONE[averageBand] : undefined} />
         <KpiTile
           label="Hallazgos críticos"
           value={critical}

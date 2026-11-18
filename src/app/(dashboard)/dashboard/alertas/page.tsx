@@ -4,6 +4,7 @@ import { checkSectionAccess } from "@/components/dashboard/SectionAccess";
 import { AlertPoliciesForm } from "@/components/screens/alertas/AlertPoliciesForm";
 import { AvisoSimulado } from "@/components/ui/AvisoSimulado";
 import { SECTIONS } from "@/config/permissions";
+import { getScoringWeights } from "@/services/queries";
 import { getAlertPolicies } from "@/services/settingsService";
 
 export const metadata: Metadata = { title: SECTIONS.alertas.label };
@@ -11,12 +12,13 @@ export const metadata: Metadata = { title: SECTIONS.alertas.label };
 export default async function AlertasPage() {
   const { forbidden } = await checkSectionAccess("alertas");
   if (forbidden) return forbidden;
+  const [policies, weights] = await Promise.all([getAlertPolicies(), getScoringWeights()]);
 
   return (
     <div className="space-y-8">
       <PageHeader title={SECTIONS.alertas.label} description="Cuándo avisa LowTide y con qué umbral de riesgo." />
       <AvisoSimulado acciones={["updateAlertPolicies"]} datos={["getAlertPolicies"]} />
-      <AlertPoliciesForm initial={await getAlertPolicies()} />
+      <AlertPoliciesForm initial={policies} bands={weights.bands} />
     </div>
   );
 }

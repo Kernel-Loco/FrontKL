@@ -485,6 +485,8 @@ export const mockWeights: ScoringWeights = {
     "configuration": 0.2,
     "data_leaks": 0.3
   },
+  "band_cutoffs": { "medium": 40, "high": 60, "critical": 80 },
+  "band_cutoffs_template": { "medium": 40, "high": 60, "critical": 80 },
   "bands": [
     {
       "band": "low",
