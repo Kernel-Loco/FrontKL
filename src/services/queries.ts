@@ -36,5 +36,15 @@ export const getTxtVerifications = () => apiGet<ListResponse<TxtVerification>>("
 
 export const getScoringWeights = () => apiGet<ScoringWeights>("/scoring/weights");
 
-/** Provisional: aún no está en el contrato #21. */
-export const getScans = () => apiGet<ListResponse<Scan>>("/scans");
+/**
+ * Provisional: aún no está en el contrato #21. Del más nuevo al más viejo. Sin `domain`, los de toda la empresa.
+ * `limit` va de 1 a 100 (la API da 50 sin él) y `total` cuenta todos los del filtro, no solo la página (RC-318).
+ */
+export const getScans = ({ domain, limit, offset }: { domain?: string; limit?: number; offset?: number } = {}) => {
+  const query = new URLSearchParams();
+  if (domain !== undefined) query.set("domain", domain);
+  if (limit !== undefined) query.set("limit", String(limit));
+  if (offset !== undefined) query.set("offset", String(offset));
+  const qs = query.toString();
+  return apiGet<ListResponse<Scan>>(qs ? `/scans?${qs}` : "/scans");
+};
