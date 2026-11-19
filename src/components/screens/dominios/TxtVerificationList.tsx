@@ -4,13 +4,13 @@ import { useState } from "react";
 import { Check, Hourglass, RefreshCw, ShieldCheck } from "lucide-react";
 import { ActionButton } from "@/components/ui/ActionButton";
 import { Badge } from "@/components/ui/Badge";
-import { mensajeDeExito } from "@/config/simulado";
+import { PREFIJO_FALSO } from "@/config/simulado";
 import { formatRelative } from "@/lib/format";
 import { verifyTxt } from "@/services/domainService";
 import { getErrorMessage } from "@/services/errors";
-import type { TxtVerification } from "@/types";
+import type { Domain, TxtVerification } from "@/types";
 
-export function TxtVerificationList({ items, onChange }: { items: TxtVerification[]; onChange: (item: TxtVerification) => void }) {
+export function TxtVerificationList({ items, onChange }: { items: TxtVerification[]; onChange: (domain: Domain, item: TxtVerification) => void }) {
   const [copied, setCopied] = useState<string | null>(null);
   const [checking, setChecking] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -29,11 +29,11 @@ export function TxtVerificationList({ items, onChange }: { items: TxtVerificatio
     setChecking(fqdn);
     setMessage(null);
     try {
-      const result = await verifyTxt(fqdn);
-      onChange(result);
-      setMessage(mensajeDeExito("verifyTxt", result.status === "verified" ? `${fqdn}: registro TXT verificado.` : `${fqdn}: todavía no encontramos el registro TXT.`));
+      const { domain, txt } = await verifyTxt(fqdn);
+      onChange(domain, txt);
+      setMessage(txt.status === "verified" ? `${fqdn}: registro TXT verificado.` : `${fqdn}: el registro TXT no coincide o todavía no se encuentra.`);
     } catch (error) {
-      setMessage(getErrorMessage(error));
+      setMessage(getErrorMessage(error, { apiMessageOn403: true }));
     } finally {
       setChecking(null);
     }
@@ -71,13 +71,17 @@ export function TxtVerificationList({ items, onChange }: { items: TxtVerificatio
               <div className="mt-2.5 space-y-2">
                 <div className="flex items-center justify-between gap-2 rounded-lg border border-lt-border bg-lt-bg px-3 py-2">
                   <code className="min-w-0 break-all font-mono text-xs text-lt-text">{item.expected_value}</code>
-                  <ActionButton variant="secondary" size="sm" onClick={() => copy(item.expected_value)} className="!border-lt-indigo/50 !text-lt-indigo-soft">
+                  <ActionButton variant="secondary" size="sm" disabled={item.expected_value.includes(PREFIJO_FALSO)} onClick={() => copy(item.expected_value)} className="!border-lt-indigo/50 !text-lt-indigo-soft">
                     {copied === item.expected_value ? "Copiado" : "Copiar"}
                   </ActionButton>
                 </div>
                 <div className="flex items-center justify-between gap-2">
-                  <p className="text-[11px] text-lt-faint">Publícalo como registro TXT en {item.fqdn} y verifica.</p>
-                  <ActionButton variant="ghost" size="sm" loading={checking === item.fqdn} onClick={() => check(item.fqdn)}>
+                  <p className="text-[11px] text-lt-faint">
+                    {item.expected_value.includes(PREFIJO_FALSO)
+                      ? "Este dominio es simulado y no se puede verificar."
+                      : `Publícalo como registro TXT en ${item.fqdn} y verifica.`}
+                  </p>
+                  <ActionButton variant="ghost" size="sm" disabled={checking !== null || item.expected_value.includes(PREFIJO_FALSO)} loading={checking === item.fqdn} onClick={() => check(item.fqdn)}>
                     {checking !== item.fqdn && <RefreshCw aria-hidden="true" className="h-3.5 w-3.5" />}
                     Verificar ahora
                   </ActionButton>

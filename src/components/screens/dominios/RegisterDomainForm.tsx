@@ -7,12 +7,11 @@ import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { CHECKBOX, Field, INPUT } from "@/components/ui/Field";
 import { InlineAlert } from "@/components/ui/InlineAlert";
-import { mensajeDeExito } from "@/config/simulado";
 import { registerDomain } from "@/services/domainService";
 import { getErrorMessage } from "@/services/errors";
 import type { Category, Domain, TxtVerification } from "@/types";
 
-const MAX_PDF_BYTES = 10 * 1024 * 1024;
+const MAX_PDF_BYTES = 5 * 1024 * 1024;
 
 const SCOPES: { id: Category; label: string }[] = [
   { id: "infrastructure", label: "Infraestructura: subdominios, certificados y servicios expuestos (CT, Shodan)" },
@@ -21,12 +20,11 @@ const SCOPES: { id: Category; label: string }[] = [
   { id: "data_leaks", label: "Fugas de datos: correos corporativos en brechas (HIBP)" },
 ];
 
-type Errors = Partial<Record<"fqdn" | "organization" | "signer_email" | "letter" | "valid_from" | "valid_until" | "scope" | "confirm", string>>;
+type Errors = Partial<Record<"fqdn" | "signer_name" | "signer_title" | "signer_email" | "letter" | "valid_from" | "valid_until" | "confirm", string>>;
 
 export function RegisterDomainForm({ onRegistered }: { onRegistered: (domain: Domain, txt: TxtVerification) => void }) {
   const formRef = useRef<HTMLFormElement>(null);
   const [letter, setLetter] = useState<File | null>(null);
-  const [scope, setScope] = useState<Category[]>(SCOPES.map((s) => s.id));
   const [errors, setErrors] = useState<Errors>({});
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<{ tone: "success" | "error"; message: string } | null>(null);
@@ -36,22 +34,23 @@ export function RegisterDomainForm({ onRegistered }: { onRegistered: (domain: Do
     const data = new FormData(event.currentTarget);
     const value = (name: string) => String(data.get(name) ?? "").trim();
     const fqdn = value("fqdn");
-    const organization = value("organization");
+    const signer_name = value("signer_name");
+    const signer_title = value("signer_title");
     const signer_email = value("signer_email");
     const valid_from = value("valid_from");
     const valid_until = value("valid_until");
 
     const next: Errors = {};
     if (!fqdn) next.fqdn = "Escribe el dominio.";
-    if (!organization) next.organization = "Escribe la organización.";
+    if (!signer_name || signer_name.length > 200) next.signer_name = "Escribe el nombre de quien firma (máximo 200 caracteres).";
+    if (!signer_title || signer_title.length > 200) next.signer_title = "Escribe el cargo de quien firma (máximo 200 caracteres).";
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(signer_email)) next.signer_email = "Escribe un correo válido.";
     if (!letter) next.letter = "Sube la carta de autorización firmada.";
     else if (letter.type !== "application/pdf") next.letter = "La carta debe ser un PDF.";
-    else if (letter.size > MAX_PDF_BYTES) next.letter = "El PDF pesa más de 10 MB.";
+    else if (letter.size > MAX_PDF_BYTES) next.letter = "El PDF pesa más de 5 MB.";
     if (!valid_from) next.valid_from = "Elige la fecha de inicio.";
     if (!valid_until) next.valid_until = "Elige la fecha de fin.";
     else if (valid_from && valid_until <= valid_from) next.valid_until = "Debe ser posterior al inicio.";
-    if (scope.length === 0) next.scope = "Elige al menos un alcance.";
     if (data.get("confirm") !== "on") next.confirm = "Confirma que la organización autorizó el monitoreo pasivo.";
     setErrors(next);
     setResult(null);
@@ -60,14 +59,13 @@ export function RegisterDomainForm({ onRegistered }: { onRegistered: (domain: Do
     setBusy(true);
     try {
       const { domain, txt } = await registerDomain(
-        { fqdn, organization, signer_email, valid_from, valid_until, scope, passive_monitoring_confirmed: true },
+        { fqdn, signer_name, signer_title, signer_email, valid_from, valid_until, passive_monitoring_confirmed: true },
         letter,
       );
       onRegistered(domain, txt);
       formRef.current?.reset();
       setLetter(null);
-      setScope(SCOPES.map((s) => s.id));
-      setResult({ tone: "success", message: mensajeDeExito("registerDomain", `${domain.fqdn} quedó registrado. Para activarlo, publica el registro TXT que aparece en «Verificación TXT».`) });
+      setResult({ tone: "success", message: `${domain.fqdn} quedó registrado. Publica el TXT de «Verificación TXT» para comprobar el dominio.` });
     } catch (error) {
       setResult({ tone: "error", message: getErrorMessage(error) });
     } finally {
@@ -80,7 +78,7 @@ export function RegisterDomainForm({ onRegistered }: { onRegistered: (domain: Do
   return (
     <Card
       title="Registrar dominio"
-      description="Configura el alcance de monitoreo autorizado."
+      description="Revisa el alcance completo de monitoreo autorizado."
       icon={<Globe aria-hidden="true" className="h-4 w-4" />}
       action={
         <Badge tone="indigo">
@@ -93,10 +91,13 @@ export function RegisterDomainForm({ onRegistered }: { onRegistered: (domain: Do
           <Field label="Dominio" htmlFor="fqdn" error={errors.fqdn}>
             <input id="fqdn" name="fqdn" placeholder="ejemplo.com" autoComplete="off" className={`${INPUT} font-mono`} {...err("fqdn")} />
           </Field>
-          <Field label="Organización" htmlFor="organization" error={errors.organization}>
-            <input id="organization" name="organization" placeholder="Razón social" className={INPUT} {...err("organization")} />
+          <Field label="Nombre de quien firma" htmlFor="signer_name" error={errors.signer_name}>
+            <input id="signer_name" name="signer_name" maxLength={200} className={INPUT} {...err("signer_name")} />
           </Field>
         </div>
+        <Field label="Cargo de quien firma" htmlFor="signer_title" error={errors.signer_title}>
+          <input id="signer_title" name="signer_title" maxLength={200} className={INPUT} {...err("signer_title")} />
+        </Field>
         <Field label="Responsable que autoriza (correo)" htmlFor="signer_email" error={errors.signer_email}>
           <input id="signer_email" name="signer_email" type="email" placeholder="ciso@organizacion.com" className={INPUT} {...err("signer_email")} />
         </Field>
@@ -111,7 +112,7 @@ export function RegisterDomainForm({ onRegistered }: { onRegistered: (domain: Do
               <Upload aria-hidden="true" className="h-4 w-4 shrink-0" />
               <span className="truncate">{letter ? letter.name : "Subir PDF"}</span>
             </span>
-            <span className="shrink-0 text-xs text-lt-faint">Máx. 10 MB</span>
+            <span className="shrink-0 text-xs text-lt-faint">Máx. 5 MB</span>
           </label>
           <input
             id="letter"
@@ -131,27 +132,18 @@ export function RegisterDomainForm({ onRegistered }: { onRegistered: (domain: Do
             <input id="valid_until" name="valid_until" type="date" className={INPUT} {...err("valid_until")} />
           </Field>
         </div>
-        <fieldset>
-          <legend className="mb-2 text-xs font-medium text-lt-muted">Alcance autorizado</legend>
-          <div className="space-y-2">
+        <div>
+          <p className="mb-2 text-xs font-medium text-lt-muted">Alcance completo autorizado</p>
+          <ul className="space-y-2">
             {SCOPES.map((s) => (
-              <label key={s.id} className="flex items-start gap-2.5 text-[13px] text-lt-text">
-                <input
-                  type="checkbox"
-                  className={`${CHECKBOX} mt-0.5`}
-                  checked={scope.includes(s.id)}
-                  onChange={(e) => setScope((current) => (e.target.checked ? [...current, s.id] : current.filter((c) => c !== s.id)))}
-                />
-                {s.label}
-              </label>
+              <li key={s.id} className="text-[13px] text-lt-text">{s.label}</li>
             ))}
-          </div>
-          {errors.scope && <p className="mt-1.5 text-xs font-medium text-lt-red">{errors.scope}</p>}
-        </fieldset>
+          </ul>
+        </div>
         <div className="rounded-lg border border-lt-border bg-lt-raised/60 p-3.5">
           <label className="flex items-start gap-2.5 text-[13px] text-lt-muted">
             <input type="checkbox" name="confirm" className={`${CHECKBOX} mt-0.5`} {...err("confirm")} />
-            Confirmo que la organización autorizó el monitoreo pasivo (solo fuentes abiertas, sin explotación ni acceso no autorizado).
+            Confirmo que la carta está firmada, que autoriza el dominio y su alcance completo, y que tengo permiso para registrarlo para mi organización.
           </label>
           {errors.confirm && (
             <p id="confirm-error" className="mt-1.5 text-xs font-medium text-lt-red">
