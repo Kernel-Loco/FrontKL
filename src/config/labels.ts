@@ -140,6 +140,7 @@ export const ASSET_TYPE_LABELS: Record<AssetType, string> = {
   service: "Servicio",
   certificate: "Certificado",
   email: "Correo",
+  api_doc: "Documentación de API",
 };
 
 export const EXPOSICION_LABELS: Record<Caracteristicas["exposicion"], string> = {

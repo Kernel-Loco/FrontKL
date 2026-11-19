@@ -11,8 +11,10 @@ import { scoredDomains, unscannedDomains, unscoredLabel } from "@/components/scr
 import { coverageIncomplete, criticalKpi } from "@/lib/cobertura";
 import { BAND_TONE } from "@/components/ui/tones";
 import { can, canAccessSection } from "@/config/permissions";
+import { mapLimit, panelAssets } from "@/lib/activosNuevos";
 import { bandaEnRangos } from "@/lib/bandas";
-import { getDomainFindings, getDomainScore, getDomains, getScans, getScoringWeights } from "@/services/queries";
+import { ServiceError } from "@/services/errors";
+import { getDomainAssets, getDomainFindings, getDomainScore, getDomains, getScans, getScoringWeights } from "@/services/queries";
 import type { Scan } from "@/types";
 
 export const metadata: Metadata = { title: "Dashboard" };
@@ -63,12 +65,41 @@ export default async function DashboardPage() {
         status: scan.status,
         newFindings: failed ? null : scan.stats?.new_findings ?? null,
         resolvedFindings: failed ? null : scan.stats?.resolved_findings ?? null,
+        newAssets: null,
+        firstScan: false,
       }];
     }
     if (domain.score === null) return [];
     // Con score pero fuera de esos 50: queda la fecha del dominio, si la hay, sin conteos.
-    return [{ domain: domain.fqdn, finishedAt: domain.last_scan_at, status: null, newFindings: null, resolvedFindings: null }];
+    return [{
+      domain: domain.fqdn,
+      finishedAt: domain.last_scan_at,
+      status: null,
+      newFindings: null,
+      resolvedFindings: null,
+      newAssets: null,
+      firstScan: false,
+    }];
   });
+  // Activos que dejó el último escaneo de cada dominio (RC-219). La base sale del mismo /scans general que da la fecha
+  // del panel. Si ahí no está el anterior que sí corrió, o el dominio tiene score pero su último escaneo quedó fuera de
+  // esos 50, se leen los 5 más nuevos del dominio (RC-318) y se usan solo si su último es el escaneo de la fecha del
+  // panel (panelAssets). El inventario (first_seen_at y el 'emitido' de ct_logs) se lee solo si hay con qué comparar,
+  // con a lo más 4 dominios a la vez: cada /scans abandona los vencidos con un UPDATE. Si una lectura falla, sin conteos.
+  const assetChanges = await mapLimit(summaries, 4, async (s) => {
+    try {
+      return await panelAssets(
+        s,
+        scans,
+        (fqdn) => getScans({ domain: fqdn, limit: 5 }),
+        async (fqdn) => (await getDomainAssets(fqdn)).items,
+      );
+    } catch (error) {
+      if (error instanceof ServiceError) return { firstScan: false, newAssets: null };
+      throw error;
+    }
+  });
+  const panel = summaries.map((s, index) => ({ ...s, ...assetChanges[index] }));
   // Los resueltos no se listan: /findings solo trae abiertos.
   const summaryFqdns = new Set(summaries.map((s) => s.domain));
   const newFindings: Change[] = findings
@@ -113,7 +144,7 @@ export default async function DashboardPage() {
       }))} />
       <div className="grid gap-6 2xl:grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)]">
         <DomainsRiskTable domains={rows} lastScans={lastScans} partialDomains={new Set(partialDomains)} canOpenDetail={canAccessSection(user.role, "detalle")} />
-        <RecentChanges summaries={summaries} changes={changes} more={newFindings.length - changes.length} />
+        <RecentChanges summaries={panel} changes={changes} more={newFindings.length - changes.length} />
       </div>
     </div>
   );
