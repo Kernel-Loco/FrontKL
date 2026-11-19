@@ -10,7 +10,7 @@ import { InlineAlert } from "@/components/ui/InlineAlert";
 import { scoredDomains, unscoredLabel } from "@/components/screens/shared/domainState";
 import { BAND_TONE } from "@/components/ui/tones";
 import { can, canAccessSection } from "@/config/permissions";
-import { newAssetCounts, scanBase } from "@/lib/activosNuevos";
+import { comparable, mapLimit, newAssetCounts, scanBase } from "@/lib/activosNuevos";
 import { bandaEnRangos } from "@/lib/bandas";
 import { ServiceError } from "@/services/errors";
 import { getDomainAssets, getDomainFindings, getDomainScore, getDomains, getScans, getScoringWeights } from "@/services/queries";
@@ -74,18 +74,28 @@ export default async function DashboardPage() {
       firstScan: false,
     }];
   });
-  // Activos que dejó el último escaneo de cada dominio (RC-219): sus 5 escaneos más nuevos dan el anterior que sí corrió
-  // (RC-318) y su inventario da first_seen_at y el 'emitido' de ct_logs. Si una de las dos lecturas falla, sin conteos.
-  const assetChanges = await Promise.all(summaries.map(async (s) => {
+  // Activos que dejó el último escaneo de cada dominio (RC-219). La base sale del mismo /scans general que da la fecha
+  // del panel. Solo si ahí no está el anterior que sí corrió se leen los 5 más nuevos del dominio (RC-318), y se usan
+  // solo si su último es el mismo escaneo del panel. El inventario (first_seen_at y el 'emitido' de ct_logs) se lee solo
+  // si hay con qué comparar, con a lo más 4 dominios a la vez: cada /scans abandona los vencidos con un UPDATE. Un
+  // dominio fuera de esos 50 queda sin conteos, como sus hallazgos. Si una lectura falla, sin conteos.
+  const assetChanges = await mapLimit(summaries, 4, async (s) => {
+    const shown = lastScans.get(s.domain);
+    if (!shown) return { firstScan: false, newAssets: null };
     try {
-      const [own, assets] = await Promise.all([getScans({ domain: s.domain, limit: 5 }), getDomainAssets(s.domain)]);
-      const base = scanBase(own.items, s.domain, own.total);
-      return { firstScan: base.firstScan, newAssets: newAssetCounts(assets.items, base) };
+      let base = scanBase(scans.items, s.domain, scans.total);
+      if (base.unknown) {
+        const own = await getScans({ domain: s.domain, limit: 5 });
+        base = scanBase(own.items, s.domain, own.total);
+        if (base.last?.id !== shown.id) return { firstScan: false, newAssets: null };
+      }
+      if (!comparable(base)) return { firstScan: base.firstScan, newAssets: null };
+      return { firstScan: false, newAssets: newAssetCounts((await getDomainAssets(s.domain)).items, base) };
     } catch (error) {
       if (error instanceof ServiceError) return { firstScan: false, newAssets: null };
       throw error;
     }
-  }));
+  });
   const panel = summaries.map((s, index) => ({ ...s, ...assetChanges[index] }));
   // Los resueltos no se listan: /findings solo trae abiertos.
   const summaryFqdns = new Set(summaries.map((s) => s.domain));

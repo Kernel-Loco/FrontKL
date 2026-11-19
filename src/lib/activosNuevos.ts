@@ -9,9 +9,14 @@ import type { Asset, Scan } from "@/types";
 export interface ScanBase {
   last: Scan | null;
   previous: Scan | null;
-  /** true si entre los escaneos leídos no hay uno anterior y la API dice que no hay más que leer. */
+  /**
+   * Inicio de la ventana de lo nuevo: el queued_at del más viejo de los terminados después de `previous` (el último y
+   * los fallidos de en medio). Lo que guardó un escaneo fallido cuenta como nuevo en el siguiente que sí corrió.
+   */
+  since: string | null;
+  /** true si el último corrió, entre los leídos no hay uno anterior que corriera y la API dice que no hay más. */
   firstScan: boolean;
-  /** true si no hay anterior entre los leídos pero la API tiene más (total mayor que los leídos): no se sabe. */
+  /** true si el último corrió y no hay anterior entre los leídos pero la API tiene más (total mayor que los leídos). */
   unknown: boolean;
 }
 
@@ -19,9 +24,18 @@ export interface ScanBase {
 export function scanBase(scans: Scan[], fqdn: string, total = scans.length): ScanBase {
   const finished = scans.filter((s) => s.domain === fqdn && s.finished_at);
   const last = finished[0] ?? null;
-  const previous = finished.slice(1).find((s) => s.status !== "failed") ?? null;
+  const index = finished.findIndex((s, i) => i > 0 && s.status !== "failed");
+  const previous = index > 0 ? finished[index] : null;
+  const since = previous ? finished[index - 1].queued_at : (last?.queued_at ?? null);
+  // Un último fallido no revisó nada: ni es el primer escaneo ni hay base que buscar.
+  const ran = last !== null && last.status !== "failed";
   const more = total > scans.length;
-  return { last, previous, firstScan: last !== null && previous === null && !more, unknown: last !== null && previous === null && more };
+  return { last, previous, since, firstScan: ran && previous === null && !more, unknown: ran && previous === null && more };
+}
+
+/** Hay con qué comparar: el último corrió (no falló) y hay un anterior que también corrió. */
+export function comparable(base: ScanBase | null): base is ScanBase & { last: Scan; previous: Scan } {
+  return base !== null && base.last !== null && base.previous !== null && base.last.status !== "failed";
 }
 
 const time = (value: unknown): number | null => {
@@ -30,11 +44,14 @@ const time = (value: unknown): number | null => {
   return Number.isNaN(t) ? null : t;
 };
 
-/** El activo apareció en `scan`: first_seen_at entre su queued_at y su finished_at, como new_assets de la API. */
-export function isNewAsset(asset: Pick<Asset, "first_seen_at">, scan: Scan | null): boolean {
+/**
+ * El activo apareció en el último escaneo: first_seen_at entre `since` y el finished_at del último, como new_assets de
+ * la API. Sin fallidos de por medio, `since` es el queued_at del último.
+ */
+export function isNewAsset(asset: Pick<Asset, "first_seen_at">, base: Pick<ScanBase, "last" | "since">): boolean {
   const seen = time(asset.first_seen_at);
-  const start = time(scan?.queued_at);
-  const end = time(scan?.finished_at);
+  const start = time(base.since);
+  const end = time(base.last?.finished_at);
   return seen !== null && start !== null && end !== null && seen >= start && seen <= end;
 }
 
@@ -59,19 +76,40 @@ export interface NewAssetCounts {
 
 /**
  * Lo que dejó el último escaneo. `null` en el primer escaneo, si no se sabe cuál fue el anterior o si el último
- * falló (no revisó nada). Un activo de tipo 'certificate' nuevo también cuenta como certificado.
+ * falló (no revisó nada). Un certificado con varios nombres en el SAN es el mismo 'emitido' en cada nombre: cuenta una
+ * vez. Un activo de tipo 'certificate' nuevo cuenta aparte, por su valor.
  */
 export function newAssetCounts(assets: Asset[], base: ScanBase): NewAssetCounts | null {
-  if (!base.last || !base.previous || base.last.status === "failed") return null;
+  if (!comparable(base)) return null;
   const counts: NewAssetCounts = { subdomains: 0, ips: 0, ports: 0, certificates: 0 };
+  const certificates = new Set<string>();
   for (const asset of assets) {
-    const fresh = isNewAsset(asset, base.last);
+    const fresh = isNewAsset(asset, base);
     if (fresh && asset.type === "subdomain") counts.subdomains += 1;
     if (fresh && asset.type === "ip") counts.ips += 1;
     if (fresh && asset.type === "service") counts.ports += 1;
-    if ((fresh && asset.type === "certificate") || hasNewCertificate(asset, base)) counts.certificates += 1;
+    if (fresh && asset.type === "certificate") certificates.add(`certificate:${asset.value}`);
+    if (hasNewCertificate(asset, base)) certificates.add(`emitido:${time(asset.attributes?.emitido)}`);
   }
+  counts.certificates = certificates.size;
   return counts;
+}
+
+/**
+ * Corre `task` sobre cada elemento con a lo más `limit` a la vez y devuelve los resultados en el mismo orden. Para que
+ * el dashboard no lance todas las lecturas por dominio juntas.
+ */
+export async function mapLimit<T, R>(items: T[], limit: number, task: (item: T, index: number) => Promise<R>): Promise<R[]> {
+  const results = new Array<R>(items.length);
+  let next = 0;
+  const worker = async () => {
+    while (next < items.length) {
+      const index = next++;
+      results[index] = await task(items[index], index);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(Math.max(1, limit), items.length) }, worker));
+  return results;
 }
 
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
