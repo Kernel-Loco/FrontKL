@@ -35,15 +35,16 @@ export default async function ActionPlanPage({ searchParams }: Props) {
     );
   }
 
-  // La pestaña Hallazgos usa la misma cobertura que el detalle: coverage_gaps cuenta aunque partial_coverage sea false (RC-229).
   // Sin la sección Hallazgos (gerente) no se pide /findings, que le responde 403, y la pestaña no se muestra (RC-280).
   const canSeeFindings = canAccessSection(user.role, "hallazgos");
+  const selectedDomain = domains.find((domain) => domain.fqdn === fqdn);
   const [plan, findings, score] = await Promise.all([
     getActionPlan(fqdn),
     canSeeFindings ? getDomainFindings(fqdn) : Promise.resolve(null),
     getDomainScore(fqdn),
   ]);
   const canOpenDetail = canAccessSection(user.role, "detalle");
+  const canExport = selectedDomain?.authorization.status === "valid";
 
   return (
     <div className="space-y-6">
@@ -54,7 +55,7 @@ export default async function ActionPlanPage({ searchParams }: Props) {
         actions={<DomainPicker domains={options} value={fqdn} />}
       />
       {canOpenDetail && <DomainTabs tabs={domainTabs(fqdn, findings?.total ?? 0, "plan", canSeeFindings, true, coverageIncomplete(score))} />}
-      <ActionPlanExplorer key={fqdn} plan={plan} canOpenFindings={canAccessSection(user.role, "hallazgos")} />
+      <ActionPlanExplorer key={fqdn} plan={plan} canSeeFindings={canSeeFindings} canExport={canExport} />
     </div>
   );
 }
