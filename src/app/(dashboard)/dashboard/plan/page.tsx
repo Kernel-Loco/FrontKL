@@ -35,6 +35,7 @@ export default async function ActionPlanPage({ searchParams }: Props) {
     );
   }
 
+  // Sin la sección Hallazgos (gerente) no se pide /findings, que le responde 403, y la pestaña no se muestra (RC-280).
   const canSeeFindings = canAccessSection(user.role, "hallazgos");
   const selectedDomain = domains.find((domain) => domain.fqdn === fqdn);
   const [plan, findings, score] = await Promise.all([

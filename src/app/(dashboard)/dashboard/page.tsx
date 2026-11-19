@@ -32,8 +32,11 @@ export default async function DashboardPage() {
   const running = scans.items.filter((s) => s.status === "queued" || s.status === "running").length;
 
   // El gráfico incluye todos los dominios activos; el panel de cambios, los que tienen score o un escaneo terminado.
+  // Sin la sección Hallazgos (gerente) no se pide /findings, que le responde 403: el gráfico va por severidad con los
+  // conteos de /domains y el panel no lista hallazgos nuevos (RC-280).
+  const canSeeFindings = canAccessSection(user.role, "hallazgos");
   const [findings, coverage] = await Promise.all([
-    Promise.all(visible.map((domain) => getDomainFindings(domain.fqdn))),
+    canSeeFindings ? Promise.all(visible.map((domain) => getDomainFindings(domain.fqdn))) : Promise.resolve(null),
     Promise.all(visible.map(async (domain) => {
       if (domain.score === null) return "unscanned" as const;
       return coverageIncomplete(await getDomainScore(domain.fqdn)) ? "partial" as const : "complete" as const;
@@ -102,7 +105,7 @@ export default async function DashboardPage() {
   const panel = summaries.map((s, index) => ({ ...s, ...assetChanges[index] }));
   // Los resueltos no se listan: /findings solo trae abiertos.
   const summaryFqdns = new Set(summaries.map((s) => s.domain));
-  const newFindings: Change[] = findings
+  const newFindings: Change[] = (findings ?? [])
     .filter((result) => summaryFqdns.has(result.domain))
     .flatMap((f) => f.items.filter((item) => item.recurrence === "new").map((finding) => ({ domain: f.domain, finding })));
   const changes = newFindings.slice(0, 5);
@@ -135,13 +138,17 @@ export default async function DashboardPage() {
           pueden estar incompletos, y los conteos muestran los hallazgos abiertos registrados y pueden no estar al día.
         </InlineAlert>
       )}
-      <FindingsByTypeChart series={findings.map(({ domain, items }, index) => ({
-        domain,
-        findings: items,
-        coverage: coverage[index] ?? "unscanned",
-        // El mismo estado que la tabla Dominios: sin score por falta de autorización, por vencido o por no tener escaneo.
-        stateLabel: visible[index] ? unscoredLabel(visible[index]) : "Sin escaneo completo",
-      }))} />
+      <FindingsByTypeChart
+        groupBy={findings ? "category" : "severity"}
+        series={visible.map((domain, index) => ({
+          domain: domain.fqdn,
+          findings: findings?.[index]?.items,
+          severityCounts: domain.open_findings,
+          coverage: coverage[index] ?? "unscanned",
+          // El mismo estado que la tabla Dominios: sin score por falta de autorización, por vencido o por no tener escaneo.
+          stateLabel: unscoredLabel(domain),
+        }))}
+      />
       <div className="grid grid-cols-1 gap-6 2xl:grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)]">
         <DomainsRiskTable domains={rows} lastScans={lastScans} partialDomains={new Set(partialDomains)} canOpenDetail={canAccessSection(user.role, "detalle")} />
         <RecentChanges summaries={panel} changes={changes} more={newFindings.length - changes.length} />

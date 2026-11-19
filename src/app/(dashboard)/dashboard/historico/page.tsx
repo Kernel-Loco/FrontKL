@@ -50,7 +50,13 @@ export default async function HistoricoPage({ searchParams }: Props) {
 
   // La pestaña Hallazgos usa la cobertura del último score, como el detalle: coverage_gaps cuenta aunque partial_coverage
   // sea false (RC-229).
-  const [history, findings, score] = await Promise.all([getScoreHistory(fqdn), getDomainFindings(fqdn), getDomainScore(fqdn)]);
+  // Sin la sección Hallazgos (gerente) no se pide /findings, que le responde 403, y la pestaña no se muestra (RC-280).
+  const canSeeFindings = canAccessSection(user.role, "hallazgos");
+  const [history, findings, score] = await Promise.all([
+    getScoreHistory(fqdn),
+    canSeeFindings ? getDomainFindings(fqdn) : Promise.resolve(null),
+    getDomainScore(fqdn),
+  ]);
   const points = history.items;
   const scanCount = points.filter((point) => point.reason === "scan").length;
   const correctionCount = points.filter((point) => point.reason === "correction").length;
@@ -103,7 +109,7 @@ export default async function HistoricoPage({ searchParams }: Props) {
         )}
       />
       <AvisoSimulado datos={["getReports"]} datosDe="la tarjeta Reportes" />
-      {canOpenDetail && <DomainTabs tabs={domainTabs(fqdn, findings.total, "historico", canAccessSection(user.role, "hallazgos"), true, coverageIncomplete(score))} />}
+      {canOpenDetail && <DomainTabs tabs={domainTabs(fqdn, findings?.total ?? 0, "historico", canSeeFindings, true, coverageIncomplete(score))} />}
 
       {hasPartialCoverage && (
         <InlineAlert tone="warning">
@@ -133,7 +139,7 @@ export default async function HistoricoPage({ searchParams }: Props) {
       )}
 
       {points.length > 0 && (
-        <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+        <div className={`grid grid-cols-1 items-start gap-6 ${canSeeFindings ? "xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]" : ""}`}>
           <Card title="Escaneos" padded={false}>
             <TableWrap>
               <table className="w-full min-w-[680px]">
@@ -180,7 +186,8 @@ export default async function HistoricoPage({ searchParams }: Props) {
               </table>
             </TableWrap>
           </Card>
-          {points.length >= 2 ? (
+          {/* La comparación lista los hallazgos uno por uno y /score/compare le responde 403 al gerente (RC-280). */}
+          {!canSeeFindings ? null : points.length >= 2 ? (
             <CompareScans key={fqdn} domain={fqdn} points={points} />
           ) : (
             <Card title="Comparar escaneos">
