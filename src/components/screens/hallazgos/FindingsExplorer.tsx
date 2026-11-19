@@ -7,8 +7,7 @@ import { INPUT, SELECT } from "@/components/ui/Field";
 import { TD, TH } from "@/components/ui/Card";
 import { ApiExport } from "@/components/screens/shared/ApiExport";
 import { CATEGORY_LABELS, SEVERITY_LABELS, SOURCE_LABELS } from "@/config/labels";
-import { NO_FINDINGS_PARTIAL } from "@/lib/cobertura";
-import { cantidad } from "@/lib/format";
+import { findingsCountLabel, NO_FINDINGS_PARTIAL } from "@/lib/cobertura";
 import { downloadFindings } from "@/services/exportService";
 import type { Category, DomainFinding, Severity } from "@/types";
 import { ExplanationPanel } from "./ExplanationPanel";
@@ -103,7 +102,7 @@ export function FindingsExplorer({
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-xs text-lt-muted">
-          {visible.length} de {cantidad(findings.length, "hallazgo")}
+          {findingsCountLabel(visible.length, findings.length, partialCoverage || unscored)}
           {visible.length < findings.length && " · la exportación trae todos, sin los filtros"}
         </p>
         {/* La API arma el archivo (#24): todos los hallazgos abiertos del dominio, sin los filtros, y 403 sin autorización vigente. */}
@@ -114,7 +113,7 @@ export function FindingsExplorer({
       <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
         <div className="overflow-hidden rounded-xl border border-lt-border bg-lt-surface">
           {visible.length === 0 ? (
-            <EmptyState title={findings.length === 0 ? unscored ? "Riesgo sin calcular" : partialCoverage ? NO_FINDINGS_PARTIAL : "Sin hallazgos abiertos" : "Ningún hallazgo coincide"}>
+            <EmptyState title={findings.length === 0 ? unscored ? "Sin escaneo completo" : partialCoverage ? NO_FINDINGS_PARTIAL : "Sin hallazgos abiertos" : "Ningún hallazgo coincide"}>
               {findings.length === 0
                 ? unscored
                   ? "Ningún escaneo de este dominio ha calculado su riesgo todavía; no se puede concluir que no haya hallazgos."

@@ -5,6 +5,7 @@ import { SeverityBadge } from "@/components/ui/Badge";
 import { InlineAlert } from "@/components/ui/InlineAlert";
 import { Spinner } from "@/components/Spinner";
 import { EXPOSICION_LABELS, scoreMethodText, SENSIBILIDAD_LABELS, SEVERITY_LABELS } from "@/config/labels";
+import { epssText } from "@/lib/cobertura";
 import { marcosDelHallazgo, MARCOS_ATRIBUCION } from "@/lib/marcos";
 import { getFindingExplanation } from "@/services/domainService";
 import { getErrorMessage } from "@/services/errors";
@@ -197,7 +198,7 @@ export function ExplanationPanel({ finding }: { finding: DomainFinding }) {
             <div>
               <dt className="text-lt-faint">EPSS</dt>
               <dd className="mt-0.5 text-lt-text tabular-nums">
-                {finding.epss != null ? `${(finding.epss * 100).toFixed(1)} %` : "Sin dato"}
+                {finding.epss != null ? epssText(finding.epss) : "Sin dato"}
               </dd>
             </div>
             <div>

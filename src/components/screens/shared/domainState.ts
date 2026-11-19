@@ -34,6 +34,11 @@ export function unscoredLabel(domain: Domain): string {
   return state.label === "Autorizado" ? "Sin escaneo completo" : state.label;
 }
 
+/** Dominios autorizados sin score: los que el tablero llama «Sin escaneo completo», no los sin carta, vencidos o sin TXT. */
+export function unscannedDomains(domains: Domain[]): Domain[] {
+  return domains.filter((d) => d.score === null && unscoredLabel(d) === "Sin escaneo completo");
+}
+
 /** Dominios con score, de mayor a menor riesgo. */
 export function scoredDomains(domains: Domain[]): Domain[] {
   return domains.filter((d) => d.score !== null).sort((a, b) => (b.score ?? 0) - (a.score ?? 0));

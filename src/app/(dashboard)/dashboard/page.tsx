@@ -7,7 +7,8 @@ import { KpiTile } from "@/components/screens/dashboard/KpiTile";
 import { RecentChanges, type Change, type ScanSummary } from "@/components/screens/dashboard/RecentChanges";
 import { ScanButton } from "@/components/screens/shared/ScanButton";
 import { InlineAlert } from "@/components/ui/InlineAlert";
-import { scoredDomains, unscoredLabel } from "@/components/screens/shared/domainState";
+import { scoredDomains, unscannedDomains, unscoredLabel } from "@/components/screens/shared/domainState";
+import { coverageIncomplete, criticalKpi } from "@/lib/cobertura";
 import { BAND_TONE } from "@/components/ui/tones";
 import { can, canAccessSection } from "@/config/permissions";
 import { bandaEnRangos } from "@/lib/bandas";
@@ -33,19 +34,18 @@ export default async function DashboardPage() {
     Promise.all(visible.map((domain) => getDomainFindings(domain.fqdn))),
     Promise.all(visible.map(async (domain) => {
       if (domain.score === null) return "unscanned" as const;
-      return (await getDomainScore(domain.fqdn)).partial_coverage ? "partial" as const : "complete" as const;
+      return coverageIncomplete(await getDomainScore(domain.fqdn)) ? "partial" as const : "complete" as const;
     })),
   ]);
   const partialDomains = visible.filter((_, index) => coverage[index] === "partial").map((domain) => domain.fqdn);
   // Cuenta los críticos abiertos registrados con cualquier cobertura (hoy todo escaneo queda parcial); el hint lo avisa.
   const critical = visible.reduce((sum, domain) => sum + domain.open_findings.critical, 0);
-  // Un dominio sin score no cuenta como 0 críticos: sale como «Sin escaneo completo» (RC-69, RC-229). open_findings ya
-  // usa la severidad del último score, la misma de la lista de hallazgos.
-  const unscanned = visible.filter((domain) => domain.score === null).length;
-  const criticalHint = [
-    unscanned > 0 ? `${unscanned} ${unscanned === 1 ? "dominio" : "dominios"} sin escaneo completo` : "",
-    partialDomains.length > 0 ? "cobertura parcial: puede no estar al día" : "",
-  ].filter(Boolean).join(" · ");
+  // Un dominio autorizado sin score no cuenta como 0 críticos, y con dominios parciales o sin escaneo completo el KPI no
+  // dice 0 a secas: el 0 va en la pista (RC-69, RC-229). open_findings ya usa la severidad del último score, la misma de
+  // la lista de hallazgos.
+  const unscanned = unscannedDomains(visible).length;
+  const kpi = criticalKpi(critical, scored.length, partialDomains.length, unscanned);
+  const criticalHint = kpi.hint;
   // Último escaneo terminado de cada dominio, también si falló: /scans viene del más nuevo al más viejo (los últimos 50 de la empresa).
   const lastScans = new Map<string, Scan>();
   for (const scan of scans.items) {
@@ -91,7 +91,7 @@ export default async function DashboardPage() {
         <KpiTile label="Riesgo promedio" value={average ?? "—"} tone={averageBand ? BAND_TONE[averageBand] : undefined} />
         <KpiTile
           label="Hallazgos críticos"
-          value={scored.length === 0 && critical === 0 && unscanned > 0 ? "Sin escaneo completo" : critical}
+          value={kpi.value}
           tone={critical > 0 ? "red" : undefined}
           hint={criticalHint ? criticalHint.charAt(0).toUpperCase() + criticalHint.slice(1) : undefined}
         />

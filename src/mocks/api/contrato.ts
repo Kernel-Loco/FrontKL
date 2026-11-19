@@ -464,9 +464,13 @@ export const mockExplanation: FindingExplanation = {
   "base_severity": "critical",
   "category": "data_leaks",
   "rule_code": "breach_exposure",
+  "rule_title": "Correos de la empresa en una filtración reciente al detectarla, con contraseñas u otros datos de acceso",
+  "meaning": "Al menos un correo de la empresa aparece en una filtración de datos que incluía contraseñas, preguntas de seguridad u otros datos para entrar a cuentas y que, cuando se detectó, había ocurrido hacía menos de un año. Quien tenga esos datos puede intentar entrar a las cuentas de esas personas, también a las de la empresa si repiten la contraseña.",
   "score_id": "a0000000-0000-4000-8000-000000000004",
   "computed_at": "2026-10-29T20:16:09-06:00",
   "method": "rules",
+  "model_version": null,
+  "model_fallback_reason": null,
   "penalty": 40.0,
   "max_penalty": 40.0,
   "factors": [
@@ -483,6 +487,8 @@ export const mockExplanation: FindingExplanation = {
   },
   "summary": "Es crítico porque alguien de fuera puede usar ya esas contraseñas para entrar a cuentas de la empresa, sin pasos extra.",
   "recommendation": "Pide a todo el personal que cambie ya la contraseña y las preguntas de seguridad de las cuentas que abrió con su correo de trabajo y de cualquier cuenta donde repita esa contraseña, sobre todo la de la empresa, y que cierre las sesiones abiertas. Activa la verificación en dos pasos en las cuentas de la empresa y, si quieres saber qué correos aparecen, consulta la búsqueda por dominio de Have I Been Pwned, que te pide verificar el dominio en ese servicio.",
+  "model_prediction": null,
+  "explanation_model_version": null,
   "confidence": null,
   "shap": null
 };

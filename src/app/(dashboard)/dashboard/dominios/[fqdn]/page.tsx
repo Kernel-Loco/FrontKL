@@ -20,7 +20,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { InlineAlert } from "@/components/ui/InlineAlert";
 import { CATEGORY_LABELS, MODEL_FALLBACK_LABELS, SCAN_BLOCK_REASON_LABELS } from "@/config/labels";
 import { can, canAccessSection } from "@/config/permissions";
-import { noFindingsTitle } from "@/lib/cobertura";
+import { coverageIncomplete, noFindingsTitle } from "@/lib/cobertura";
 import { formatDate, formatDateTime } from "@/lib/format";
 import { ServiceError } from "@/services/errors";
 import { getDomainAssets, getDomainFindings, getDomains, getDomainScore, getScans, getScoreHistory } from "@/services/queries";
@@ -77,7 +77,7 @@ export default async function DomainDetailPage({ params }: Props) {
       : failedAt
         ? null
         : domain.score === null
-          ? unscored === "Sin escaneo completo" ? "Sin riesgo calculado todavía" : unscored
+          ? unscored
           : "Sin fecha de escaneo",
     domain.authorization.valid_until
       ? `${domain.authorization.status === "expired" ? "Venció el" : "Autorizado hasta"} ${formatDate(domain.authorization.valid_until)}`
@@ -111,7 +111,7 @@ export default async function DomainDetailPage({ params }: Props) {
     >
       {top.length === 0 ? (
         // Con cobertura parcial nunca dice que no hay hallazgos: solo que no los hay en las fuentes que respondieron (RC-229).
-        <EmptyState title={noFindingsTitle(score?.partial_coverage ?? false)} />
+        <EmptyState title={noFindingsTitle(coverageIncomplete(score))} />
       ) : (
         <ul>
           {top.map((f) => (
@@ -142,7 +142,7 @@ export default async function DomainDetailPage({ params }: Props) {
           </>
         }
       />
-      <DomainTabs tabs={domainTabs(fqdn, findings.total, "resumen", canSeeFindings, domain.score !== null, score?.partial_coverage)} />
+      <DomainTabs tabs={domainTabs(fqdn, findings.total, "resumen", canSeeFindings, domain.score !== null, coverageIncomplete(score))} />
 
       {blocked && (
         <InlineAlert tone="warning">Este dominio no se puede escanear{reportBlocked ? " ni exportar" : ""}: {blocked}.</InlineAlert>
@@ -180,11 +180,10 @@ export default async function DomainDetailPage({ params }: Props) {
             </Card>
             <Card title="Riesgo por categoría" action="Ponderación configurable">
               <CategoryBars categories={score.categories} subcategories={score.subcategories} kris={score.kris} />
-              {score.partial_coverage && (
+              {coverageIncomplete(score) && (
                 <InlineAlert tone="warning" className="mt-5">
-                  Cobertura parcial: alguna fuente falló, revisó solo una parte de sus repos o IP, o hay reglas que
-                  las fuentes actuales todavía no pueden revisar. El score y su letra pueden estar incompletos. Reglas sin
-                  revisar en el último escaneo:
+                  Cobertura parcial: alguna fuente falló o no corrió, revisó solo una parte de sus repos o IP, o hay reglas
+                  que las fuentes actuales todavía no pueden revisar. El score y su letra pueden estar incompletos.
                   <CoverageGapsList gaps={score.coverage_gaps} />
                 </InlineAlert>
               )}
@@ -195,7 +194,7 @@ export default async function DomainDetailPage({ params }: Props) {
       ) : (
         <>
           <Card>
-            <EmptyState title={unscored === "Sin escaneo completo" ? "Riesgo sin calcular" : unscored}>{pendingNote}</EmptyState>
+            <EmptyState title={unscored}>{pendingNote}</EmptyState>
           </Card>
           {top.length > 0 && topFindings}
         </>

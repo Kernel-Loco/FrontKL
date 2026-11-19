@@ -69,9 +69,11 @@ test("un dominio sin score dice su estado y solo autorizado dice 'Sin escaneo co
 test("el Detalle de un dominio sin score usa el estado de la tabla Dominios", () => {
   const detalle = leer("app/(dashboard)/dashboard/dominios/[fqdn]/page.tsx");
   assert.match(detalle, /const unscored = unscoredLabel\(domain\);/);
-  assert.match(detalle, /<EmptyState title=\{unscored === "Sin escaneo completo" \? "Riesgo sin calcular" : unscored\}>/);
-  assert.match(detalle, /unscored === "Sin escaneo completo" \? "Sin riesgo calculado todavía" : unscored/);
-  assert.doesNotMatch(detalle, /<EmptyState title="Riesgo sin calcular">/);
+  // Dice lo mismo que el tablero: «Sin escaneo completo», no «Riesgo sin calcular» (RC-229).
+  assert.match(detalle, /<EmptyState title=\{unscored\}>\{pendingNote\}<\/EmptyState>/);
+  assert.doesNotMatch(detalle, /Riesgo sin calcular|Sin riesgo calculado todavía/);
+  assert.doesNotMatch(leer("app/(dashboard)/dashboard/hallazgos/page.tsx"), /Riesgo sin calcular/);
+  assert.doesNotMatch(leer("components/screens/hallazgos/FindingsExplorer.tsx"), /Riesgo sin calcular/);
   // Como la columna Vigencia de la tabla: una autorización vencida no dice 'Autorizado hasta'.
   assert.match(detalle, /status === "expired" \? "Venció el" : "Autorizado hasta"/);
 });
