@@ -18,15 +18,18 @@ import { SeverityBadge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { InlineAlert } from "@/components/ui/InlineAlert";
-import { CATEGORY_LABELS, MODEL_FALLBACK_LABELS, SCAN_BLOCK_REASON_LABELS } from "@/config/labels";
+import { CATEGORY_LABELS, MODEL_FALLBACK_LABELS, SCAN_BLOCK_REASON_LABELS, SEVERITY_LABELS } from "@/config/labels";
 import { can, canAccessSection } from "@/config/permissions";
 import { scanBase } from "@/lib/activosNuevos";
 import { coverageIncomplete, noFindingsTitle } from "@/lib/cobertura";
 import { formatDate, formatDateTime } from "@/lib/format";
 import { ServiceError } from "@/services/errors";
 import { getDomainAssets, getDomainFindings, getDomains, getDomainScore, getScans, getScoreHistory } from "@/services/queries";
+import type { Severity } from "@/types";
 
 type Props = { params: Promise<{ fqdn: string }> };
+
+const SEVERITIES = Object.keys(SEVERITY_LABELS) as Severity[];
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return { title: decodeURIComponent((await params).fqdn) };
@@ -41,9 +44,11 @@ export default async function DomainDetailPage({ params }: Props) {
   const domain = domains.items.find((d) => d.fqdn === fqdn);
   if (!domain) notFound();
 
+  // Sin la sección Hallazgos (gerente) no se pide /findings, que le responde 403: ve los conteos por severidad de
+  // /domains (RC-280).
   const canSeeFindings = canAccessSection(user.role, "hallazgos");
   const [findings, history, assets, scans] = await Promise.all([
-    getDomainFindings(fqdn),
+    canSeeFindings ? getDomainFindings(fqdn) : Promise.resolve(null),
     getScoreHistory(fqdn),
     getDomainAssets(fqdn),
     // Si /scans falla, el detalle sigue con la fecha del dominio.
@@ -55,7 +60,10 @@ export default async function DomainDetailPage({ params }: Props) {
   const score = domain.score !== null ? await getDomainScore(fqdn) : null;
   const points = history.items;
   const delta = points.length >= 2 ? points[points.length - 1]!.score - points[points.length - 2]!.score : null;
-  const top = findings.items.slice(0, 4);
+  const top = findings?.items.slice(0, 4) ?? [];
+  const openTotal = SEVERITIES.reduce((sum, severity) => sum + domain.open_findings[severity], 0);
+  const findingsTotal = findings?.total ?? openTotal;
+  const hasFindings = findings ? top.length > 0 : openTotal > 0;
   const reasons = domain.scan_eligibility.can_scan ? [] : domain.scan_eligibility.reasons;
   const blocked = reasons.length ? reasons.map((r) => SCAN_BLOCK_REASON_LABELS[r]).join(" · ") : undefined;
   // El reporte solo se frena sin carta vigente, como la API (403). Los demás motivos solo frenan el escaneo.
@@ -92,13 +100,30 @@ export default async function DomainDetailPage({ params }: Props) {
       : failedAt
         ? "El último escaneo falló antes de calcular el riesgo."
         : "El riesgo se calcula al cerrar un escaneo; uno que se cae antes no lo calcula.",
-    top.length > 0 ? "Abajo están los hallazgos que alcanzaron a registrar las fuentes." : "",
+    hasFindings
+      ? `Abajo están ${findings ? "los hallazgos" : "los conteos de los hallazgos"} que alcanzaron a registrar las fuentes.`
+      : "",
     "Solo se puede escanear con autorización vigente y registro TXT verificado.",
   ]
     .filter(Boolean)
     .join(" ");
 
-  const topFindings = (
+  const topFindings = !findings ? (
+    <Card title="Hallazgos abiertos por severidad">
+      {openTotal === 0 ? (
+        <EmptyState title={noFindingsTitle(coverageIncomplete(score))} />
+      ) : (
+        <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {SEVERITIES.map((severity) => (
+            <li key={severity} className="flex items-center justify-between gap-2 rounded-md border border-lt-border px-3 py-2.5">
+              <SeverityBadge severity={severity} />
+              <span className="font-mono text-lg tabular-nums text-lt-text">{domain.open_findings[severity]}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Card>
+  ) : (
     <Card
       title="Hallazgos más críticos"
       padded={false}
@@ -143,7 +168,7 @@ export default async function DomainDetailPage({ params }: Props) {
           </>
         }
       />
-      <DomainTabs tabs={domainTabs(fqdn, findings.total, "resumen", canSeeFindings, domain.score !== null, coverageIncomplete(score))} />
+      <DomainTabs tabs={domainTabs(fqdn, findingsTotal, "resumen", canSeeFindings, domain.score !== null, coverageIncomplete(score))} />
 
       {blocked && (
         <InlineAlert tone="warning">Este dominio no se puede escanear{reportBlocked ? " ni exportar" : ""}: {blocked}.</InlineAlert>
@@ -197,7 +222,7 @@ export default async function DomainDetailPage({ params }: Props) {
           <Card>
             <EmptyState title={unscored}>{pendingNote}</EmptyState>
           </Card>
-          {top.length > 0 && topFindings}
+          {hasFindings && topFindings}
         </>
       )}
 

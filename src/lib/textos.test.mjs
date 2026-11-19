@@ -124,3 +124,22 @@ test("un 401 sin causa conocida no dice 'inactividad': el aviso nombra las tres 
   assert.equal(expired.length, 1);
   assert.match(expired[0], /IdleTimeout\.tsx:\d+$/);
 });
+
+test("sin la sección Hallazgos (gerente) las pantallas no piden /findings, que le responde 403 (RC-280)", () => {
+  const paginas = [
+    "app/(dashboard)/dashboard/page.tsx",
+    "app/(dashboard)/dashboard/dominios/[fqdn]/page.tsx",
+    "app/(dashboard)/dashboard/historico/page.tsx",
+    "app/(dashboard)/dashboard/plan/page.tsx",
+  ];
+  for (const pagina of paginas) {
+    const texto = leer(pagina);
+    assert.match(texto, /const canSeeFindings = canAccessSection\(user\.role, "hallazgos"\);/, pagina);
+    const llamadas = texto.match(/[^\n]*getDomainFindings\(/g) ?? [];
+    assert.ok(llamadas.length > 0, pagina);
+    for (const linea of llamadas) assert.match(linea, /canSeeFindings \? /, `${pagina}: ${linea.trim()}`);
+  }
+  // El gráfico del gerente va por severidad con open_findings de /domains.
+  assert.match(leer(paginas[0]), /groupBy=\{findings \? "category" : "severity"\}/);
+  assert.match(leer(paginas[0]), /severityCounts: domain\.open_findings/);
+});

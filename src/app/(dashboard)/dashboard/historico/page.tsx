@@ -50,7 +50,13 @@ export default async function HistoricoPage({ searchParams }: Props) {
 
   // La pestaña Hallazgos usa la cobertura del último score, como el detalle: coverage_gaps cuenta aunque partial_coverage
   // sea false (RC-229).
-  const [history, findings, score] = await Promise.all([getScoreHistory(fqdn), getDomainFindings(fqdn), getDomainScore(fqdn)]);
+  // Sin la sección Hallazgos (gerente) no se pide /findings, que le responde 403, y la pestaña no se muestra (RC-280).
+  const canSeeFindings = canAccessSection(user.role, "hallazgos");
+  const [history, findings, score] = await Promise.all([
+    getScoreHistory(fqdn),
+    canSeeFindings ? getDomainFindings(fqdn) : Promise.resolve(null),
+    getDomainScore(fqdn),
+  ]);
   const points = history.items;
   const scanCount = points.filter((point) => point.reason === "scan").length;
   const correctionCount = points.filter((point) => point.reason === "correction").length;
@@ -103,7 +109,7 @@ export default async function HistoricoPage({ searchParams }: Props) {
         )}
       />
       <AvisoSimulado datos={["getReports"]} datosDe="la tarjeta Reportes" />
-      {canOpenDetail && <DomainTabs tabs={domainTabs(fqdn, findings.total, "historico", canAccessSection(user.role, "hallazgos"), true, coverageIncomplete(score))} />}
+      {canOpenDetail && <DomainTabs tabs={domainTabs(fqdn, findings?.total ?? 0, "historico", canSeeFindings, true, coverageIncomplete(score))} />}
 
       {hasPartialCoverage && (
         <InlineAlert tone="warning">

@@ -36,7 +36,13 @@ export default async function ActionPlanPage({ searchParams }: Props) {
   }
 
   // La pestaña Hallazgos usa la misma cobertura que el detalle: coverage_gaps cuenta aunque partial_coverage sea false (RC-229).
-  const [plan, findings, score] = await Promise.all([getActionPlan(fqdn), getDomainFindings(fqdn), getDomainScore(fqdn)]);
+  // Sin la sección Hallazgos (gerente) no se pide /findings, que le responde 403, y la pestaña no se muestra (RC-280).
+  const canSeeFindings = canAccessSection(user.role, "hallazgos");
+  const [plan, findings, score] = await Promise.all([
+    getActionPlan(fqdn),
+    canSeeFindings ? getDomainFindings(fqdn) : Promise.resolve(null),
+    getDomainScore(fqdn),
+  ]);
   const canOpenDetail = canAccessSection(user.role, "detalle");
 
   return (
@@ -47,7 +53,7 @@ export default async function ActionPlanPage({ searchParams }: Props) {
         description="Revisa el impacto estimado y combina acciones para comparar el score resultante."
         actions={<DomainPicker domains={options} value={fqdn} />}
       />
-      {canOpenDetail && <DomainTabs tabs={domainTabs(fqdn, findings.total, "plan", canAccessSection(user.role, "hallazgos"), true, coverageIncomplete(score))} />}
+      {canOpenDetail && <DomainTabs tabs={domainTabs(fqdn, findings?.total ?? 0, "plan", canSeeFindings, true, coverageIncomplete(score))} />}
       <ActionPlanExplorer key={fqdn} plan={plan} canOpenFindings={canAccessSection(user.role, "hallazgos")} />
     </div>
   );
