@@ -7,6 +7,7 @@ import { INPUT, SELECT } from "@/components/ui/Field";
 import { TD, TH } from "@/components/ui/Card";
 import { ApiExport } from "@/components/screens/shared/ApiExport";
 import { CATEGORY_LABELS, SEVERITY_LABELS, SOURCE_LABELS } from "@/config/labels";
+import { NO_FINDINGS_PARTIAL } from "@/lib/cobertura";
 import { cantidad } from "@/lib/format";
 import { downloadFindings } from "@/services/exportService";
 import type { Category, DomainFinding, Severity } from "@/types";
@@ -113,7 +114,7 @@ export function FindingsExplorer({
       <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
         <div className="overflow-hidden rounded-xl border border-lt-border bg-lt-surface">
           {visible.length === 0 ? (
-            <EmptyState title={findings.length === 0 ? unscored ? "Riesgo sin calcular" : partialCoverage ? "Resultados incompletos" : "Sin hallazgos abiertos" : "Ningún hallazgo coincide"}>
+            <EmptyState title={findings.length === 0 ? unscored ? "Riesgo sin calcular" : partialCoverage ? NO_FINDINGS_PARTIAL : "Sin hallazgos abiertos" : "Ningún hallazgo coincide"}>
               {findings.length === 0
                 ? unscored
                   ? "Ningún escaneo de este dominio ha calculado su riesgo todavía; no se puede concluir que no haya hallazgos."

@@ -70,6 +70,17 @@ export const MODEL_FALLBACK_LABELS: Record<string, string> = {
   inferencia_ml_no_disponible: "el modelo no pudo calcular este score",
 };
 
+/**
+ * Método del score con la versión del modelo o, si cayó a reglas, el motivo (RC-229). Lo usan el histórico y el panel
+ * del hallazgo: «Modelo de ML v3» o «Reglas: el modelo no está disponible».
+ */
+export function scoreMethodText(method: ScoreMethod, modelVersion?: string | null, fallbackReason?: string | null): string {
+  if (method === "ml") return modelVersion ? `${SCORE_METHOD_LABELS.ml} ${modelVersion}` : SCORE_METHOD_LABELS.ml;
+  return fallbackReason
+    ? `${SCORE_METHOD_LABELS.rules}: ${MODEL_FALLBACK_LABELS[fallbackReason] ?? fallbackReason}`
+    : SCORE_METHOD_LABELS.rules;
+}
+
 export const SCORE_REASON_LABELS: Record<ScoreReason, string> = {
   scan: "Escaneo",
   intel_update: "Recálculo por información de amenazas nueva",

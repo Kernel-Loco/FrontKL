@@ -3,6 +3,7 @@ import { PageHeader } from "@/components/dashboard/PageHeader";
 import { checkSectionAccess } from "@/components/dashboard/SectionAccess";
 import { DomainTabs, domainTabs } from "@/components/screens/detalle/DomainTabs";
 import { FindingsExplorer } from "@/components/screens/hallazgos/FindingsExplorer";
+import { CoverageGapsList } from "@/components/screens/shared/CoverageGapsList";
 import { DomainPicker } from "@/components/screens/shared/DomainPicker";
 import { InlineAlert } from "@/components/ui/InlineAlert";
 import { resultDomains } from "@/components/screens/shared/domainState";
@@ -53,7 +54,7 @@ export default async function HallazgosPage({ searchParams }: Props) {
         title="Hallazgos"
         actions={<DomainPicker domains={options} value={fqdn} />}
       />
-      {canOpenDetail && <DomainTabs tabs={domainTabs(fqdn, findings.total, "hallazgos", true, hasScore)} />}
+      {canOpenDetail && <DomainTabs tabs={domainTabs(fqdn, findings.total, "hallazgos", true, hasScore, score?.partial_coverage)} />}
       {!score && (
         <InlineAlert tone="warning">
           <strong>Riesgo sin calcular.</strong> Ningún escaneo de este dominio ha calculado su riesgo todavía: sigue en curso o falló. La lista muestra lo que alcanzaron a registrar las fuentes, pero no permite concluir que los demás no existan.
@@ -61,7 +62,8 @@ export default async function HallazgosPage({ searchParams }: Props) {
       )}
       {score?.partial_coverage && (
         <InlineAlert tone="warning">
-          <strong>Cobertura parcial.</strong> En el último escaneo alguna fuente falló, revisó solo una parte de sus repos o IP, o hay reglas que las fuentes actuales todavía no pueden revisar. La lista muestra los hallazgos detectados, pero no permite concluir que los demás no existan.
+          <strong>Cobertura parcial.</strong> En el último escaneo alguna fuente falló, revisó solo una parte de sus repos o IP, o hay reglas que las fuentes actuales todavía no pueden revisar. La lista muestra los hallazgos detectados, pero no permite concluir que los demás no existan. Reglas sin revisar:
+          <CoverageGapsList gaps={score.coverage_gaps} />
         </InlineAlert>
       )}
       <FindingsExplorer

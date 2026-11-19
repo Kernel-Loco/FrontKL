@@ -25,10 +25,13 @@ export function domainState(domain: Domain): DomainState {
   return { label: "Autorizado", tone: "teal" };
 }
 
-/** Lo que dice la columna Nivel de la tabla Dominios para un dominio sin score: su estado, o «Sin calcular» si está autorizado. */
+/**
+ * Lo que dice la columna Nivel de la tabla Dominios para un dominio sin score: su estado, o «Sin escaneo completo» si
+ * está autorizado. Nunca 0 críticos: ningún escaneo ha cerrado con su riesgo (RC-69, RC-229).
+ */
 export function unscoredLabel(domain: Domain): string {
   const state = domainState(domain);
-  return state.label === "Autorizado" ? "Sin calcular" : state.label;
+  return state.label === "Autorizado" ? "Sin escaneo completo" : state.label;
 }
 
 /** Dominios con score, de mayor a menor riesgo. */

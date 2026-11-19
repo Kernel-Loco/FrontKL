@@ -58,9 +58,9 @@ test("el gráfico del Dashboard no dice 'riesgo sin calcular'", () => {
   assert.doesNotMatch(leer("components/screens/dashboard/FindingsByTypeChart.tsx"), /[Rr]iesgo sin calcular/);
 });
 
-test("un dominio sin score dice su estado y solo autorizado dice 'Sin calcular'", () => {
+test("un dominio sin score dice su estado y solo autorizado dice 'Sin escaneo completo' (RC-229)", () => {
   const dominio = (status, auth, txt) => ({ status, authorization: { status: auth }, txt: { status: txt } });
-  assert.equal(unscoredLabel(dominio("verified", "valid", "verified")), "Sin calcular");
+  assert.equal(unscoredLabel(dominio("verified", "valid", "verified")), "Sin escaneo completo");
   assert.equal(unscoredLabel(dominio("pending_verification", "missing", "pending")), "Sin autorización");
   assert.equal(unscoredLabel(dominio("verified", "expired", "verified")), "Vencido");
   assert.equal(unscoredLabel(dominio("pending_verification", "valid", "pending")), "Pendiente TXT");
@@ -69,8 +69,8 @@ test("un dominio sin score dice su estado y solo autorizado dice 'Sin calcular'"
 test("el Detalle de un dominio sin score usa el estado de la tabla Dominios", () => {
   const detalle = leer("app/(dashboard)/dashboard/dominios/[fqdn]/page.tsx");
   assert.match(detalle, /const unscored = unscoredLabel\(domain\);/);
-  assert.match(detalle, /<EmptyState title=\{unscored === "Sin calcular" \? "Riesgo sin calcular" : unscored\}>/);
-  assert.match(detalle, /unscored === "Sin calcular" \? "Sin riesgo calculado todavía" : unscored/);
+  assert.match(detalle, /<EmptyState title=\{unscored === "Sin escaneo completo" \? "Riesgo sin calcular" : unscored\}>/);
+  assert.match(detalle, /unscored === "Sin escaneo completo" \? "Sin riesgo calculado todavía" : unscored/);
   assert.doesNotMatch(detalle, /<EmptyState title="Riesgo sin calcular">/);
   // Como la columna Vigencia de la tabla: una autorización vencida no dice 'Autorizado hasta'.
   assert.match(detalle, /status === "expired" \? "Venció el" : "Autorizado hasta"/);

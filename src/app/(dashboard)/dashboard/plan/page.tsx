@@ -45,7 +45,7 @@ export default async function ActionPlanPage({ searchParams }: Props) {
         description="Revisa el impacto estimado y combina acciones para comparar el score resultante."
         actions={<DomainPicker domains={options} value={fqdn} />}
       />
-      {canOpenDetail && <DomainTabs tabs={domainTabs(fqdn, findings.total, "plan", canAccessSection(user.role, "hallazgos"))} />}
+      {canOpenDetail && <DomainTabs tabs={domainTabs(fqdn, findings.total, "plan", canAccessSection(user.role, "hallazgos"), true, plan.partial_coverage)} />}
       <ActionPlanExplorer key={fqdn} plan={plan} canOpenFindings={canAccessSection(user.role, "hallazgos")} />
     </div>
   );

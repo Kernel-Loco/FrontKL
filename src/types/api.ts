@@ -176,6 +176,20 @@ export interface Kri {
   penalty: number | null;
 }
 
+/**
+ * Por qué el escaneo del score no revisó un código (RC-229). source_failed: la fuente no respondió. source_not_run: no
+ * corrió en ese escaneo (apagada o aún no existía). no_api_key: Shodan sin la API de host. source_partial: la fuente
+ * respondió pero no pudo revisarlo.
+ */
+export type CoverageGapReason = "source_failed" | "source_not_run" | "no_api_key" | "source_partial";
+
+/** Un código de regla que el escaneo del score no revisó, con su fuente (null si no se sabe) y su motivo. */
+export interface CoverageGap {
+  code: string;
+  source: string | null;
+  reason: CoverageGapReason;
+}
+
 /** `GET /api/v1/domains/{fqdn}/score` */
 export interface DomainScore extends ScoreBase {
   domain: string;
@@ -183,6 +197,8 @@ export interface DomainScore extends ScoreBase {
   subcategories: SubcategoryScore[];
   kris: Kri[];
   kri_map_version: number;
+  /** Códigos sin cobertura del escaneo del score, ordenados por código (RC-229). Vacía sin corridas. */
+  coverage_gaps: CoverageGap[];
   /** El umbral compara el score de 0 a 100, nunca la letra. */
   alert: { threshold: number; triggered: boolean };
 }
@@ -342,6 +358,8 @@ export interface FindingExplanation {
   method: ScoreMethod;
   /** Versión del modelo del score, solo con `method = "ml"`. */
   model_version?: string | null;
+  /** Por qué el score más reciente usó reglas (MODEL_FALLBACK_LABELS); null con ML. La API lo da desde RC-229. */
+  model_fallback_reason?: string | null;
   penalty: number;
   max_penalty: number;
   factors: ExplanationFactor[];

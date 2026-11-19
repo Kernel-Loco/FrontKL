@@ -369,6 +369,20 @@ export const mockScore: DomainScore = {
     { "kri": "reputation", "name": "Reputación", "status": "no_source_yet", "subcategories": [], "sources": [], "sources_failed": [], "sources_not_run": [], "sources_partial": [], "rules_without_coverage": [], "findings": null, "max_severity": null, "penalty": null }
   ],
   "kri_map_version": 1,
+  "coverage_gaps": [
+    {"code": "api_auth_not_declared", "source": "api_docs", "reason": "source_not_run"},
+    {"code": "debug_page_exposed", "source": "web", "reason": "source_not_run"},
+    {"code": "directory_listing", "source": "web", "reason": "source_not_run"},
+    {"code": "email_in_public_commits", "source": "github", "reason": "source_not_run"},
+    {"code": "exposed_api_docs", "source": "api_docs", "reason": "source_not_run"},
+    {"code": "file_share_link_in_repo", "source": "github", "reason": "source_not_run"},
+    {"code": "known_vulnerability", "source": "web", "reason": "source_not_run"},
+    {"code": "outdated_software", "source": "web", "reason": "source_not_run"},
+    {"code": "secret_in_public_repo", "source": "github", "reason": "source_not_run"},
+    {"code": "server_version_disclosed", "source": "web", "reason": "source_not_run"},
+    {"code": "tls_certificate_invalid", "source": "web", "reason": "source_not_run"},
+    {"code": "tls_legacy_only", "source": "web", "reason": "source_not_run"}
+  ],
   "alert": {
     "threshold": 60,
     "triggered": true
