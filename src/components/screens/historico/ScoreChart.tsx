@@ -22,8 +22,8 @@ export function ScoreChart({ points }: { points: ScoreHistoryPoint[] }) {
   const last = points.length - 1;
 
   return (
-    <figure>
-      <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img" aria-labelledby="grafica-titulo grafica-desc">
+    <figure role="region" aria-label="Gráfica desplazable horizontalmente" tabIndex={0} className="relative overflow-x-auto">
+      <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full min-w-[600px]" role="img" aria-labelledby="grafica-titulo grafica-desc">
         <title id="grafica-titulo">Riesgo global en el tiempo</title>
         <desc id="grafica-desc">{points.map((p) => `${formatShortDate(p.computed_at)}: ${p.score}`).join("; ")}</desc>
         {ticks.map((t) => (

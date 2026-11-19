@@ -10,7 +10,7 @@ export interface Tab {
 export function DomainTabs({ tabs }: { tabs: Tab[] }) {
   return (
     <nav aria-label="Secciones del dominio" className="border-b border-lt-border">
-      <ul className="-mb-px flex gap-6 overflow-x-auto">
+      <ul className="relative -mb-px flex gap-6 overflow-x-auto">
         {tabs.map((tab) => (
           <li key={tab.href}>
             <Link

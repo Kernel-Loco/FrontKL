@@ -154,7 +154,7 @@ export function CompareScans({ domain, points }: { domain: string; points: Score
 
   return (
     <Card title="Comparar escaneos">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <label htmlFor={fromId} className="mb-1.5 block text-xs font-medium text-lt-muted">
             Desde
@@ -181,14 +181,14 @@ export function CompareScans({ domain, points }: { domain: string; points: Score
         </div>
       </div>
       <ul className="mt-4 divide-y divide-lt-border">
-        <li className="flex items-center justify-between py-3 text-sm">
+        <li className="flex flex-wrap items-center justify-between gap-2 py-3 text-sm">
           <span className="font-semibold text-lt-text">Riesgo global</span>
           <span className="flex items-center gap-2 tabular-nums text-lt-text">
             {a.score} → {b.score} {!withCorrection && <Delta value={b.score - a.score} />}
           </span>
         </li>
         {(Object.keys(CATEGORY_LABELS) as Category[]).map((c) => (
-          <li key={c} className="flex items-center justify-between py-3 text-sm">
+          <li key={c} className="flex flex-wrap items-center justify-between gap-2 py-3 text-sm">
             <span className="text-lt-text">{CATEGORY_LABELS[c]}</span>
             <span className="flex items-center gap-2 tabular-nums text-lt-text">
               {a.categories[c]} → {b.categories[c]}{" "}

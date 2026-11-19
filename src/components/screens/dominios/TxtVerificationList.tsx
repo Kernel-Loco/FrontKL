@@ -43,7 +43,7 @@ export function TxtVerificationList({ items, onChange }: { items: TxtVerificatio
 
   return (
     <div>
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h3 className="text-[15px] font-semibold text-lt-text">Verificación TXT</h3>
         <Badge tone="indigo">
           <ShieldCheck aria-hidden="true" className="h-3 w-3" /> Solo Administrador
@@ -52,10 +52,10 @@ export function TxtVerificationList({ items, onChange }: { items: TxtVerificatio
       <ul className="mt-3 divide-y divide-lt-border">
         {items.map((item) => (
           <li key={item.fqdn} className="py-2.5">
-            <div className="flex items-center justify-between gap-3">
-              <span className="flex items-center gap-2.5 font-mono text-xs text-lt-muted">
-                <span aria-hidden="true" className={`h-1.5 w-1.5 rounded-full ${item.status === "verified" ? "bg-lt-teal" : "bg-lt-amber"}`} />
-                {item.fqdn}
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <span className="flex min-w-0 items-center gap-2.5 font-mono text-xs text-lt-muted">
+                <span aria-hidden="true" className={`h-1.5 w-1.5 shrink-0 rounded-full ${item.status === "verified" ? "bg-lt-teal" : "bg-lt-amber"}`} />
+                <span className="break-all">{item.fqdn}</span>
               </span>
               {item.status === "verified" ? (
                 <span className="flex items-center gap-1 text-xs font-medium text-lt-teal">
@@ -75,8 +75,8 @@ export function TxtVerificationList({ items, onChange }: { items: TxtVerificatio
                     {copied === item.expected_value ? "Copiado" : "Copiar"}
                   </ActionButton>
                 </div>
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-[11px] text-lt-faint">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="min-w-0 break-words text-[11px] text-lt-faint">
                     {item.expected_value.includes(PREFIJO_FALSO)
                       ? "Este dominio es simulado y no se puede verificar."
                       : `Publícalo como registro TXT en ${item.fqdn} y verifica.`}

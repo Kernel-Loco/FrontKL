@@ -110,7 +110,7 @@ export function FindingsExplorer({
           download={(format, signal) => downloadFindings(domain, format, signal)} />
       </div>
 
-      <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
         <div className="overflow-hidden rounded-xl border border-lt-border bg-lt-surface">
           {visible.length === 0 ? (
             <EmptyState title={findings.length === 0 ? unscored ? "Sin escaneo completo" : partialCoverage ? NO_FINDINGS_PARTIAL : "Sin hallazgos abiertos" : "Ningún hallazgo coincide"}>
@@ -123,7 +123,7 @@ export function FindingsExplorer({
                 : "Prueba con otra búsqueda o quita los filtros."}
             </EmptyState>
           ) : (
-            <div className="overflow-x-auto">
+            <div role="region" aria-label="Tabla desplazable horizontalmente" tabIndex={0} className="relative overflow-x-auto">
               <table className="w-full min-w-[560px]">
                 <caption className="sr-only">Hallazgos. Elige uno para ver por qué tiene su criticidad.</caption>
                 <thead>

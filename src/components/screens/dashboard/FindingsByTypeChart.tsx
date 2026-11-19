@@ -61,7 +61,7 @@ export function FindingsByTypeChart({ series }: { series: DomainFindingSeries[] 
               </li>
             ))}
           </ul>
-          <div className="overflow-x-auto">
+          <div role="region" aria-label="Gráfica desplazable horizontalmente" tabIndex={0} className="relative overflow-x-auto">
             <svg
               width={chartWidth}
               height={HEIGHT}

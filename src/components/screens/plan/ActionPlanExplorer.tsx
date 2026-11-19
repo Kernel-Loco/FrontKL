@@ -86,7 +86,7 @@ export function ActionPlanExplorer({
   const bandAfter = selected.length === 0 ? bandBefore : simulation?.band_after;
 
   return (
-    <div className="grid min-w-0 items-start gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.65fr)]">
+    <div className="grid min-w-0 grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.65fr)]">
       <Card
         title="Acciones recomendadas"
         description={`${cantidad(plan.total, "acción", "acciones")} para ${plan.domain}`}

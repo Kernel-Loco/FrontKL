@@ -46,7 +46,7 @@ export default function PrivacidadPage() {
         <h2 id="arco" className={H2}>
           {ARCO.titulo}
         </h2>
-        <div className="overflow-x-auto rounded-xl border border-lt-border">
+        <div role="region" aria-label="Tabla desplazable horizontalmente" tabIndex={0} className="relative overflow-x-auto rounded-xl border border-lt-border">
           <table className="w-full min-w-[640px] text-left text-sm">
             <thead className="bg-lt-surface text-lt-text">
               <tr>
