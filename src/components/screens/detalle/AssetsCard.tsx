@@ -1,6 +1,9 @@
+"use client";
+
 import { Badge } from "@/components/ui/Badge";
 import { Card, TableWrap, TD, TH, TR } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { ComparadorInventario, EstadoInventarioBadge, useComparacionInventario } from "./ComparadorInventario";
 import { ASSET_TYPE_LABELS } from "@/config/labels";
 import { detallesDelActivo } from "@/lib/atributos";
 import { formatDateTime } from "@/lib/format";
@@ -8,11 +11,14 @@ import type { Asset } from "@/types";
 
 /** Inventario de lo que el dominio deja expuesto: subdominios, certificados, IP y servicios, con sus detalles. */
 export function AssetsCard({ assets }: { assets: Asset[] }) {
+  const inventario = useComparacionInventario(assets);
   return (
     <Card title="Activos" padded={false} action={`${assets.length} en el inventario`}>
       {assets.length === 0 ? (
         <EmptyState title="Sin activos todavía">Aparecen después del primer escaneo.</EmptyState>
       ) : (
+        <>
+        <ComparadorInventario control={inventario} />
         <TableWrap>
           <table className="w-full min-w-[760px]">
             <thead>
@@ -22,10 +28,11 @@ export function AssetsCard({ assets }: { assets: Asset[] }) {
                 <th scope="col" className={TH}>Pertenece a</th>
                 <th scope="col" className={TH}>Detalles</th>
                 <th scope="col" className={TH}>Visto por última vez</th>
+                {inventario.resultado && <th scope="col" className={TH}>Inventario</th>}
               </tr>
             </thead>
             <tbody>
-              {assets.map((a) => (
+              {inventario.visibles.map((a) => (
                 <tr key={a.id} className={TR}>
                   <td className={`${TD} max-w-xs break-all font-mono text-[13px]`}>{a.value}</td>
                   <td className={TD}>
@@ -47,11 +54,13 @@ export function AssetsCard({ assets }: { assets: Asset[] }) {
                     )}
                   </td>
                   <td className={`${TD} whitespace-nowrap text-[13px] text-lt-muted`}>{formatDateTime(a.last_seen_at)}</td>
+                  {inventario.resultado && <td className={TD}><EstadoInventarioBadge estado={inventario.resultado.estados.get(a.id)} /></td>}
                 </tr>
               ))}
             </tbody>
           </table>
         </TableWrap>
+        </>
       )}
     </Card>
   );
