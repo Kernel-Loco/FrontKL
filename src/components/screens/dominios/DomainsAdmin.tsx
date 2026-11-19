@@ -48,7 +48,10 @@ export function DomainsAdmin({ domains: initialDomains, txt: initialTxt }: Domai
         <div className="mt-6">
           <TxtVerificationList
             items={txt}
-            onChange={(item) => setTxt((current) => current.map((t) => (t.fqdn === item.fqdn ? item : t)))}
+            onChange={(domain, item) => {
+              setDomains((current) => current.map((d) => (d.id === domain.id ? domain : d)));
+              setTxt((current) => current.map((t) => (t.fqdn === item.fqdn ? item : t)));
+            }}
           />
         </div>
       </Card>

@@ -4,7 +4,6 @@ import { PageHeader } from "@/components/dashboard/PageHeader";
 import { checkSectionAccess } from "@/components/dashboard/SectionAccess";
 import { DomainsAdmin } from "@/components/screens/dominios/DomainsAdmin";
 import { RegisteredDomainsTable } from "@/components/screens/dominios/RegisteredDomainsTable";
-import { AvisoSimulado } from "@/components/ui/AvisoSimulado";
 import { Card } from "@/components/ui/Card";
 import { can, canAccessSection, SECTIONS } from "@/config/permissions";
 import { cantidad } from "@/lib/format";
@@ -22,7 +21,6 @@ export default async function DominiosPage() {
   return (
     <div className="space-y-8">
       <PageHeader title={SECTIONS.dominios.label} description="Solo se escanean y reportan dominios con autorización vigente." />
-      {isAdmin && <AvisoSimulado acciones={["registerDomain", "verifyTxt"]} solo="«Registrar dominio» y «Verificar ahora»" />}
       {isAdmin ? (
         <DomainsAdmin domains={domains} txt={(await getTxtVerifications()).items} />
       ) : (

@@ -595,18 +595,18 @@ export interface OrgSettings {
   api_keys: ApiKey[];
 }
 
-// ---------------------------------------------------------------- Provisional: alta de dominios y TXT (Admin)
+// ---------------------------------------------------------------- Alta de dominios y TXT (Admin)
 
 export type ScopeCategory = Category;
 
-/** `POST /api/v1/domains` (solo Admin). La carta firmada viaja como archivo aparte. */
+/** `POST /api/v1/domains` (solo Admin). La carta se añade en el servicio. */
 export interface DomainRegistrationRequest {
   fqdn: string;
-  organization: string;
+  signer_name: string;
+  signer_title: string;
   signer_email: string;
   valid_from: string;
   valid_until: string;
-  scope: ScopeCategory[];
   /** Confirmación de que la organización autorizó el monitoreo pasivo. */
   passive_monitoring_confirmed: true;
 }
