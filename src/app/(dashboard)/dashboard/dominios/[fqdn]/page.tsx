@@ -6,6 +6,7 @@ import { checkSectionAccess } from "@/components/dashboard/SectionAccess";
 import { AssetsCard } from "@/components/screens/detalle/AssetsCard";
 import { CategoryBars } from "@/components/screens/detalle/CategoryBars";
 import { DomainTabs, domainTabs } from "@/components/screens/detalle/DomainTabs";
+import { DnsProvidersCard } from "@/components/screens/detalle/DnsProvidersCard";
 import { KriPanel } from "@/components/screens/detalle/KriPanel";
 import { RiskGauge } from "@/components/screens/detalle/RiskGauge";
 import { ReportButton } from "@/components/screens/shared/ReportButton";
@@ -226,6 +227,7 @@ export default async function DomainDetailPage({ params }: Props) {
         </>
       )}
 
+      <DnsProvidersCard assets={assets.items} dominio={fqdn} />
       <AssetsCard assets={assets.items} base={scans ? scanBase(scans.items, fqdn, scans.total) : null} />
     </div>
   );
