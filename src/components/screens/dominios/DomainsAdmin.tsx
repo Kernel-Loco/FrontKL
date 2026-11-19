@@ -23,7 +23,7 @@ export function DomainsAdmin({ domains: initialDomains, txt: initialTxt }: Domai
   return (
     // Una sola columna a todo ancho: en dos, desde 1536 px el inventario queda en unos 650 px y la tabla
     // (correo y 'Ver' sin cortes) pide unos 720, con scroll y 'Ver' fuera de vista.
-    <div className="grid gap-6">
+    <div className="space-y-6">
       <div className="space-y-6">
         <RegisterDomainForm
           onRegistered={(domain, record) => {

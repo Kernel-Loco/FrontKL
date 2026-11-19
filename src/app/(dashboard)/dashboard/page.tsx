@@ -149,7 +149,7 @@ export default async function DashboardPage() {
           stateLabel: unscoredLabel(domain),
         }))}
       />
-      <div className="grid gap-6 2xl:grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 gap-6 2xl:grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)]">
         <DomainsRiskTable domains={rows} lastScans={lastScans} partialDomains={new Set(partialDomains)} canOpenDetail={canAccessSection(user.role, "detalle")} />
         <RecentChanges summaries={panel} changes={changes} more={newFindings.length - changes.length} />
       </div>

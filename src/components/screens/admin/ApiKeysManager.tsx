@@ -85,7 +85,7 @@ export function ApiKeysManager({ initial }: { initial: ApiKey[] }) {
   };
 
   return (
-    <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.8fr)]">
+    <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.8fr)]">
       <Card title="Crear llave" description={`Para conectar LowTide con los sistemas de tu propia empresa. Vigencia máxima de ${API_KEY_MAX_DAYS} días.`} icon={<KeyRound aria-hidden="true" className="h-4 w-4" />}>
         <form onSubmit={onCreate} noValidate className="space-y-4">
           <Field label="Nombre" htmlFor="key-name">
@@ -95,7 +95,7 @@ export function ApiKeysManager({ initial }: { initial: ApiKey[] }) {
             <legend className="mb-2 text-xs font-medium text-lt-muted">Permisos</legend>
             <div className="space-y-2">
               {API_SCOPES.map((s) => (
-                <label key={s} className="flex items-center gap-2.5 text-[13px] text-lt-text">
+                <label key={s} className="flex flex-wrap items-center gap-2.5 text-[13px] text-lt-text">
                   <input
                     type="checkbox"
                     className={CHECKBOX}

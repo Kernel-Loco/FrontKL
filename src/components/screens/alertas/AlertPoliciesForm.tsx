@@ -43,7 +43,7 @@ export function AlertPoliciesForm({ initial, bands }: { initial: AlertPolicies; 
   };
 
   return (
-    <form onSubmit={onSubmit} className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
+    <form onSubmit={onSubmit} className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
       <Card title="Umbral de riesgo" description="La alerta se crea cuando el score de un dominio llega a este valor o lo pasa." icon={<Gauge aria-hidden="true" className="h-4 w-4" />}>
         <label htmlFor={thresholdId} className="mb-1.5 block text-xs font-medium text-lt-muted">
           Umbral (0 a 100)
@@ -56,7 +56,7 @@ export function AlertPoliciesForm({ initial, bands }: { initial: AlertPolicies; 
             value={validThreshold ? threshold : 60}
             onChange={(e) => setPolicies((c) => ({ ...c, alert_score_threshold: Number(e.target.value) }))}
             aria-label="Umbral de riesgo"
-            className="flex-1 accent-lt-indigo"
+            className="min-w-0 flex-1 accent-lt-indigo"
           />
           <input
             id={thresholdId}
