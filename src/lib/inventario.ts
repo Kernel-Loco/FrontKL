@@ -11,7 +11,10 @@
 // - Una fila que no es FQDN ni IP, o cuyo tipo contradice al valor, se ignora y se cuenta. Rangos CIDR, URL y
 //   puertos cuentan como inválidos.
 // - Un servicio (198.51.100.10:443/tcp) se compara por su IP o host, un certificado por el subdominio al que
-//   pertenece y un correo por su dominio. Así todo activo queda en uno de los dos estados.
+//   pertenece, un correo por su dominio y una documentación de API (api_doc, una URL) por su host. Así todo activo
+//   queda en uno de los dos estados.
+// - Una comilla que no se cierra se toma como carácter normal y el resto del archivo se lee sin comillas, para no
+//   juntar miles de filas en una sola celda.
 
 import type { Asset } from "@/types";
 
@@ -152,13 +155,27 @@ export function normalizarValor(texto: string): EntradaInventario | null {
 
 // ---------------------------------------------------------------- Lectura del CSV
 
-/** Filas de un CSV con comillas dobles al estilo RFC 4180. */
+/** Filas de un CSV con comillas dobles al estilo RFC 4180. Una comilla abre solo al inicio de la celda, aunque
+ *  vaya después de espacios. Si una comilla llega al final del archivo sin cerrarse, se vuelve a leer desde ella
+ *  como carácter normal y sin comillas, una sola vez, así que el costo sigue siendo lineal. */
 export function partirCsv(texto: string, separador: string): string[][] {
   const filas: string[][] = [];
   let fila: string[] = [];
   let celda = "";
   let entreComillas = false;
-  for (let i = 0; i < texto.length; i += 1) {
+  let sinComillas = false;
+  let apertura = -1;
+  let celdaAntes = "";
+  for (let i = 0; ; i += 1) {
+    if (i >= texto.length) {
+      if (!entreComillas) break;
+      // Entre comillas no se cierra ninguna celda ni fila, así que basta con volver a la celda de antes.
+      celda = `${celdaAntes}"`;
+      entreComillas = false;
+      sinComillas = true;
+      i = apertura;
+      continue;
+    }
     const c = texto[i]!;
     if (entreComillas) {
       if (c === '"') {
@@ -171,7 +188,10 @@ export function partirCsv(texto: string, separador: string): string[][] {
       } else {
         celda += c;
       }
-    } else if (c === '"' && celda === "") {
+    } else if (c === '"' && !sinComillas && /^[ \t]*$/.test(celda)) {
+      apertura = i;
+      celdaAntes = celda;
+      celda = "";
       entreComillas = true;
     } else if (c === separador) {
       fila.push(celda);
@@ -198,18 +218,41 @@ const NOMBRES_TIPO = new Set(["tipo", "type", "clase", "kind"]);
 const TIPOS_IP = new Set(["ip", "ipv4", "ipv6", "direccion ip", "dirección ip"]);
 const TIPOS_FQDN = new Set(["fqdn", "dominio", "domain", "subdominio", "subdomain", "host", "hostname", "nombre", "dns", "comodin", "comodín", "wildcard"]);
 
-function separadorDe(primeraLinea: string): string {
-  const cuenta = (s: string) => primeraLinea.split(s).length - 1;
-  const opciones: [string, number][] = [[",", cuenta(",")], [";", cuenta(";")], ["\t", cuenta("\t")]];
-  opciones.sort((a, b) => b[1] - a[1]);
+/** El separador más usado en la primera fila, sin contar los que van entre comillas. Una comilla abre igual que en
+ *  partirCsv: al inicio de la celda para cualquiera de los tres separadores. */
+export function separadorDe(texto: string): string {
+  const cuentas: Record<string, number> = { ",": 0, ";": 0, "\t": 0 };
+  let entreComillas = false;
+  let inicioDeCelda = true;
+  for (let i = 0; i < texto.length; i += 1) {
+    const c = texto[i]!;
+    if (entreComillas) {
+      if (c === '"') {
+        if (texto[i + 1] === '"') i += 1;
+        else entreComillas = false;
+      }
+      continue;
+    }
+    if (c === "\n" || c === "\r") break;
+    if (c in cuentas) {
+      cuentas[c]! += 1;
+      inicioDeCelda = true;
+    } else if (c === '"' && inicioDeCelda) {
+      entreComillas = true;
+    } else if (c !== " ") {
+      inicioDeCelda = false;
+    }
+  }
+  const opciones = Object.entries(cuentas).sort((a, b) => b[1] - a[1]);
   return opciones[0]![1] > 0 ? opciones[0]![0] : ",";
 }
 
-/** Lee el texto del CSV. Lanza InventarioError si pasa de 1 MB o de 5,000 filas o si no trae ninguna fila. */
+/** Lee el texto del CSV. Lanza InventarioError si pasa de 1 MB o de 5,000 filas, si no trae ninguna fila o si solo
+ *  trae el encabezado. */
 export function leerInventario(texto: string): InventarioLeido {
   if (new TextEncoder().encode(texto).length > MAX_BYTES) throw new InventarioError("El archivo pasa de 1 MB.");
   const limpio = texto.startsWith("﻿") ? texto.slice(1) : texto;
-  const filas = partirCsv(limpio, separadorDe(limpio.split(/\r?\n/, 1)[0] ?? "")).filter((f) => f.some((c) => c.trim() !== ""));
+  const filas = partirCsv(limpio, separadorDe(limpio)).filter((f) => f.some((c) => c.trim() !== ""));
   if (filas.length === 0) throw new InventarioError("El archivo no trae filas.");
 
   let columnaValor = 0;
@@ -225,6 +268,7 @@ export function leerInventario(texto: string): InventarioLeido {
   } else if (filas.some((f) => f.length > 1)) {
     columnaTipo = 1;
   }
+  if (datos.length === 0) throw new InventarioError("El archivo solo trae el encabezado, sin activos.");
   if (datos.length > MAX_FILAS) throw new InventarioError(`El archivo trae ${datos.length.toLocaleString("es-MX")} filas y el tope es de 5,000.`);
 
   const vistas = new Set<string>();
@@ -252,8 +296,8 @@ export function leerInventario(texto: string): InventarioLeido {
 
 // ---------------------------------------------------------------- Comparación
 
-/** Lo que se compara de cada activo: el valor, la IP o host de un servicio, el subdominio de un certificado o el
- *  dominio de un correo. */
+/** Lo que se compara de cada activo: el valor, la IP o host de un servicio, el subdominio de un certificado, el
+ *  dominio de un correo o el host de la URL de una documentación de API. */
 export function llaveDelActivo(asset: Pick<Asset, "type" | "value" | "parent" | "attributes">): string | null {
   let texto = asset.value;
   if (asset.type === "service") {
@@ -265,6 +309,13 @@ export function llaveDelActivo(asset: Pick<Asset, "type" | "value" | "parent" | 
     texto = asset.parent ?? (typeof sujeto === "string" ? sujeto : "");
   } else if (asset.type === "email") {
     texto = texto.slice(texto.lastIndexOf("@") + 1);
+  } else if (asset.type === "api_doc") {
+    // URL.hostname ya viene en minúsculas y en punycode, y una IPv6 con corchetes, que normalizarIpv6 acepta.
+    try {
+      texto = new URL(texto).hostname;
+    } catch {
+      texto = "";
+    }
   }
   const entrada = normalizarValor(texto);
   return entrada && !entrada.comodin ? entrada.valor : null;

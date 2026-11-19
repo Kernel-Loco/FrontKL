@@ -12,6 +12,8 @@ import {
   llaveDelActivo,
   MAX_FILAS,
   normalizarValor,
+  partirCsv,
+  separadorDe,
 } from "./inventario.ts";
 
 const activo = (id, type, value, parent = null, attributes = {}) => ({
@@ -98,6 +100,53 @@ test("cada activo queda en inventario o desconocido y se lista lo que LowTide no
   assert.deepEqual(r.noVistos, ["viejo.acme.mx", "*.interno.acme.mx"]);
   assert.equal(llaveDelActivo(assets[5]), "2001:db8::1");
   assert.equal(llaveDelActivo(activo("8", "certificate", "abc", null, { subject: "Api.Acme.mx" })), "api.acme.mx");
+});
+
+test("una documentación de API (api_doc) se compara por el host de su URL", () => {
+  const { entradas } = leerInventario("valor\napi.acme.mx\n198.51.100.10\n2001:db8::1\n");
+  const assets = [
+    activo("1", "api_doc", "https://API.acme.mx/swagger.json", "api.acme.mx"),
+    activo("2", "api_doc", "https://198.51.100.10:8443/openapi.json"),
+    activo("3", "api_doc", "https://[2001:db8::1]/v2/api-docs"),
+    activo("4", "api_doc", "https://dev.acme.mx/openapi.yaml"),
+    activo("5", "api_doc", "no es una URL"),
+  ];
+  const r = compararInventario(assets, entradas);
+  assert.deepEqual(Object.fromEntries(r.estados), { 1: "inventario", 2: "inventario", 3: "inventario", 4: "desconocido", 5: "desconocido" });
+  assert.equal(llaveDelActivo(activo("6", "api_doc", "https://ñandú.mx/docs")), "xn--and-6ma2c.mx");
+  assert.equal(llaveDelActivo(assets[4]), null);
+});
+
+test("un CSV con solo el encabezado lanza InventarioError", () => {
+  for (const texto of ["valor\n", "Tipo;Valor\r\n\r\n", "﻿fqdn,tipo"]) {
+    assert.throws(() => leerInventario(texto), (e) => e instanceof InventarioError && /encabezado/.test(e.message), JSON.stringify(texto));
+  }
+});
+
+test("una comilla sin cerrar no se traga el resto del archivo", () => {
+  const filas = Array.from({ length: 3000 }, (_, i) => `h${i}.acme.mx`).join("\n");
+  const r = leerInventario(`valor\n"roto.acme.mx\n${filas}\n`);
+  assert.equal(r.entradas.length, 3000);
+  assert.equal(r.invalidas, 1);
+  assert.deepEqual(partirCsv('a,"b\nc,d\n', ","), [["a", '"b'], ["c", "d"]]);
+  // Una comilla cerrada sigue juntando líneas, como pide RFC 4180.
+  assert.deepEqual(partirCsv('a,"b\nc",d\n', ","), [["a", "b\nc", "d"]]);
+});
+
+test("una comilla después de espacios abre comillas", () => {
+  assert.deepEqual(partirCsv('  "a,b" ,c\n', ","), [["a,b ", "c"]]);
+  const r = leerInventario('valor,tipo\n  "www.acme.mx" ,fqdn\n');
+  assert.deepEqual(r.entradas.map((e) => e.valor), ["www.acme.mx"]);
+  assert.equal(r.invalidas, 0);
+});
+
+test("el separador no cuenta los que van entre comillas", () => {
+  assert.equal(separadorDe('"a,b,c,d";tipo\nx;y\n'), ";");
+  assert.equal(separadorDe('valor\ttipo\t"x,y,z"\n'), "\t");
+  assert.equal(separadorDe("valor,tipo\n"), ",");
+  assert.equal(separadorDe("valor\n"), ",");
+  const r = leerInventario('"Valor, del activo";Tipo\nwww.acme.mx;fqdn\n198.51.100.10;ip\n');
+  assert.deepEqual(r.entradas.map((e) => e.valor), ["www.acme.mx", "198.51.100.10"]);
 });
 
 test("el CSV de desconocidos lleva comilla antes de =, +, - y @", () => {
