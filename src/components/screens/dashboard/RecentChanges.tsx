@@ -1,5 +1,6 @@
 import { Card } from "@/components/ui/Card";
 import { CATEGORY_LABELS } from "@/config/labels";
+import { newAssetsText, type NewAssetCounts } from "@/lib/activosNuevos";
 import { formatDateTime } from "@/lib/format";
 import type { DomainFinding, ScanStatus } from "@/types";
 
@@ -18,6 +19,10 @@ export interface ScanSummary {
   status: ScanStatus | null;
   newFindings: number | null;
   resolvedFindings: number | null;
+  /** Subdominios, IP, puertos y certificados nuevos del último escaneo (RC-219). `null` si no se pueden contar. */
+  newAssets: NewAssetCounts | null;
+  /** El último escaneo es el primero del dominio: no cuenta todo como nuevo. */
+  firstScan: boolean;
 }
 
 const count = (value: number | null, one: string, many: string) => `${value === null ? "—" : value} ${value === 1 ? one : many}`;
@@ -44,6 +49,16 @@ export function RecentChanges({ summaries, changes, more }: { summaries: ScanSum
                   <span className="tabular-nums">{count(s.resolvedFindings, "resuelto", "resueltos")}</span>
                   {s.status && STATUS_NOTE[s.status] && (
                     <span className={s.status === "failed" ? "text-lt-red" : "text-lt-amber"}> · {STATUS_NOTE[s.status]}</span>
+                  )}
+                </p>
+                {/* Los desaparecidos no se listan, igual que los resueltos. */}
+                <p className="mt-0.5 text-xs text-lt-muted">
+                  {s.firstScan ? (
+                    "Activos: primer escaneo"
+                  ) : (
+                    <>
+                      Activos nuevos: <span className="tabular-nums">{s.newAssets ? newAssetsText(s.newAssets) : "—"}</span>
+                    </>
                   )}
                 </p>
               </li>
