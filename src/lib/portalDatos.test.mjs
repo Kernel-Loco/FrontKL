@@ -25,16 +25,27 @@ test("1. HX4: el inventario muestra tecnologías, CDN, registrador, país y ASN,
 
 test("2. HX15: los marcos salen con su enlace y la atribución de MITRE y CIS", () => {
   const marcos = marcosDelHallazgo({
-    mitre_attack: { version: "v19", technique_id: "T1566", technique_name: "Phishing", source_url: "https://attack.mitre.org/techniques/T1566/", unmapped_reason: null },
-    iso_27001_2022: { version: "2022", control_id: "A.8.23", control_name: "Filtrado web", source_url: null },
-    cis_controls_v8_1: { version: "v8.1", safeguard_id: "9.5", safeguard_name: "DMARC", source_url: "javascript:alert(1)" },
+    mitre_attack: { version: "Enterprise v19", technique_id: "T1566", technique_name: "Phishing", source_url: "https://attack.mitre.org/techniques/T1566/", unmapped_reason: null },
+    iso_27001_2022: { version: "ISO/IEC 27001:2022", control_id: "A.8.23", control_name: "Filtrado web", source_url: null },
+    cis_controls_v8_1: { version: "CIS Controls v8.1", safeguard_id: "9.5", safeguard_name: "DMARC", source_url: "javascript:alert(1)" },
   });
+  assert.deepEqual(marcos.map((m) => m.marco), ["MITRE ATT&CK Enterprise v19", "ISO/IEC 27001:2022", "CIS Controls v8.1"]);
   assert.deepEqual(marcos.map((m) => m.texto), ["T1566 Phishing", "A.8.23 Filtrado web", "9.5 DMARC"]);
   assert.equal(marcos[0].url, "https://attack.mitre.org/techniques/T1566/");
   assert.equal(marcos[2].url, null, "solo enlaces https");
   assert.deepEqual(marcosDelHallazgo(undefined), []);
   assert.match(MARCOS_ATRIBUCION, /The MITRE Corporation/);
   assert.match(MARCOS_ATRIBUCION, /CC BY-NC-ND 4\.0/);
+});
+
+test("una regla sin técnica ATT&CK muestra el motivo sin enlazar una técnica inexistente", () => {
+  const [attack] = marcosDelHallazgo({
+    mitre_attack: { version: "Enterprise v19", technique_id: null, technique_name: null, source_url: "https://attack.mitre.org/", unmapped_reason: "No corresponde a una técnica" },
+    iso_27001_2022: { version: "ISO/IEC 27001:2022", control_id: "A.8.23", control_name: "Filtrado web", source_url: null },
+    cis_controls_v8_1: { version: "CIS Controls v8.1", safeguard_id: "9.5", safeguard_name: "DMARC", source_url: "https://www.cisecurity.org/" },
+  });
+  assert.equal(attack.texto, "Sin técnica: No corresponde a una técnica");
+  assert.equal(attack.url, null);
 });
 
 test("3. HX5, HX16 y HX17: CVE y CVSS, título y significado de la regla, y el modelo del score", () => {

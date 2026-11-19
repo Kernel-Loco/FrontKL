@@ -32,7 +32,7 @@ export function marcosDelHallazgo(f: Frameworks | undefined): MarcoVisible[] {
       url: url(f.iso_27001_2022.source_url),
     },
     {
-      marco: `CIS Controls ${f.cis_controls_v8_1.version}`,
+      marco: f.cis_controls_v8_1.version,
       texto: `${f.cis_controls_v8_1.safeguard_id} ${f.cis_controls_v8_1.safeguard_name}`.trim(),
       url: url(f.cis_controls_v8_1.source_url),
     },
