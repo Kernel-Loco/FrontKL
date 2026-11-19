@@ -5,15 +5,24 @@ import { Card, TableWrap, TD, TH, TR } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ComparadorInventario, EstadoInventarioBadge, useComparacionInventario } from "./ComparadorInventario";
 import { ASSET_TYPE_LABELS } from "@/config/labels";
+import { comparable, hasNewCertificate, isNewAsset, type ScanBase } from "@/lib/activosNuevos";
 import { detallesDelActivo } from "@/lib/atributos";
 import { formatDateTime } from "@/lib/format";
 import type { Asset } from "@/types";
 
-/** Inventario de lo que el dominio deja expuesto: subdominios, certificados, IP y servicios, con sus detalles. */
-export function AssetsCard({ assets }: { assets: Asset[] }) {
+/**
+ * Inventario de lo que el dominio deja expuesto: subdominios, certificados, IP y servicios, con sus detalles.
+ * Marca 'Nuevo' lo que apareció en el último escaneo terminado y 'Certificado nuevo' el nombre cuyo certificado más
+ * reciente se emitió después del escaneo anterior (RC-219). En el primer escaneo o si el último falló no marca nada.
+ */
+export function AssetsCard({ assets, base }: { assets: Asset[]; base: ScanBase | null }) {
+  // Si el último falló no marca nada, igual que el panel del dashboard, que no da conteos.
+  const marks = comparable(base) ? base : null;
+  const fresh = marks ? assets.filter((a) => isNewAsset(a, marks)).length : 0;
+  const note = base?.firstScan ? " · primer escaneo" : marks && fresh > 0 ? ` · ${fresh} ${fresh === 1 ? "nuevo" : "nuevos"}` : "";
   const inventario = useComparacionInventario(assets);
   return (
-    <Card title="Activos" padded={false} action={`${assets.length} en el inventario`}>
+    <Card title="Activos" padded={false} action={`${assets.length} en el inventario${note}`}>
       {assets.length === 0 ? (
         <EmptyState title="Sin activos todavía">Aparecen después del primer escaneo.</EmptyState>
       ) : (
@@ -34,7 +43,15 @@ export function AssetsCard({ assets }: { assets: Asset[] }) {
             <tbody>
               {inventario.visibles.map((a) => (
                 <tr key={a.id} className={TR}>
-                  <td className={`${TD} max-w-xs break-all font-mono text-[13px]`}>{a.value}</td>
+                  <td className={`${TD} max-w-xs break-all font-mono text-[13px]`}>
+                    {a.value}
+                    {marks && (isNewAsset(a, marks) || hasNewCertificate(a, marks)) && (
+                      <span className="ml-2 inline-flex flex-wrap gap-1 align-middle font-sans">
+                        {isNewAsset(a, marks) && <Badge tone="green">Nuevo</Badge>}
+                        {hasNewCertificate(a, marks) && <Badge tone="teal">Certificado nuevo</Badge>}
+                      </span>
+                    )}
+                  </td>
                   <td className={TD}>
                     <Badge tone="indigo">{ASSET_TYPE_LABELS[a.type]}</Badge>
                   </td>

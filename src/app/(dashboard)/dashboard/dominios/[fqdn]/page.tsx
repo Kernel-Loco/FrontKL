@@ -19,6 +19,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { InlineAlert } from "@/components/ui/InlineAlert";
 import { CATEGORY_LABELS, MODEL_FALLBACK_LABELS, SCAN_BLOCK_REASON_LABELS } from "@/config/labels";
 import { can, canAccessSection } from "@/config/permissions";
+import { scanBase } from "@/lib/activosNuevos";
 import { formatDate, formatDateTime } from "@/lib/format";
 import { ServiceError } from "@/services/errors";
 import { getDomainAssets, getDomainFindings, getDomains, getDomainScore, getScans, getScoreHistory } from "@/services/queries";
@@ -196,7 +197,7 @@ export default async function DomainDetailPage({ params }: Props) {
         </>
       )}
 
-      <AssetsCard assets={assets.items} />
+      <AssetsCard assets={assets.items} base={scans ? scanBase(scans.items, fqdn, scans.total) : null} />
     </div>
   );
 }
