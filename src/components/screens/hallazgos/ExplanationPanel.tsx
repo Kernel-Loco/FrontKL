@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { SeverityBadge } from "@/components/ui/Badge";
 import { InlineAlert } from "@/components/ui/InlineAlert";
 import { Spinner } from "@/components/Spinner";
-import { EXPOSICION_LABELS, SENSIBILIDAD_LABELS } from "@/config/labels";
+import { EXPOSICION_LABELS, scoreMethodText, SENSIBILIDAD_LABELS, SEVERITY_LABELS } from "@/config/labels";
+import { cveFacts } from "@/lib/cobertura";
 import { marcosDelHallazgo, MARCOS_ATRIBUCION } from "@/lib/marcos";
 import { getFindingExplanation } from "@/services/domainService";
 import { getErrorMessage } from "@/services/errors";
@@ -41,7 +42,7 @@ function factorsOf(explanation: FindingExplanation): Factor[] {
   }));
 }
 
-/** Panel «¿Por qué es crítico?» del hallazgo elegido. */
+/** Panel «¿Por qué tiene severidad …?» del hallazgo elegido: qué significa, cómo se calculó, factores y CVE (RC-229). */
 export function ExplanationPanel({ finding }: { finding: DomainFinding }) {
   const [state, setState] = useState<{ id: string; data?: FindingExplanation; error?: string } | null>(null);
 
@@ -66,7 +67,9 @@ export function ExplanationPanel({ finding }: { finding: DomainFinding }) {
 
   return (
     <aside aria-labelledby="explicacion-titulo" aria-busy={loading} className="rounded-xl border border-lt-border bg-lt-surface p-5">
-      <p className="font-mono text-[11px] uppercase tracking-[0.15em] text-lt-muted">¿Por qué es crítico?</p>
+      <p className="font-mono text-[11px] uppercase tracking-[0.15em] text-lt-muted">
+        ¿Por qué tiene severidad {SEVERITY_LABELS[finding.severity].toLowerCase()}?
+      </p>
       <h2 id="explicacion-titulo" className="mt-1.5 text-lg font-semibold leading-snug text-lt-text">
         {finding.title}
       </h2>
@@ -87,12 +90,20 @@ export function ExplanationPanel({ finding }: { finding: DomainFinding }) {
       ) : (
         explanation && (
           <>
-            {explanation.rule_title && (
-              <p className="mt-4 text-sm text-lt-text">
-                Regla: {explanation.rule_title}
-                {explanation.meaning && <span className="block text-xs leading-relaxed text-lt-muted">{explanation.meaning}</span>}
-              </p>
+            {(explanation.rule_title || explanation.meaning) && (
+              <section aria-labelledby="explicacion-significa" className="mt-4">
+                <h3 id="explicacion-significa" className="text-sm text-lt-text">Qué significa</h3>
+                {explanation.rule_title && <p className="mt-1 text-sm font-semibold text-lt-text">{explanation.rule_title}</p>}
+                {explanation.meaning && <p className="mt-1 text-sm leading-relaxed text-lt-muted">{explanation.meaning}</p>}
+              </section>
             )}
+            <section aria-labelledby="explicacion-calculo" className="mt-4">
+              <h3 id="explicacion-calculo" className="text-sm text-lt-text">Cómo se calculó</h3>
+              <p className="mt-1 text-sm leading-relaxed text-lt-muted">
+                {scoreMethodText(explanation.method, explanation.model_version, explanation.model_fallback_reason)}.
+                {explanation.explanation_model_version && <> La confianza y el SHAP son del modelo {explanation.explanation_model_version}.</>}
+              </p>
+            </section>
             <p className="mt-4 text-sm leading-relaxed text-lt-muted">{explanation.summary}</p>
             {topShap.length > 0 ? (
               <>
@@ -155,12 +166,6 @@ export function ExplanationPanel({ finding }: { finding: DomainFinding }) {
               <p className="text-sm font-semibold text-lt-text">Recomendación</p>
               <p className="mt-1 text-sm leading-relaxed text-lt-muted">{explanation.recommendation}</p>
             </div>
-            {(explanation.model_version || explanation.explanation_model_version) && (
-              <p className="mt-3 text-[11px] text-lt-faint">
-                {explanation.model_version && <>Modelo del score: {explanation.model_version}. </>}
-                {explanation.explanation_model_version && <>Modelo de la confianza y el SHAP: {explanation.explanation_model_version}.</>}
-              </p>
-            )}
             {marcosDelHallazgo(explanation.frameworks ?? finding.frameworks).length > 0 && (
               <div className="mt-5 border-t border-lt-border pt-4">
                 <p className="text-xs font-semibold text-lt-text">Marcos de referencia</p>
@@ -181,12 +186,29 @@ export function ExplanationPanel({ finding }: { finding: DomainFinding }) {
         )
       )}
 
-      {(finding.cve_id || finding.cvss != null) && (
-        <p className="mt-5 text-xs text-lt-text">
-          {finding.cve_id && <span className="font-mono">{finding.cve_id}</span>}
-          {finding.cve_id && finding.cvss != null && " · "}
-          {finding.cvss != null && <span>CVSS {finding.cvss.toFixed(1)}</span>}
-        </p>
+      {finding.cve_id ? (
+        // Con CVE: CVSS, EPSS y la marca KEV, aunque falte alguno (RC-229). EPSS es la probabilidad de explotación en 30 días.
+        <div className="mt-5 border-t border-lt-border pt-4 text-xs">
+          <p className="font-mono text-lt-text">{finding.cve_id}</p>
+          <dl className="mt-2 grid grid-cols-3 gap-3">
+            <div>
+              <dt className="text-lt-faint">CVSS</dt>
+              <dd className="mt-0.5 text-lt-text tabular-nums">{cveFacts(finding).cvss}</dd>
+            </div>
+            <div>
+              <dt className="text-lt-faint">EPSS</dt>
+              <dd className="mt-0.5 text-lt-text tabular-nums">{cveFacts(finding).epss}</dd>
+            </div>
+            <div>
+              <dt className="text-lt-faint">KEV de CISA</dt>
+              <dd className={`mt-0.5 ${finding.in_kev ? "font-semibold text-lt-red" : "text-lt-text"}`}>
+                {cveFacts(finding).kev}
+              </dd>
+            </div>
+          </dl>
+        </div>
+      ) : (
+        finding.cvss != null && <p className="mt-5 text-xs text-lt-text">CVSS {finding.cvss.toFixed(1)}</p>
       )}
       <dl className="mt-5 grid grid-cols-2 gap-3 border-t border-lt-border pt-4 text-xs">
         <div>

@@ -14,11 +14,12 @@ import { AvisoSimulado } from "@/components/ui/AvisoSimulado";
 import { Card, TableWrap, TD, TH, TR } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { InlineAlert } from "@/components/ui/InlineAlert";
-import { BAND_LABELS, SCORE_METHOD_LABELS, SCORE_REASON_LABELS } from "@/config/labels";
+import { BAND_LABELS, SCORE_METHOD_LABELS, SCORE_REASON_LABELS, scoreMethodText } from "@/config/labels";
 import { can, canAccessSection, SECTIONS } from "@/config/permissions";
 import { lastScanSummary, latestScan, weeklyChangeNotes } from "@/lib/cambiosSemanales";
 import { formatDate } from "@/lib/format";
-import { getDomainFindings, getDomains, getScoreHistory } from "@/services/queries";
+import { coverageIncomplete } from "@/lib/cobertura";
+import { getDomainFindings, getDomains, getDomainScore, getScoreHistory } from "@/services/queries";
 import { getReports } from "@/services/reportService";
 
 export const metadata: Metadata = { title: SECTIONS.historico.label };
@@ -47,7 +48,9 @@ export default async function HistoricoPage({ searchParams }: Props) {
     );
   }
 
-  const [history, findings] = await Promise.all([getScoreHistory(fqdn), getDomainFindings(fqdn)]);
+  // La pestaña Hallazgos usa la cobertura del último score, como el detalle: coverage_gaps cuenta aunque partial_coverage
+  // sea false (RC-229).
+  const [history, findings, score] = await Promise.all([getScoreHistory(fqdn), getDomainFindings(fqdn), getDomainScore(fqdn)]);
   const points = history.items;
   const scanCount = points.filter((point) => point.reason === "scan").length;
   const correctionCount = points.filter((point) => point.reason === "correction").length;
@@ -73,6 +76,8 @@ export default async function HistoricoPage({ searchParams }: Props) {
     floor_applied: point.floor_applied,
     critical_open: point.critical_open,
     method: SCORE_METHOD_LABELS[point.method],
+    model_version: point.model_version,
+    model_fallback_reason: point.model_fallback_reason,
     rule_set_version: point.rule_set_version,
     reason: point.reason,
     partial_coverage: point.partial_coverage,
@@ -98,7 +103,7 @@ export default async function HistoricoPage({ searchParams }: Props) {
         )}
       />
       <AvisoSimulado datos={["getReports"]} datosDe="la tarjeta Reportes" />
-      {canOpenDetail && <DomainTabs tabs={domainTabs(fqdn, findings.total, "historico", canAccessSection(user.role, "hallazgos"))} />}
+      {canOpenDetail && <DomainTabs tabs={domainTabs(fqdn, findings.total, "historico", canAccessSection(user.role, "hallazgos"), true, coverageIncomplete(score))} />}
 
       {hasPartialCoverage && (
         <InlineAlert tone="warning">
@@ -131,7 +136,7 @@ export default async function HistoricoPage({ searchParams }: Props) {
         <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
           <Card title="Escaneos" padded={false}>
             <TableWrap>
-              <table className="w-full min-w-[560px]">
+              <table className="w-full min-w-[680px]">
                 <thead>
                   <tr>
                     <th scope="col" className={TH}>Fecha</th>
@@ -139,6 +144,7 @@ export default async function HistoricoPage({ searchParams }: Props) {
                     <th scope="col" className={TH}>Cambio</th>
                     <th scope="col" className={TH}>Nuevos</th>
                     <th scope="col" className={TH}>Resueltos</th>
+                    <th scope="col" className={TH}>Método</th>
                     <th scope="col" className={TH}>Cobertura</th>
                   </tr>
                 </thead>
@@ -158,6 +164,9 @@ export default async function HistoricoPage({ searchParams }: Props) {
                       <td className={TD}>{first || point.reason === "correction" ? <span className="text-lt-faint">—</span> : <Delta value={change} />}</td>
                       <td className={`${TD} tabular-nums`}>{point.reason !== "scan" ? "—" : (point.new_findings ?? "—")}</td>
                       <td className={`${TD} tabular-nums`}>{point.reason !== "scan" ? "—" : (point.resolved_findings ?? "—")}</td>
+                      <td className={`${TD} text-xs text-lt-muted`}>
+                        {scoreMethodText(point.method, point.model_version, point.model_fallback_reason)}
+                      </td>
                       <td className={TD}>
                         {point.partial_coverage ? (
                           <span className="rounded-sm border border-lt-amber/30 bg-lt-amber/10 px-2 py-1 text-xs text-lt-amber">Parcial</span>

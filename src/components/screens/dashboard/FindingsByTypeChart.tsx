@@ -6,7 +6,7 @@ interface DomainFindingSeries {
   domain: string;
   findings: DomainFinding[];
   coverage: "complete" | "partial" | "unscanned";
-  /** Para un dominio sin score: lo mismo que dice la tabla Dominios (Sin autorización, Vencido, Sin calcular...). */
+  /** Para un dominio sin score: lo mismo que dice la tabla Dominios (Sin autorización, Vencido, Sin escaneo completo...). */
   stateLabel: string;
 }
 

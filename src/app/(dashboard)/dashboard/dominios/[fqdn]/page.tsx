@@ -11,6 +11,7 @@ import { RiskGauge } from "@/components/screens/detalle/RiskGauge";
 import { ReportButton } from "@/components/screens/shared/ReportButton";
 import { SiemExportButton } from "@/components/screens/shared/SiemExportButton";
 import { ScanButton } from "@/components/screens/shared/ScanButton";
+import { CoverageGapsList } from "@/components/screens/shared/CoverageGapsList";
 import { exportBlockReasons, failedScanAt, unscoredLabel } from "@/components/screens/shared/domainState";
 import { TEXT_LINK } from "@/components/ui/ActionButton";
 import { SeverityBadge } from "@/components/ui/Badge";
@@ -20,6 +21,7 @@ import { InlineAlert } from "@/components/ui/InlineAlert";
 import { CATEGORY_LABELS, MODEL_FALLBACK_LABELS, SCAN_BLOCK_REASON_LABELS } from "@/config/labels";
 import { can, canAccessSection } from "@/config/permissions";
 import { scanBase } from "@/lib/activosNuevos";
+import { coverageIncomplete, noFindingsTitle } from "@/lib/cobertura";
 import { formatDate, formatDateTime } from "@/lib/format";
 import { ServiceError } from "@/services/errors";
 import { getDomainAssets, getDomainFindings, getDomains, getDomainScore, getScans, getScoreHistory } from "@/services/queries";
@@ -66,7 +68,7 @@ export default async function DomainDetailPage({ params }: Props) {
   const failedAt = failedScanAt(domain, ownScans.find((s) => s.finished_at));
   // Si el escaneo fallido también calculó el riesgo (misma fecha), no hay un riesgo anterior que nombrar.
   const riskAt = domain.last_scan_at && (!failedAt || Date.parse(domain.last_scan_at) < Date.parse(failedAt)) ? domain.last_scan_at : null;
-  // Sin score, el mismo estado que la tabla Dominios: «Sin autorización», «Vencido»... o «Sin calcular» si está autorizado.
+  // Sin score, el mismo estado que la tabla Dominios: «Sin autorización», «Vencido»... o «Sin escaneo completo» si está autorizado.
   const unscored = unscoredLabel(domain);
   const subtitle = [
     running ? "Escaneo en curso" : null,
@@ -76,7 +78,7 @@ export default async function DomainDetailPage({ params }: Props) {
       : failedAt
         ? null
         : domain.score === null
-          ? unscored === "Sin calcular" ? "Sin riesgo calculado todavía" : unscored
+          ? unscored
           : "Sin fecha de escaneo",
     domain.authorization.valid_until
       ? `${domain.authorization.status === "expired" ? "Venció el" : "Autorizado hasta"} ${formatDate(domain.authorization.valid_until)}`
@@ -109,7 +111,8 @@ export default async function DomainDetailPage({ params }: Props) {
       }
     >
       {top.length === 0 ? (
-        <EmptyState title="Sin hallazgos abiertos" />
+        // Con cobertura parcial nunca dice que no hay hallazgos: solo que no los hay en las fuentes que respondieron (RC-229).
+        <EmptyState title={noFindingsTitle(coverageIncomplete(score))} />
       ) : (
         <ul>
           {top.map((f) => (
@@ -140,7 +143,7 @@ export default async function DomainDetailPage({ params }: Props) {
           </>
         }
       />
-      <DomainTabs tabs={domainTabs(fqdn, findings.total, "resumen", canSeeFindings, domain.score !== null)} />
+      <DomainTabs tabs={domainTabs(fqdn, findings.total, "resumen", canSeeFindings, domain.score !== null, coverageIncomplete(score))} />
 
       {blocked && (
         <InlineAlert tone="warning">Este dominio no se puede escanear{reportBlocked ? " ni exportar" : ""}: {blocked}.</InlineAlert>
@@ -156,7 +159,7 @@ export default async function DomainDetailPage({ params }: Props) {
                   score={score.score}
                   band={score.band}
                   grade={score.grade}
-                  partial={score.partial_coverage}
+                  partial={coverageIncomplete(score)}
                   delta={delta}
                   reason={score.reason}
                   previousReason={points.length >= 2 ? points[points.length - 2]!.reason : null}
@@ -178,10 +181,11 @@ export default async function DomainDetailPage({ params }: Props) {
             </Card>
             <Card title="Riesgo por categoría" action="Ponderación configurable">
               <CategoryBars categories={score.categories} subcategories={score.subcategories} kris={score.kris} />
-              {score.partial_coverage && (
+              {coverageIncomplete(score) && (
                 <InlineAlert tone="warning" className="mt-5">
-                  Cobertura parcial: alguna fuente falló, revisó solo una parte de sus repos o IP, o hay reglas que
-                  las fuentes actuales todavía no pueden revisar. El score y su letra pueden estar incompletos.
+                  Cobertura parcial: alguna fuente falló o no corrió, revisó solo una parte de sus repos o IP, o hay reglas
+                  que las fuentes actuales todavía no pueden revisar. El score y su letra pueden estar incompletos.
+                  <CoverageGapsList gaps={score.coverage_gaps} />
                 </InlineAlert>
               )}
             </Card>
@@ -191,7 +195,7 @@ export default async function DomainDetailPage({ params }: Props) {
       ) : (
         <>
           <Card>
-            <EmptyState title={unscored === "Sin calcular" ? "Riesgo sin calcular" : unscored}>{pendingNote}</EmptyState>
+            <EmptyState title={unscored}>{pendingNote}</EmptyState>
           </Card>
           {top.length > 0 && topFindings}
         </>

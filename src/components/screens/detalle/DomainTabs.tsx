@@ -36,11 +36,14 @@ export function domainTabs(
   active: "resumen" | "hallazgos" | "historico" | "plan",
   canSeeFindings: boolean,
   scored = true,
+  partial = false,
 ): Tab[] {
+  // Con cobertura parcial y sin hallazgos la pestaña no dice 0: no se puede concluir que no haya (RC-229).
+  const findingsLabel = partial && findingsCount === 0 ? "Hallazgos (parcial)" : `Hallazgos (${findingsCount})`;
   const q = `?dominio=${encodeURIComponent(fqdn)}`;
   return [
     { label: "Resumen", href: `/dashboard/dominios/${fqdn}`, active: active === "resumen" },
-    ...(canSeeFindings ? [{ label: `Hallazgos (${findingsCount})`, href: `/dashboard/hallazgos${q}`, active: active === "hallazgos" }] : []),
+    ...(canSeeFindings ? [{ label: findingsLabel, href: `/dashboard/hallazgos${q}`, active: active === "hallazgos" }] : []),
     ...(scored
       ? [
           { label: "Histórico", href: `/dashboard/historico${q}`, active: active === "historico" },

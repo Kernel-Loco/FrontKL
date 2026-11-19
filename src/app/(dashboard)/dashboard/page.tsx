@@ -7,7 +7,8 @@ import { KpiTile } from "@/components/screens/dashboard/KpiTile";
 import { RecentChanges, type Change, type ScanSummary } from "@/components/screens/dashboard/RecentChanges";
 import { ScanButton } from "@/components/screens/shared/ScanButton";
 import { InlineAlert } from "@/components/ui/InlineAlert";
-import { scoredDomains, unscoredLabel } from "@/components/screens/shared/domainState";
+import { scoredDomains, unscannedDomains, unscoredLabel } from "@/components/screens/shared/domainState";
+import { coverageIncomplete, criticalKpi } from "@/lib/cobertura";
 import { BAND_TONE } from "@/components/ui/tones";
 import { can, canAccessSection } from "@/config/permissions";
 import { mapLimit, panelAssets } from "@/lib/activosNuevos";
@@ -35,12 +36,18 @@ export default async function DashboardPage() {
     Promise.all(visible.map((domain) => getDomainFindings(domain.fqdn))),
     Promise.all(visible.map(async (domain) => {
       if (domain.score === null) return "unscanned" as const;
-      return (await getDomainScore(domain.fqdn)).partial_coverage ? "partial" as const : "complete" as const;
+      return coverageIncomplete(await getDomainScore(domain.fqdn)) ? "partial" as const : "complete" as const;
     })),
   ]);
   const partialDomains = visible.filter((_, index) => coverage[index] === "partial").map((domain) => domain.fqdn);
   // Cuenta los críticos abiertos registrados con cualquier cobertura (hoy todo escaneo queda parcial); el hint lo avisa.
   const critical = visible.reduce((sum, domain) => sum + domain.open_findings.critical, 0);
+  // Un dominio autorizado sin score no cuenta como 0 críticos, y con dominios parciales o sin escaneo completo el KPI no
+  // dice 0 a secas: el 0 va en la pista (RC-69, RC-229). open_findings ya usa la severidad del último score, la misma de
+  // la lista de hallazgos.
+  const unscanned = unscannedDomains(visible).length;
+  const kpi = criticalKpi(critical, scored.length, partialDomains.length, unscanned);
+  const criticalHint = kpi.hint;
   // Último escaneo terminado de cada dominio, también si falló: /scans viene del más nuevo al más viejo (los últimos 50 de la empresa).
   const lastScans = new Map<string, Scan>();
   for (const scan of scans.items) {
@@ -115,15 +122,15 @@ export default async function DashboardPage() {
         <KpiTile label="Riesgo promedio" value={average ?? "—"} tone={averageBand ? BAND_TONE[averageBand] : undefined} />
         <KpiTile
           label="Hallazgos críticos"
-          value={critical}
+          value={kpi.value}
           tone={critical > 0 ? "red" : undefined}
-          hint={partialDomains.length > 0 ? "Cobertura parcial: puede no estar al día" : undefined}
+          hint={criticalHint ? criticalHint.charAt(0).toUpperCase() + criticalHint.slice(1) : undefined}
         />
         <KpiTile label="Escaneos en curso" value={running} />
       </div>
       {partialDomains.length > 0 && (
         <InlineAlert tone="warning">
-          <strong>Cobertura parcial.</strong> El último escaneo de {partialDomains.join(", ")} no revisó todo: alguna fuente falló,
+          <strong>Cobertura parcial.</strong> El último escaneo de {partialDomains.join(", ")} no revisó todo: alguna fuente falló o no corrió,
           revisó solo una parte de sus repos o IP, o hay reglas que las fuentes actuales todavía no pueden revisar. Su score y su letra
           pueden estar incompletos, y los conteos muestran los hallazgos abiertos registrados y pueden no estar al día.
         </InlineAlert>
@@ -133,7 +140,7 @@ export default async function DashboardPage() {
         findings: items,
         coverage: coverage[index] ?? "unscanned",
         // El mismo estado que la tabla Dominios: sin score por falta de autorización, por vencido o por no tener escaneo.
-        stateLabel: visible[index] ? unscoredLabel(visible[index]) : "Sin calcular",
+        stateLabel: visible[index] ? unscoredLabel(visible[index]) : "Sin escaneo completo",
       }))} />
       <div className="grid gap-6 2xl:grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)]">
         <DomainsRiskTable domains={rows} lastScans={lastScans} partialDomains={new Set(partialDomains)} canOpenDetail={canAccessSection(user.role, "detalle")} />

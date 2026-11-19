@@ -31,10 +31,10 @@ test("1. la letra va junto al score y, con cobertura parcial, lleva el mismo avi
 test("1b. el tablero, el detalle y el PDF pintan la letra que da la API", () => {
   assert.match(leer("../components/screens/dashboard/DomainsRiskTable.tsx"), /<GradeBadge grade=\{d\.grade\}[^>]*partial=\{partialDomains\.has\(d\.fqdn\)\}/);
   assert.match(leer("../components/screens/detalle/RiskGauge.tsx"), /<GradeBadge grade=\{grade\} band=\{band\} partial=\{partial\}/);
-  assert.match(leer("../app/(dashboard)/dashboard/dominios/[fqdn]/page.tsx"), /grade=\{score\.grade\}\s+partial=\{score\.partial_coverage\}/);
+  assert.match(leer("../app/(dashboard)/dashboard/dominios/[fqdn]/page.tsx"), /grade=\{score\.grade\}\s+partial=\{coverageIncomplete\(score\)\}/);
   assert.match(leer("./reporteEjecutivo.ts"), /scoreCell\(s\.score, s\.grade, [^)]*s\.partial_coverage\)/);
   // El aviso de la letra sale del score de cada dominio, no de una constante.
-  assert.match(leer("../app/(dashboard)/dashboard/page.tsx"), /\(await getDomainScore\(domain\.fqdn\)\)\.partial_coverage \? "partial"/);
+  assert.match(leer("../app/(dashboard)/dashboard/page.tsx"), /coverageIncomplete\(await getDomainScore\(domain\.fqdn\)\) \? "partial"/);
 });
 
 test("2. los hallazgos de cada categoría se agrupan por subcategoría, en el orden de la API", () => {
