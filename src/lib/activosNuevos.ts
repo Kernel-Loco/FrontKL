@@ -1,6 +1,8 @@
-// Activos nuevos desde el último escaneo (#102, RC-219). Usa la misma regla que la API para new_assets del histórico
-// (cirdan/api/v1.py, score_history): un activo es nuevo en un escaneo si su first_seen_at cae entre el queued_at y el
-// finished_at de ese escaneo. Un certificado es nuevo si su 'emitido' (not_before del más reciente, que ct_logs guarda
+// Activos nuevos desde el último escaneo (#102, RC-219). Parte de la regla de new_assets del histórico de la API
+// (cirdan/api/v1.py, score_history): un activo es nuevo si su first_seen_at cae entre el queued_at y el finished_at del
+// último escaneo. Se aparta a propósito cuando hay fallidos entre el último y el anterior que sí corrió: la ventana
+// empieza en el queued_at del más viejo de esos fallidos, para que lo que guardaron cuente en el siguiente (new_assets
+// lo cuenta en el fallido). Un certificado es nuevo si su 'emitido' (not_before del más reciente, que ct_logs guarda
 // en los atributos del dominio o del subdominio) es posterior al inicio del escaneo anterior que sí corrió.
 // Sin imports con @/ de valores, así node --test lo carga.
 import type { Asset, Scan } from "@/types";
@@ -45,8 +47,8 @@ const time = (value: unknown): number | null => {
 };
 
 /**
- * El activo apareció en el último escaneo: first_seen_at entre `since` y el finished_at del último, como new_assets de
- * la API. Sin fallidos de por medio, `since` es el queued_at del último.
+ * El activo apareció en el último escaneo: first_seen_at entre `since` y el finished_at del último. Sin fallidos de por
+ * medio, `since` es el queued_at del último y da lo mismo que new_assets de la API. Con fallidos de en medio, no.
  */
 export function isNewAsset(asset: Pick<Asset, "first_seen_at">, base: Pick<ScanBase, "last" | "since">): boolean {
   const seen = time(asset.first_seen_at);
@@ -93,6 +95,56 @@ export function newAssetCounts(assets: Asset[], base: ScanBase): NewAssetCounts 
   }
   counts.certificates = certificates.size;
   return counts;
+}
+
+/**
+ * Margen entre el finished_at de un escaneo y el last_scan_at de su dominio. El orquestador los guarda en la misma
+ * transacción con dos clock_timestamp() seguidos (cirdan/orquestador/__init__.py, UPDATE scans y luego UPDATE domains),
+ * así que nunca son iguales: last_scan_at queda unos microsegundos después, o más si espera el candado de la fila.
+ */
+export const SAME_CLOSE_MS = 60_000;
+
+/** El last_scan_at del dominio es el cierre de este escaneo: cae entre su finished_at y SAME_CLOSE_MS después. */
+export function sameClose(scanFinishedAt: string | null | undefined, domainLastScanAt: string | null | undefined): boolean {
+  const end = time(scanFinishedAt);
+  const at = time(domainLastScanAt);
+  return end !== null && at !== null && at >= end && at - end <= SAME_CLOSE_MS;
+}
+
+export interface ScanList {
+  items: Scan[];
+  total: number;
+}
+
+export interface PanelAssets {
+  firstScan: boolean;
+  newAssets: NewAssetCounts | null;
+}
+
+/**
+ * Conteos del panel del dashboard para un dominio. `general` es el /scans de la empresa (los 50 más nuevos), del que sale
+ * la fecha del panel. Si ahí está su último escaneo pero no el anterior que corrió, se leen los 5 más nuevos del dominio
+ * y se usan solo si su último es el mismo. Si no está (un dominio con score cuyo escaneo quedó fuera de esos 50, y la
+ * fecha del panel es su last_scan_at), se leen igual y se usan solo si su último cerró con ese last_scan_at. El
+ * inventario se lee solo si hay con qué comparar.
+ */
+export async function panelAssets(
+  summary: { domain: string; finishedAt: string | null },
+  general: ScanList,
+  domainScans: (fqdn: string) => Promise<ScanList>,
+  domainAssets: (fqdn: string) => Promise<Asset[]>,
+): Promise<PanelAssets> {
+  const none: PanelAssets = { firstScan: false, newAssets: null };
+  let base = scanBase(general.items, summary.domain, general.total);
+  if (!base.last || base.unknown) {
+    if (!base.last && !summary.finishedAt) return none;
+    const shown = base.last;
+    const own = await domainScans(summary.domain);
+    base = scanBase(own.items, summary.domain, own.total);
+    if (shown ? base.last?.id !== shown.id : !sameClose(base.last?.finished_at, summary.finishedAt)) return none;
+  }
+  if (!comparable(base)) return { firstScan: base.firstScan, newAssets: null };
+  return { firstScan: false, newAssets: newAssetCounts(await domainAssets(summary.domain), base) };
 }
 
 /**

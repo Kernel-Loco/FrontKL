@@ -10,7 +10,7 @@ import { InlineAlert } from "@/components/ui/InlineAlert";
 import { scoredDomains, unscoredLabel } from "@/components/screens/shared/domainState";
 import { BAND_TONE } from "@/components/ui/tones";
 import { can, canAccessSection } from "@/config/permissions";
-import { comparable, mapLimit, newAssetCounts, scanBase } from "@/lib/activosNuevos";
+import { mapLimit, panelAssets } from "@/lib/activosNuevos";
 import { bandaEnRangos } from "@/lib/bandas";
 import { ServiceError } from "@/services/errors";
 import { getDomainAssets, getDomainFindings, getDomainScore, getDomains, getScans, getScoringWeights } from "@/services/queries";
@@ -75,22 +75,18 @@ export default async function DashboardPage() {
     }];
   });
   // Activos que dejó el último escaneo de cada dominio (RC-219). La base sale del mismo /scans general que da la fecha
-  // del panel. Solo si ahí no está el anterior que sí corrió se leen los 5 más nuevos del dominio (RC-318), y se usan
-  // solo si su último es el mismo escaneo del panel. El inventario (first_seen_at y el 'emitido' de ct_logs) se lee solo
-  // si hay con qué comparar, con a lo más 4 dominios a la vez: cada /scans abandona los vencidos con un UPDATE. Un
-  // dominio fuera de esos 50 queda sin conteos, como sus hallazgos. Si una lectura falla, sin conteos.
+  // del panel. Si ahí no está el anterior que sí corrió, o el dominio tiene score pero su último escaneo quedó fuera de
+  // esos 50, se leen los 5 más nuevos del dominio (RC-318) y se usan solo si su último es el escaneo de la fecha del
+  // panel (panelAssets). El inventario (first_seen_at y el 'emitido' de ct_logs) se lee solo si hay con qué comparar,
+  // con a lo más 4 dominios a la vez: cada /scans abandona los vencidos con un UPDATE. Si una lectura falla, sin conteos.
   const assetChanges = await mapLimit(summaries, 4, async (s) => {
-    const shown = lastScans.get(s.domain);
-    if (!shown) return { firstScan: false, newAssets: null };
     try {
-      let base = scanBase(scans.items, s.domain, scans.total);
-      if (base.unknown) {
-        const own = await getScans({ domain: s.domain, limit: 5 });
-        base = scanBase(own.items, s.domain, own.total);
-        if (base.last?.id !== shown.id) return { firstScan: false, newAssets: null };
-      }
-      if (!comparable(base)) return { firstScan: base.firstScan, newAssets: null };
-      return { firstScan: false, newAssets: newAssetCounts((await getDomainAssets(s.domain)).items, base) };
+      return await panelAssets(
+        s,
+        scans,
+        (fqdn) => getScans({ domain: fqdn, limit: 5 }),
+        async (fqdn) => (await getDomainAssets(fqdn)).items,
+      );
     } catch (error) {
       if (error instanceof ServiceError) return { firstScan: false, newAssets: null };
       throw error;

@@ -2,7 +2,9 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { comparable, hasNewCertificate, isNewAsset, mapLimit, newAssetCounts, newAssetsText, scanBase } from "./activosNuevos.ts";
+import {
+  comparable, hasNewCertificate, isNewAsset, mapLimit, newAssetCounts, newAssetsText, panelAssets, sameClose, scanBase,
+} from "./activosNuevos.ts";
 
 const leer = (ruta) => readFileSync(new URL(ruta, import.meta.url), "utf8");
 const D = "acme-demo.mx";
@@ -31,7 +33,7 @@ test("2. primer escaneo: sin anterior y sin más escaneos que leer; con más en 
   assert.equal(scanBase([], D).firstScan, false);
 });
 
-test("3. nuevo si first_seen_at cae entre queued_at y finished_at del último, como new_assets de la API", () => {
+test("3. sin fallidos de en medio, nuevo si first_seen_at cae entre queued_at y finished_at del último (como new_assets)", () => {
   const base = scanBase([ULTIMO, ANTERIOR], D);
   assert.equal(base.since, ULTIMO.queued_at);
   assert.equal(isNewAsset(asset("subdomain", "a", "2026-11-18T10:00:00Z"), base), true);
@@ -87,7 +89,7 @@ test("6. el panel dice 'primer escaneo' y no cuenta; el detalle no marca nada en
   const detalle = leer("../app/(dashboard)/dashboard/dominios/[fqdn]/page.tsx");
   assert.match(detalle, /<AssetsCard assets=\{assets\.items\} base=\{scans \? scanBase\(scans\.items, fqdn, scans\.total\) : null\} \/>/);
   const dashboard = leer("../app/(dashboard)/dashboard/page.tsx");
-  assert.match(dashboard, /newAssetCounts\(\(await getDomainAssets\(s\.domain\)\)\.items, base\)/);
+  assert.match(dashboard, /async \(fqdn\) => \(await getDomainAssets\(fqdn\)\)\.items,/);
 });
 
 // Ronda de arreglos 1 (18 nov): hallazgos 1, 2, 3, 4 y 7 de la revisión del commit d71d0c9.
@@ -168,9 +170,74 @@ test("11. hallazgo 7: mapLimit respeta el tope y el orden; el dashboard reusa el
   const dashboard = leer("../app/(dashboard)/dashboard/page.tsx");
   assert.match(dashboard, /await mapLimit\(summaries, 4, async \(s\) => \{/);
   assert.doesNotMatch(dashboard, /Promise\.all\(\[getScans\(\{ domain/);
-  // El /scans del dominio solo si el general no trae el anterior, y solo con el mismo último que la fecha del panel.
-  assert.match(dashboard, /let base = scanBase\(scans\.items, s\.domain, scans\.total\);\s*if \(base\.unknown\) \{\s*const own = await getScans\(\{ domain: s\.domain, limit: 5 \}\);/);
-  assert.match(dashboard, /if \(base\.last\?\.id !== shown\.id\) return \{ firstScan: false, newAssets: null \};/);
-  // El inventario se lee solo si hay con qué comparar.
-  assert.match(dashboard, /if \(!comparable\(base\)\) return \{ firstScan: base\.firstScan, newAssets: null \};\s*return \{ firstScan: false, newAssets: newAssetCounts\(\(await getDomainAssets/);
+  // El /scans del dominio y el inventario los decide panelAssets (prueba 12), dentro del mismo tope.
+  assert.match(dashboard, /await mapLimit\(summaries, 4, async \(s\) => \{\s*try \{\s*return await panelAssets\(\s*s,\s*scans,\s*\(fqdn\) => getScans\(\{ domain: fqdn, limit: 5 \}\),/);
+  assert.match(dashboard, /if \(error instanceof ServiceError\) return \{ firstScan: false, newAssets: null \};/);
+});
+
+// Ronda de arreglos 2 (19 nov): el dominio con score fuera de los 50 vuelve a contar, y since con 2 fallidos de en medio.
+const lista = (items, total = items.length) => ({ items, total });
+const fuente = (porDominio) => {
+  const llamadas = { scans: [], assets: [] };
+  return {
+    llamadas,
+    scans: async (fqdn) => { llamadas.scans.push(fqdn); return porDominio[fqdn] ?? lista([]); },
+    assets: async (fqdn) => { llamadas.assets.push(fqdn); return [asset("subdomain", "api.acme-demo.mx", "2026-11-18T10:02:00Z")]; },
+  };
+};
+const UNO = { subdomains: 1, ips: 0, ports: 0, certificates: 0 };
+// El orquestador guarda last_scan_at con otro clock_timestamp() justo después del finished_at del escaneo.
+const CIERRE = "2026-11-18T10:05:00.004Z";
+
+test("12. dashboard: un dominio con score cuyo último escaneo no está en los 50 de la empresa también cuenta", async () => {
+  const otros = lista([scan("x", "completed", "2026-11-19T10:00:00Z", "2026-11-19T10:01:00Z", "otro.mx")], 80);
+  // Fuera de los 50: lee los 5 del dominio y los usa porque su último cerró con el last_scan_at que muestra el panel.
+  let f = fuente({ [D]: lista([ULTIMO, ANTERIOR], 7) });
+  assert.deepEqual(await panelAssets({ domain: D, finishedAt: CIERRE }, otros, f.scans, f.assets), { firstScan: false, newAssets: UNO });
+  assert.deepEqual([f.llamadas.scans, f.llamadas.assets], [[D], [D]]);
+  // Primer escaneo del dominio, también fuera de los 50.
+  f = fuente({ [D]: lista([ULTIMO]) });
+  assert.deepEqual(await panelAssets({ domain: D, finishedAt: CIERRE }, otros, f.scans, f.assets), { firstScan: true, newAssets: null });
+  assert.deepEqual(f.llamadas.assets, []);
+  // Sin fecha en el panel no hay con qué emparejar: ni se lee.
+  f = fuente({ [D]: lista([ULTIMO, ANTERIOR]) });
+  assert.deepEqual(await panelAssets({ domain: D, finishedAt: null }, otros, f.scans, f.assets), { firstScan: false, newAssets: null });
+  assert.deepEqual([f.llamadas.scans, f.llamadas.assets], [[], []]);
+  // Su último no es el de la fecha del panel (uno más nuevo que falló sin tocar last_scan_at, o una fecha de otro
+  // cierre): sin conteos y sin leer el inventario.
+  for (const [propios, fecha] of [
+    [[FALLIDO, ULTIMO, ANTERIOR], CIERRE],
+    [[ULTIMO, ANTERIOR], "2026-11-11T10:04:00.003Z"],
+    [[ULTIMO, ANTERIOR], "2026-11-18T10:04:59Z"],
+    [[ULTIMO, ANTERIOR], "2026-11-18T10:06:00.001Z"],
+  ]) {
+    f = fuente({ [D]: lista(propios) });
+    assert.deepEqual(await panelAssets({ domain: D, finishedAt: fecha }, otros, f.scans, f.assets), { firstScan: false, newAssets: null });
+    assert.deepEqual(f.llamadas.assets, []);
+  }
+  assert.deepEqual([sameClose(ULTIMO.finished_at, ULTIMO.finished_at), sameClose(ULTIMO.finished_at, "2026-11-18T10:06:00Z")], [true, true]);
+  assert.deepEqual([sameClose(null, CIERRE), sameClose(ULTIMO.finished_at, "no es fecha")], [false, false]);
+  // Dentro de los 50 con su anterior: no lee el /scans del dominio. Sin el anterior: lo lee y exige el mismo último.
+  f = fuente({});
+  const general = lista([ULTIMO, ANTERIOR], 80);
+  assert.deepEqual(await panelAssets({ domain: D, finishedAt: ULTIMO.finished_at }, general, f.scans, f.assets), { firstScan: false, newAssets: UNO });
+  assert.deepEqual(f.llamadas.scans, []);
+  f = fuente({ [D]: lista([ULTIMO, ANTERIOR], 7) });
+  assert.deepEqual(await panelAssets({ domain: D, finishedAt: ULTIMO.finished_at }, lista([ULTIMO], 80), f.scans, f.assets), { firstScan: false, newAssets: UNO });
+  f = fuente({ [D]: lista([FALLIDO, ULTIMO, ANTERIOR], 7) });
+  assert.deepEqual(await panelAssets({ domain: D, finishedAt: ULTIMO.finished_at }, lista([ULTIMO], 80), f.scans, f.assets), { firstScan: false, newAssets: null });
+});
+
+test("13. since con 2 fallidos de en medio: el queued_at del más viejo, no del más nuevo (se aparta de new_assets)", () => {
+  const nuevo = scan("sf2", "failed", "2026-11-16T10:00:00Z", "2026-11-16T10:01:00Z");
+  const viejo = scan("sf1", "failed", "2026-11-14T10:00:00Z", "2026-11-14T10:01:00Z");
+  const base = scanBase([ULTIMO, nuevo, viejo, ANTERIOR], D);
+  assert.deepEqual([base.last.id, base.previous.id, base.since], ["s3", "s2", viejo.queued_at]);
+  const assets = [
+    asset("subdomain", "del-fallido-viejo.acme-demo.mx", "2026-11-14T10:00:30Z"),
+    asset("subdomain", "del-fallido-nuevo.acme-demo.mx", "2026-11-16T10:00:30Z"),
+    asset("subdomain", "entre-anterior-y-fallido.acme-demo.mx", "2026-11-13T10:00:00Z"),
+  ];
+  assert.deepEqual(assets.map((a) => isNewAsset(a, base)), [true, true, false]);
+  assert.deepEqual(newAssetCounts(assets, base), { subdomains: 2, ips: 0, ports: 0, certificates: 0 });
 });
