@@ -147,6 +147,21 @@ test("el separador no cuenta los que van entre comillas", () => {
   assert.equal(separadorDe("valor\n"), ",");
   const r = leerInventario('"Valor, del activo";Tipo\nwww.acme.mx;fqdn\n198.51.100.10;ip\n');
   assert.deepEqual(r.entradas.map((e) => e.valor), ["www.acme.mx", "198.51.100.10"]);
+  // Con la comilla del encabezado sin cerrar, cuenta la primera línea como partirCsv: sin comillas.
+  assert.equal(separadorDe('"valor;tipo\nx.acme.mx;fqdn\n'), ";");
+  assert.equal(leerInventario('"valor;tipo\nx.acme.mx;fqdn\n').entradas.length, 1);
+});
+
+test("unas comillas cerradas no dejan que otra comilla tras espacios borre la celda", () => {
+  assert.deepEqual(partirCsv('"  " "b",c\n', ","), [['   "b"', "c"]]);
+});
+
+test("muchas comillas en medio de una celda larga no vuelven cuadrática la lectura", () => {
+  const inicio = performance.now();
+  partirCsv(`a${'"'.repeat(400000)}`, ",");
+  leerInventario(`www.acme.mx,"${'x"'.repeat(100000)}`);
+  // Con la regex sobre la celda tardaba unos 24 s. Lineal tarda milisegundos: el tope es holgado a propósito.
+  assert.ok(performance.now() - inicio < 2000);
 });
 
 test("el CSV de desconocidos lleva comilla antes de =, +, - y @", () => {

@@ -162,6 +162,9 @@ export function partirCsv(texto: string, separador: string): string[][] {
   const filas: string[][] = [];
   let fila: string[] = [];
   let celda = "";
+  // La celda solo lleva espacios o tabuladores hasta aquí. Una bandera y no una regex sobre celda, que haría
+  // cuadrático un archivo con muchas comillas en medio de una celda larga.
+  let celdaEnBlanco = true;
   let entreComillas = false;
   let sinComillas = false;
   let apertura = -1;
@@ -171,6 +174,7 @@ export function partirCsv(texto: string, separador: string): string[][] {
       if (!entreComillas) break;
       // Entre comillas no se cierra ninguna celda ni fila, así que basta con volver a la celda de antes.
       celda = `${celdaAntes}"`;
+      celdaEnBlanco = false;
       entreComillas = false;
       sinComillas = true;
       i = apertura;
@@ -184,11 +188,12 @@ export function partirCsv(texto: string, separador: string): string[][] {
           i += 1;
         } else {
           entreComillas = false;
+          celdaEnBlanco = false;
         }
       } else {
         celda += c;
       }
-    } else if (c === '"' && !sinComillas && /^[ \t]*$/.test(celda)) {
+    } else if (c === '"' && !sinComillas && celdaEnBlanco) {
       apertura = i;
       celdaAntes = celda;
       celda = "";
@@ -196,14 +201,17 @@ export function partirCsv(texto: string, separador: string): string[][] {
     } else if (c === separador) {
       fila.push(celda);
       celda = "";
+      celdaEnBlanco = true;
     } else if (c === "\n" || c === "\r") {
       if (c === "\r" && texto[i + 1] === "\n") i += 1;
       fila.push(celda);
       filas.push(fila);
       fila = [];
       celda = "";
+      celdaEnBlanco = true;
     } else {
       celda += c;
+      if (c !== " " && c !== "\t") celdaEnBlanco = false;
     }
   }
   if (celda !== "" || fila.length > 0) {
@@ -228,8 +236,12 @@ export function separadorDe(texto: string): string {
     const c = texto[i]!;
     if (entreComillas) {
       if (c === '"') {
-        if (texto[i + 1] === '"') i += 1;
-        else entreComillas = false;
+        if (texto[i + 1] === '"') {
+          i += 1;
+        } else {
+          entreComillas = false;
+          inicioDeCelda = false;
+        }
       }
       continue;
     }
@@ -242,6 +254,11 @@ export function separadorDe(texto: string): string {
     } else if (c !== " ") {
       inicioDeCelda = false;
     }
+  }
+  if (entreComillas) {
+    // La comilla no se cierra en todo el archivo: partirCsv la toma como carácter normal, así que aquí también.
+    const primera = texto.split(/[\r\n]/, 1)[0] ?? "";
+    for (const s of Object.keys(cuentas)) cuentas[s] = primera.split(s).length - 1;
   }
   const opciones = Object.entries(cuentas).sort((a, b) => b[1] - a[1]);
   return opciones[0]![1] > 0 ? opciones[0]![0] : ",";
