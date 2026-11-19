@@ -1,5 +1,7 @@
-# CI de pruebas de FrontKL (RC-332, punto 7 del Hecho cuando): en cada PR y push a dev o main instala las
-# dependencias con npm ci y corre npm test (node --test sobre src/**/*.test.mjs). Las pruebas no usan red ni secretos.
+# CI de pruebas de FrontKL: en cada PR y push a dev o main instala las dependencias con npm ci y corre npm audit,
+# npm run lint, npm test (node --test sobre src/**/*.test.mjs, RC-332) y npm run build (RC-293). No usa secretos ni
+# la API: el build no pide variables (next.config.ts trae API_INTERNAL_URL por omisión) y solo baja las fuentes de
+# next/font/google. src/config/flujoCi.test.mjs revisa que estos pasos sigan aquí.
 name: Pruebas
 
 on:
@@ -11,14 +13,17 @@ on:
 permissions:
   contents: read
 
+# En un PR, un push nuevo cancela la corrida anterior. En dev y main no se cancela nada: cada merge queda validado.
 concurrency:
   group: pruebas-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   pruebas:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
     steps:
       - uses: actions/checkout@v7
         with:
@@ -32,6 +37,34 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
 
-      - run: npm ci
+      - id: instalar
+        run: npm ci
 
-      - run: npm test
+      # Los pasos que siguen corren aunque falle uno anterior, para ver todos los errores en una sola corrida. El
+      # job queda en rojo si falla cualquiera.
+
+      # Lo que corre en el servidor de Next (por donde pasa la cookie de sesión) frena con un aviso de cualquier
+      # nivel. Las herramientas de desarrollo (ESLint, TypeScript) solo frenan con high o critical (RC-293,
+      # decisión 1 de Ernesto, 19 nov). Si un aviso de producción sin versión corregida deja en rojo todos los PR,
+      # la salida es un PR que baje ese paso a --audit-level=moderate (y su línea en flujoCi.test.mjs), con una
+      # tarjeta de Jira que lo regrese a low cuando salga el parche. Nada de continue-on-error.
+      - name: npm audit (producción, cualquier nivel)
+        if: ${{ !cancelled() && steps.instalar.outcome == 'success' }}
+        run: npm audit --omit=dev --audit-level=low
+
+      - name: npm audit (todas, high y critical)
+        if: ${{ !cancelled() && steps.instalar.outcome == 'success' }}
+        run: npm audit --audit-level=high
+
+      - name: npm run lint
+        if: ${{ !cancelled() && steps.instalar.outcome == 'success' }}
+        run: npm run lint
+
+      - name: npm test
+        if: ${{ !cancelled() && steps.instalar.outcome == 'success' }}
+        run: npm test
+
+      # next build también revisa los tipos con tsc: un error de tipos lo pone en rojo.
+      - name: npm run build
+        if: ${{ !cancelled() && steps.instalar.outcome == 'success' }}
+        run: npm run build
