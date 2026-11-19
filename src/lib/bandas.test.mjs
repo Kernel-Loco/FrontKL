@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { mockWeights } from "../mocks/api/contrato.ts";
-import { bandaEnRangos, errorDeCortes, mismosCortes, vistaPrevia } from "./bandas.ts";
+import { bandaEnRangos, errorDeCortes, mensajeDePesos, mismosCortes, vistaPrevia } from "./bandas.ts";
 
 const leer = (ruta) => readFileSync(new URL(ruta, import.meta.url), "utf8");
 const PLANTILLA = { medium: 40, high: 60, critical: 80 };
@@ -75,4 +75,26 @@ test("6. el editor manda band_cutoffs solo si cambiaron y avisa que se recalcula
   const vista = leer("../components/screens/admin/ScoringWeightsView.tsx");
   assert.match(vista, /initialCutoffs=\{weights\.band_cutoffs\}/);
   assert.match(vista, /templateCutoffs=\{weights\.band_cutoffs_template\}/);
+});
+
+test("7. el editor no dice que activó una versión cuando solo puso al día scores viejos (RC-310)", () => {
+  const base = { category_weights: {}, band_cutoffs: PLANTILLA };
+  const igual = mensajeDePesos({ ...base, rule_set_version: 3, recalculated_domains: 0, skipped_domains: 0, unchanged: true }, 3);
+  assert.match(igual, /no cambiaron; sigue activa la versión 3\.$/);
+  const alDia = mensajeDePesos({ ...base, rule_set_version: 3, recalculated_domains: 1, skipped_domains: 1, unchanged: false }, 3);
+  assert.doesNotMatch(alDia, /Se activó/);
+  assert.match(alDia, /sigue activa la versión 3 y se puso al día el score de 1 dominio que venía de otra versión\./);
+  assert.match(alDia, /Quedó sin recalcular 1 dominio con score de ML/);
+  const dos = mensajeDePesos({ ...base, rule_set_version: 3, recalculated_domains: 2, unchanged: false }, 3);
+  assert.match(dos, /de 2 dominios que venían de otra versión\.$/);
+  const dosSaltados = mensajeDePesos({ ...base, rule_set_version: 3, recalculated_domains: 0, skipped_domains: 2, unchanged: true }, 3);
+  assert.match(dosSaltados, /Quedaron sin recalcular 2 dominios con score de ML/);
+  const nueva = mensajeDePesos({ ...base, rule_set_version: 4, recalculated_domains: 3, unchanged: false }, 3);
+  assert.equal(nueva, "Se activó la versión 4, con los cortes 40, 60 y 80, y se recalculó el score de 3 dominios.");
+  const editor = leer("../components/screens/admin/ScoringWeightsEditor.tsx");
+  assert.match(editor, /mensajeDePesos\(result, savedVersion\)/);
+  assert.match(leer("../components/screens/admin/ScoringWeightsView.tsx"), /initialVersion=\{weights\.rule_set_version\}/);
+  const etiquetas = leer("../config/labels.ts");
+  assert.match(etiquetas, /"scoring\.scores_recalculated":/);
+  assert.match(etiquetas, /"scoring\.weights_changed":/);
 });

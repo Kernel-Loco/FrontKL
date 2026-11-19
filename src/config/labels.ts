@@ -228,6 +228,8 @@ export const AUDIT_ACTION_LABELS: Record<string, string> = {
   "api_key.created": "Creó una llave de API",
   "api_key.revoked": "Revocó una llave de API",
   "chain.verified": "Verificó la integridad de la bitácora",
+  "scoring.weights_changed": "Cambió los pesos o los cortes del score",
+  "scoring.scores_recalculated": "Puso al día scores con la versión activa de los pesos",
   "platform.organization_switched": "Cambió de empresa activa (superadmin)",
   "platform.organization_entered": "El superadmin de LowTide entró a la empresa",
   "platform.organization_switch_failed": "Un cambio de empresa del superadmin no se aplicó",

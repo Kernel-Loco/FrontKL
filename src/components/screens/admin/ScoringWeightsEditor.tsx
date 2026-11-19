@@ -8,8 +8,7 @@ import { CHECKBOX, Field, INPUT } from "@/components/ui/Field";
 import { InlineAlert } from "@/components/ui/InlineAlert";
 import { BAND_TONE } from "@/components/ui/tones";
 import { BAND_LABELS, CATEGORY_LABELS } from "@/config/labels";
-import { errorDeCortes, mismosCortes, vistaPrevia } from "@/lib/bandas";
-import { cantidad } from "@/lib/format";
+import { errorDeCortes, mensajeDePesos, mismosCortes, vistaPrevia } from "@/lib/bandas";
 import { updateScoringWeights } from "@/services/scoringService";
 import { getErrorMessage } from "@/services/errors";
 import type { BandCutoffs, Category, ScoringWeights } from "@/types";
@@ -49,16 +48,20 @@ export function ScoringWeightsEditor({
   initialWeights,
   initialCutoffs,
   templateCutoffs,
+  initialVersion,
 }: {
   initialWeights: ScoringWeights["category_weights"];
   initialCutoffs: BandCutoffs;
   templateCutoffs: BandCutoffs;
+  initialVersion: number;
 }) {
   const router = useRouter();
   const [values, setValues] = useState(() => toValues(initialWeights));
   const [cutoffs, setCutoffs] = useState(() => toCutoffValues(initialCutoffs));
   // Los cortes guardados: con ellos se decide si el PUT manda band_cutoffs.
   const [savedCutoffs, setSavedCutoffs] = useState(initialCutoffs);
+  // La versión activa: con ella se sabe si el PUT creó una nueva o solo puso al día scores viejos (RC-310).
+  const [savedVersion, setSavedVersion] = useState(initialVersion);
   const [confirmed, setConfirmed] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<ResultMessage | null>(null);
@@ -122,13 +125,8 @@ export function ScoringWeightsEditor({
       setCutoffs(toCutoffValues(result.band_cutoffs));
       setSavedCutoffs(result.band_cutoffs);
       setConfirmed(false);
-      const nuevos = `${result.band_cutoffs.medium}, ${result.band_cutoffs.high} y ${result.band_cutoffs.critical}`;
-      setMessage({
-        tone: "success",
-        text: result.unchanged
-          ? `Los pesos y los cortes no cambiaron; sigue activa la versión ${result.rule_set_version}.`
-          : `Se activó la versión ${result.rule_set_version}, con los cortes ${nuevos}, y se recalculó el score de ${cantidad(result.recalculated_domains, "dominio")}.`,
-      });
+      setSavedVersion(result.rule_set_version);
+      setMessage({ tone: "success", text: mensajeDePesos(result, savedVersion) });
       router.refresh();
     } catch (error) {
       setMessage({ tone: "error", text: getErrorMessage(error) });
