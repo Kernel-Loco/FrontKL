@@ -49,8 +49,11 @@ test("la banda Bajo de Pesos usa el mismo color que el resto del portal", () => 
 });
 
 test("'Ver hallazgos' del plan solo sale a los roles que entran a Hallazgos", () => {
-  assert.match(leer("components/screens/plan/ActionPlanExplorer.tsx"), /\{canOpenFindings && \(\s*<Link/);
-  assert.match(leer("app/(dashboard)/dashboard/plan/page.tsx"), /canOpenFindings=\{canAccessSection\(user\.role, "hallazgos"\)\}/);
+  const explorer = leer("components/screens/plan/ActionPlanExplorer.tsx");
+  const page = leer("app/(dashboard)/dashboard/plan/page.tsx");
+  assert.match(explorer, /\{canSeeFindings && \(\s*<Link/);
+  assert.match(page, /const canSeeFindings = canAccessSection\(user\.role, "hallazgos"\);/);
+  assert.match(page, /<ActionPlanExplorer\b[^>]*canSeeFindings=\{canSeeFindings\}/);
 });
 
 test("el gráfico del Dashboard no dice 'riesgo sin calcular'", () => {
