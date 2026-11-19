@@ -74,6 +74,21 @@ export function coverageGroups(gaps: CoverageGap[]): CoverageGroup[] {
   return [...known, { reason: "other", label: OTHER_REASON_LABEL, sources }];
 }
 
+/** Texto de CoverageGapsList cuando no queda ningún grupo que listar. */
+export const COVERAGE_GAPS_MISSING = "Esta versión de la API no dice qué reglas quedaron sin revisar.";
+export const COVERAGE_GAPS_EMPTY =
+  "La API no detalló qué reglas quedaron sin revisar. Puede que alguna fuente haya revisado solo una parte de sus repos o IP.";
+
+/**
+ * Lo que dice CoverageGapsList en vez de la lista: sin `coverage_gaps` (una API de antes) o con la lista vacía (un
+ * escaneo sin corridas o una API anterior a partially_checked). Nunca afirma que todas las reglas se revisaron. Con
+ * algún código, null: va la lista.
+ */
+export function coverageGapsFallback(gaps: CoverageGap[] | undefined): string | null {
+  if (gaps === undefined) return COVERAGE_GAPS_MISSING;
+  return coverageGroups(gaps).length === 0 ? COVERAGE_GAPS_EMPTY : null;
+}
+
 /** Una línea por grupo: «No respondió la fuente: crt.sh (cert_expired, lookalike_domain)». */
 export function coverageLines(gaps: CoverageGap[]): string[] {
   return coverageGroups(gaps).map(
@@ -110,10 +125,24 @@ export function criticalKpi(critical: number, scored: number, partial: number, u
     partial > 0 ? "cobertura parcial: puede no estar al día" : "",
   ];
   const incomplete = partial > 0 || unscanned > 0;
+  // Sin ningún dominio con score no hay 0 que dar, aunque ninguno esté autorizado (Pendiente TXT, Sin autorización o
+  // Vencido no cuentan como sin escaneo completo).
+  if (critical === 0 && scored === 0) {
+    return { value: "Sin escaneo completo", hint: ["0 críticos abiertos registrados", ...parts].filter(Boolean).join(" · ") };
+  }
   if (critical > 0 || !incomplete) return { value: critical, hint: parts.filter(Boolean).join(" · ") };
   return {
-    value: scored === 0 ? "Sin escaneo completo" : NO_CRITICAL_INCOMPLETE,
+    value: NO_CRITICAL_INCOMPLETE,
     hint: ["0 críticos abiertos registrados", ...parts].filter(Boolean).join(" · "),
+  };
+}
+
+/** Textos de CVSS, EPSS y KEV del panel de un hallazgo con CVE (RC-229). Un dato que falta dice «Sin dato». */
+export function cveFacts(finding: { cvss: number | null; epss: number | null; in_kev: boolean }): { cvss: string; epss: string; kev: string } {
+  return {
+    cvss: finding.cvss != null ? finding.cvss.toFixed(1) : "Sin dato",
+    epss: finding.epss != null ? epssText(finding.epss) : "Sin dato",
+    kev: finding.in_kev ? "Explotada activamente" : "No está en el catálogo",
   };
 }
 

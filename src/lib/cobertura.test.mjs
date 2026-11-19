@@ -9,8 +9,9 @@ import { scoreMethodText } from "../config/labels.ts";
 import { mockExplanation, mockScore } from "../mocks/api/contrato.ts";
 import { unscannedDomains } from "../components/screens/shared/domainState.ts";
 import {
-  coverageGroups, coverageIncomplete, coverageLines, criticalKpi, epssText, findingsCountLabel, NO_CRITICAL_INCOMPLETE,
-  NO_FINDINGS_PARTIAL, noFindingsTitle, OTHER_REASON_LABEL,
+  COVERAGE_GAPS_EMPTY, COVERAGE_GAPS_MISSING, coverageGapsFallback, coverageGroups, coverageIncomplete, coverageLines,
+  criticalKpi, cveFacts, epssText, findingsCountLabel, NO_CRITICAL_INCOMPLETE, NO_FINDINGS_PARTIAL, noFindingsTitle,
+  OTHER_REASON_LABEL,
 } from "./cobertura.ts";
 
 const SRC = join(import.meta.dirname, "..");
@@ -173,4 +174,52 @@ test("el tablero no cuenta un dominio sin score como 0 críticos", () => {
   assert.match(tablero, /const unscanned = unscannedDomains\(visible\)\.length;/);
   assert.match(tablero, /value=\{kpi\.value\}/);
   assert.match(leer("components/screens/dashboard/DomainsRiskTable.tsx"), /<Badge tone="gray">Sin escaneo completo<\/Badge>/);
+});
+
+test("sin ningún dominio con score el KPI no da 0 a secas, aunque ninguno esté autorizado (R1)", () => {
+  // Pendiente TXT, Sin autorización o Vencido: unscanned 0, scored 0 y partial 0.
+  assert.deepEqual(criticalKpi(0, 0, 0, 0), { value: "Sin escaneo completo", hint: "0 críticos abiertos registrados" });
+  assert.deepEqual(criticalKpi(0, 0, 0, 2),
+    { value: "Sin escaneo completo", hint: "0 críticos abiertos registrados · 2 dominios sin escaneo completo" });
+  // Un primer escaneo caído puede guardar críticos sin score: sale el número.
+  assert.equal(criticalKpi(3, 0, 0, 1).value, 3);
+});
+
+test("la franja del tablero dice que una fuente pudo no correr (R3)", () => {
+  assert.match(leer("app/(dashboard)/dashboard/page.tsx"), /alguna fuente falló o no corrió,/);
+});
+
+test("las pestañas del histórico y del plan usan coverage_gaps, no solo partial_coverage (F1)", () => {
+  for (const ruta of ["app/(dashboard)/dashboard/historico/page.tsx", "app/(dashboard)/dashboard/plan/page.tsx"]) {
+    const pagina = leer(ruta);
+    assert.match(pagina, /true, coverageIncomplete\(score\)\)\} \/>\}/, ruta);
+    assert.match(pagina, /getDomainScore\(fqdn\)/, ruta);
+    assert.doesNotMatch(pagina, /domainTabs\([^)]*partial_coverage/, ruta);
+  }
+});
+
+test("CoverageGapsList sin lista o con la lista vacía no afirma que todo se revisó (F9 y R2)", () => {
+  const gap = { code: "exposed_api_docs", source: "api_docs", reason: "source_not_run" };
+  assert.equal(coverageGapsFallback(undefined), COVERAGE_GAPS_MISSING);
+  assert.equal(coverageGapsFallback([]), COVERAGE_GAPS_EMPTY);
+  assert.equal(coverageGapsFallback([gap]), null);
+  assert.equal(coverageGapsFallback([{ ...gap, reason: "motivo_nuevo" }]), null);
+  for (const texto of [COVERAGE_GAPS_MISSING, COVERAGE_GAPS_EMPTY]) assert.doesNotMatch(texto, /Todas las reglas se revisaron/);
+  const lista = leer("components/screens/shared/CoverageGapsList.tsx");
+  assert.match(lista, /const fallback = coverageGapsFallback\(gaps\);/);
+  assert.match(lista, /if \(fallback !== null\) return <p className="mt-2">\{fallback\}<\/p>;/);
+  assert.doesNotMatch(lista, /Todas las reglas se revisaron/);
+});
+
+test("CVSS, EPSS y KEV con lo que da /findings de un hallazgo con CVE (punto 2)", () => {
+  // Los mismos valores que test_2b_cvss_epss_y_kev_del_catalogo_de_cves de BackKL (pruebas/test_api_v1.py).
+  assert.deepEqual(cveFacts({ cvss: 9.8, epss: 0.00043, in_kev: true }),
+    { cvss: "9.8", epss: "0.04 %", kev: "Explotada activamente" });
+  assert.deepEqual(cveFacts({ cvss: 7.5, epss: null, in_kev: false }),
+    { cvss: "7.5", epss: "Sin dato", kev: "No está en el catálogo" });
+  assert.deepEqual(cveFacts({ cvss: null, epss: 0, in_kev: false }),
+    { cvss: "Sin dato", epss: "0.00 %", kev: "No está en el catálogo" });
+  const panel = leer("components/screens/hallazgos/ExplanationPanel.tsx");
+  for (const campo of ["cvss", "epss", "kev"]) assert.ok(panel.includes(`{cveFacts(finding).${campo}}`), campo);
+  assert.match(panel, /\{finding\.cve_id \? \(/);
 });

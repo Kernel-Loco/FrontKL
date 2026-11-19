@@ -8,7 +8,8 @@ import { scoredDomains } from "@/components/screens/shared/domainState";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { canAccessSection, SECTIONS } from "@/config/permissions";
-import { getActionPlan, getDomainFindings, getDomains } from "@/services/queries";
+import { coverageIncomplete } from "@/lib/cobertura";
+import { getActionPlan, getDomainFindings, getDomains, getDomainScore } from "@/services/queries";
 
 export const metadata: Metadata = { title: SECTIONS.plan.label };
 
@@ -34,7 +35,8 @@ export default async function ActionPlanPage({ searchParams }: Props) {
     );
   }
 
-  const [plan, findings] = await Promise.all([getActionPlan(fqdn), getDomainFindings(fqdn)]);
+  // La pestaña Hallazgos usa la misma cobertura que el detalle: coverage_gaps cuenta aunque partial_coverage sea false (RC-229).
+  const [plan, findings, score] = await Promise.all([getActionPlan(fqdn), getDomainFindings(fqdn), getDomainScore(fqdn)]);
   const canOpenDetail = canAccessSection(user.role, "detalle");
 
   return (
@@ -45,7 +47,7 @@ export default async function ActionPlanPage({ searchParams }: Props) {
         description="Revisa el impacto estimado y combina acciones para comparar el score resultante."
         actions={<DomainPicker domains={options} value={fqdn} />}
       />
-      {canOpenDetail && <DomainTabs tabs={domainTabs(fqdn, findings.total, "plan", canAccessSection(user.role, "hallazgos"), true, plan.partial_coverage)} />}
+      {canOpenDetail && <DomainTabs tabs={domainTabs(fqdn, findings.total, "plan", canAccessSection(user.role, "hallazgos"), true, coverageIncomplete(score))} />}
       <ActionPlanExplorer key={fqdn} plan={plan} canOpenFindings={canAccessSection(user.role, "hallazgos")} />
     </div>
   );

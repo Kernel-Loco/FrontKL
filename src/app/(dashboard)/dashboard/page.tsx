@@ -99,7 +99,7 @@ export default async function DashboardPage() {
       </div>
       {partialDomains.length > 0 && (
         <InlineAlert tone="warning">
-          <strong>Cobertura parcial.</strong> El último escaneo de {partialDomains.join(", ")} no revisó todo: alguna fuente falló,
+          <strong>Cobertura parcial.</strong> El último escaneo de {partialDomains.join(", ")} no revisó todo: alguna fuente falló o no corrió,
           revisó solo una parte de sus repos o IP, o hay reglas que las fuentes actuales todavía no pueden revisar. Su score y su letra
           pueden estar incompletos, y los conteos muestran los hallazgos abiertos registrados y pueden no estar al día.
         </InlineAlert>

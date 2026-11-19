@@ -18,7 +18,8 @@ import { BAND_LABELS, SCORE_METHOD_LABELS, SCORE_REASON_LABELS, scoreMethodText 
 import { can, canAccessSection, SECTIONS } from "@/config/permissions";
 import { lastScanSummary, latestScan, weeklyChangeNotes } from "@/lib/cambiosSemanales";
 import { formatDate } from "@/lib/format";
-import { getDomainFindings, getDomains, getScoreHistory } from "@/services/queries";
+import { coverageIncomplete } from "@/lib/cobertura";
+import { getDomainFindings, getDomains, getDomainScore, getScoreHistory } from "@/services/queries";
 import { getReports } from "@/services/reportService";
 
 export const metadata: Metadata = { title: SECTIONS.historico.label };
@@ -47,7 +48,9 @@ export default async function HistoricoPage({ searchParams }: Props) {
     );
   }
 
-  const [history, findings] = await Promise.all([getScoreHistory(fqdn), getDomainFindings(fqdn)]);
+  // La pestaña Hallazgos usa la cobertura del último score, como el detalle: coverage_gaps cuenta aunque partial_coverage
+  // sea false (RC-229).
+  const [history, findings, score] = await Promise.all([getScoreHistory(fqdn), getDomainFindings(fqdn), getDomainScore(fqdn)]);
   const points = history.items;
   const scanCount = points.filter((point) => point.reason === "scan").length;
   const correctionCount = points.filter((point) => point.reason === "correction").length;
@@ -100,7 +103,7 @@ export default async function HistoricoPage({ searchParams }: Props) {
         )}
       />
       <AvisoSimulado datos={["getReports"]} datosDe="la tarjeta Reportes" />
-      {canOpenDetail && <DomainTabs tabs={domainTabs(fqdn, findings.total, "historico", canAccessSection(user.role, "hallazgos"), true, points.at(-1)?.partial_coverage)} />}
+      {canOpenDetail && <DomainTabs tabs={domainTabs(fqdn, findings.total, "historico", canAccessSection(user.role, "hallazgos"), true, coverageIncomplete(score))} />}
 
       {hasPartialCoverage && (
         <InlineAlert tone="warning">

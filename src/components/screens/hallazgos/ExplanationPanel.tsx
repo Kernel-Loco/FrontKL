@@ -5,7 +5,7 @@ import { SeverityBadge } from "@/components/ui/Badge";
 import { InlineAlert } from "@/components/ui/InlineAlert";
 import { Spinner } from "@/components/Spinner";
 import { EXPOSICION_LABELS, scoreMethodText, SENSIBILIDAD_LABELS, SEVERITY_LABELS } from "@/config/labels";
-import { epssText } from "@/lib/cobertura";
+import { cveFacts } from "@/lib/cobertura";
 import { marcosDelHallazgo, MARCOS_ATRIBUCION } from "@/lib/marcos";
 import { getFindingExplanation } from "@/services/domainService";
 import { getErrorMessage } from "@/services/errors";
@@ -193,18 +193,16 @@ export function ExplanationPanel({ finding }: { finding: DomainFinding }) {
           <dl className="mt-2 grid grid-cols-3 gap-3">
             <div>
               <dt className="text-lt-faint">CVSS</dt>
-              <dd className="mt-0.5 text-lt-text tabular-nums">{finding.cvss != null ? finding.cvss.toFixed(1) : "Sin dato"}</dd>
+              <dd className="mt-0.5 text-lt-text tabular-nums">{cveFacts(finding).cvss}</dd>
             </div>
             <div>
               <dt className="text-lt-faint">EPSS</dt>
-              <dd className="mt-0.5 text-lt-text tabular-nums">
-                {finding.epss != null ? epssText(finding.epss) : "Sin dato"}
-              </dd>
+              <dd className="mt-0.5 text-lt-text tabular-nums">{cveFacts(finding).epss}</dd>
             </div>
             <div>
               <dt className="text-lt-faint">KEV de CISA</dt>
               <dd className={`mt-0.5 ${finding.in_kev ? "font-semibold text-lt-red" : "text-lt-text"}`}>
-                {finding.in_kev ? "Explotada activamente" : "No está en el catálogo"}
+                {cveFacts(finding).kev}
               </dd>
             </div>
           </dl>
