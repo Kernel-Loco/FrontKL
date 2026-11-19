@@ -142,4 +142,9 @@ test("sin la sección Hallazgos (gerente) las pantallas no piden /findings, que 
   // El gráfico del gerente va por severidad con open_findings de /domains.
   assert.match(leer(paginas[0]), /groupBy=\{findings \? "category" : "severity"\}/);
   assert.match(leer(paginas[0]), /severityCounts: domain\.open_findings/);
+  // Comparar escaneos tampoco se monta: /score/compare también le responde 403.
+  const historico = leer(paginas[2]);
+  const montajes = historico.match(/[^\n]*\n[^\n]*<CompareScans /g) ?? [];
+  assert.equal(montajes.length, 1);
+  assert.match(montajes[0], /\{!canSeeFindings \? null : points\.length >= 2 \? \(/);
 });

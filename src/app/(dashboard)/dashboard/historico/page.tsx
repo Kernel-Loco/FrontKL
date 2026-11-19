@@ -186,7 +186,8 @@ export default async function HistoricoPage({ searchParams }: Props) {
               </table>
             </TableWrap>
           </Card>
-          {points.length >= 2 ? (
+          {/* La comparación lista los hallazgos uno por uno y /score/compare le responde 403 al gerente (RC-280). */}
+          {!canSeeFindings ? null : points.length >= 2 ? (
             <CompareScans key={fqdn} domain={fqdn} points={points} />
           ) : (
             <Card title="Comparar escaneos">
