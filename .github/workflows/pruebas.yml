@@ -13,9 +13,10 @@ on:
 permissions:
   contents: read
 
+# En un PR, un push nuevo cancela la corrida anterior. En dev y main no se cancela nada: cada merge queda validado.
 concurrency:
   group: pruebas-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   pruebas:
@@ -44,7 +45,9 @@ jobs:
 
       # Lo que corre en el servidor de Next (por donde pasa la cookie de sesión) frena con un aviso de cualquier
       # nivel. Las herramientas de desarrollo (ESLint, TypeScript) solo frenan con high o critical (RC-293,
-      # decisión 1 de Ernesto, 19 nov).
+      # decisión 1 de Ernesto, 19 nov). Si un aviso de producción sin versión corregida deja en rojo todos los PR,
+      # la salida es un PR que baje ese paso a --audit-level=moderate (y su línea en flujoCi.test.mjs), con una
+      # tarjeta de Jira que lo regrese a low cuando salga el parche. Nada de continue-on-error.
       - name: npm audit (producción, cualquier nivel)
         if: ${{ !cancelled() && steps.instalar.outcome == 'success' }}
         run: npm audit --omit=dev --audit-level=low
