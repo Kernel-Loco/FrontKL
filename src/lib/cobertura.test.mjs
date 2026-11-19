@@ -124,6 +124,8 @@ test("con cobertura parcial nunca dice 0 hallazgos ni 'Sin hallazgos abiertos'",
   const detalle = leer("app/(dashboard)/dashboard/dominios/[fqdn]/page.tsx");
   assert.match(detalle, /<EmptyState title=\{noFindingsTitle\(coverageIncomplete\(score\)\)\} \/>/);
   assert.match(detalle, /\{coverageIncomplete\(score\) && \(/);
+  // El gauge marca parcial con lo mismo que la alerta de al lado, no solo con partial_coverage.
+  assert.match(detalle, /<RiskGauge[^>]*partial=\{coverageIncomplete\(score\)\}/);
   const hallazgos = leer("app/(dashboard)/dashboard/hallazgos/page.tsx");
   assert.match(hallazgos, /partialCoverage=\{coverageIncomplete\(score\)\}/);
   assert.match(hallazgos, /hasScore, coverageIncomplete\(score\)\)/);
@@ -215,8 +217,12 @@ test("CVSS, EPSS y KEV con lo que da /findings de un hallazgo con CVE (punto 2)"
   // Los mismos valores que test_2b_cvss_epss_y_kev_del_catalogo_de_cves de BackKL (pruebas/test_api_v1.py).
   assert.deepEqual(cveFacts({ cvss: 9.8, epss: 0.00043, in_kev: true }),
     { cvss: "9.8", epss: "0.04 %", kev: "Explotada activamente" });
-  assert.deepEqual(cveFacts({ cvss: 7.5, epss: null, in_kev: false }),
-    { cvss: "7.5", epss: "Sin dato", kev: "No está en el catálogo" });
+  // El stub que el cargador diario no ha revisado: in_kev null no es «No está en el catálogo».
+  assert.deepEqual(cveFacts({ cvss: 7.5, epss: null, in_kev: null }),
+    { cvss: "7.5", epss: "Sin dato", kev: "Sin dato" });
+  // Revisada y fuera de KEV.
+  assert.deepEqual(cveFacts({ cvss: 5.3, epss: 0.001, in_kev: false }),
+    { cvss: "5.3", epss: "0.10 %", kev: "No está en el catálogo" });
   assert.deepEqual(cveFacts({ cvss: null, epss: 0, in_kev: false }),
     { cvss: "Sin dato", epss: "0.00 %", kev: "No está en el catálogo" });
   const panel = leer("components/screens/hallazgos/ExplanationPanel.tsx");

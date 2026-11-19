@@ -159,7 +159,7 @@ export default async function DomainDetailPage({ params }: Props) {
                   score={score.score}
                   band={score.band}
                   grade={score.grade}
-                  partial={score.partial_coverage}
+                  partial={coverageIncomplete(score)}
                   delta={delta}
                   reason={score.reason}
                   previousReason={points.length >= 2 ? points[points.length - 2]!.reason : null}

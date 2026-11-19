@@ -137,12 +137,15 @@ export function criticalKpi(critical: number, scored: number, partial: number, u
   };
 }
 
-/** Textos de CVSS, EPSS y KEV del panel de un hallazgo con CVE (RC-229). Un dato que falta dice «Sin dato». */
-export function cveFacts(finding: { cvss: number | null; epss: number | null; in_kev: boolean }): { cvss: string; epss: string; kev: string } {
+/**
+ * Textos de CVSS, EPSS y KEV del panel de un hallazgo con CVE (RC-229). Un dato que falta dice «Sin dato». in_kev
+ * llega en null cuando nadie ha revisado esa CVE contra KEV, y entonces no se puede decir que no está en el catálogo.
+ */
+export function cveFacts(finding: { cvss: number | null; epss: number | null; in_kev: boolean | null }): { cvss: string; epss: string; kev: string } {
   return {
     cvss: finding.cvss != null ? finding.cvss.toFixed(1) : "Sin dato",
     epss: finding.epss != null ? epssText(finding.epss) : "Sin dato",
-    kev: finding.in_kev ? "Explotada activamente" : "No está en el catálogo",
+    kev: finding.in_kev === null ? "Sin dato" : finding.in_kev ? "Explotada activamente" : "No está en el catálogo",
   };
 }
 

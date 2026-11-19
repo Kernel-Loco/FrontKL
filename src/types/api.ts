@@ -103,7 +103,8 @@ export interface DomainFinding {
   cve_id: string | null;
   cvss: number | null;
   epss: number | null;
-  in_kev: boolean;
+  /** null con CVE que el cargador diario de inteligencia de BackKL todavía no revisó: no se sabe si está en KEV. */
+  in_kev: boolean | null;
   evidence: Record<string, unknown>;
   /** Lo entrega el backend. El simulado no lo trae. */
   frameworks?: Frameworks;
