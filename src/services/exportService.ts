@@ -25,6 +25,14 @@ async function fetchBlob(url: string, accept: string, signal?: AbortSignal): Pro
   return response.blob();
 }
 
+/**
+ * Inventario de activos de la empresa desde GET /assets?formato=csv (RC-231), con los filtros de la pantalla y sin
+ * paginar. Solo trae los dominios con autorización vigente; con un dominio sin ella responde 403.
+ */
+export function downloadAssets(query: string, signal?: AbortSignal) {
+  return downloadExport(query ? `/assets?${query}` : "/assets", "csv", signal);
+}
+
 /** Hallazgos abiertos del dominio desde GET /domains/{fqdn}/findings/export. */
 export function downloadFindings(domain: string, format: ExportFormat, signal?: AbortSignal) {
   return downloadExport(`/domains/${encodeURIComponent(domain)}/findings/export`, format, signal);
