@@ -48,6 +48,8 @@ En Detalle de dominio, «Proveedores visibles desde el DNS» muestra los servido
 
 En Bitácora, los registros siguen siendo de ejemplo y «Verificar integridad» permanece deshabilitado: no se ha conectado una consulta ni una verificación real de la cadena. Los eventos de tipo `platform` representan acciones del superadmin de LowTide.
 
+El superadmin de la plataforma puede elegir la empresa activa desde el menú. El selector muestra la empresa propia y el estado de cada organización, e impide elegir una suspendida o cancelada. Al cambiar, el portal recarga el dashboard y avisa a las demás pestañas; si no se puede cargar la lista, ofrece reintentar. Los demás usuarios no pueden cambiar de empresa.
+
 ## Estructura
 
 El portal se llama **LowTide**: el acceso (login, MFA, registro y recuperación) es claro, y el panel es oscuro con un botón para cambiar a modo claro (`ThemeToggle`). Todo el texto está en español.

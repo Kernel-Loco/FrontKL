@@ -5,11 +5,13 @@
 // La empresa activa vive en la sesión del servidor y la comparten todas las pestañas: las demás se enteran por
 // BroadcastChannel y también recargan.
 import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { ActionButton } from "@/components/ui/ActionButton";
 import { SELECT } from "@/components/ui/Field";
 import { ApiError } from "@/lib/apiClient";
 import {
   ORGANIZATION_CHANNEL,
   canWorkIn,
+  organizationListState,
   organizationOptionLabel,
   refreshListAfterFailedSwitch,
   reloadAfterFailedSwitch,
@@ -39,24 +41,59 @@ export function OrganizationSwitcher({ user }: { user: User }) {
   const errorId = useId();
   const [orgs, setOrgs] = useState<PlatformOrganization[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [listError, setListError] = useState<string | null>(null);
+  const [loadingList, setLoadingList] = useState(true);
   const [switching, setSwitching] = useState(false);
   const loading = useRef<AbortController | null>(null);
 
   // La lista se vuelve a pedir al enfocar el selector y tras un 404 o 409: el estado de cada empresa puede cambiar
   // con la página abierta.
-  const load = useCallback(() => {
+  const load = useCallback((reloadOnFailure = false) => {
     loading.current?.abort();
     const controller = new AbortController();
     loading.current = controller;
-    listOrganizations(controller.signal)
-      .then((list) => setOrgs(sortOrganizations(list.items)))
-      .catch((e: unknown) => {
-        if (!controller.signal.aborted) setError(getErrorMessage(e));
-      });
-  }, []);
+    return listOrganizations(controller.signal).then((list) => {
+      if (controller.signal.aborted) return;
+      const state = organizationListState(list.items, user.organization_id);
+      if (state === "changed") {
+        announceSwitch();
+        reloadDashboard();
+        return;
+      }
+      if (state === "invalid") {
+        if (reloadOnFailure) {
+          announceSwitch();
+          reloadDashboard();
+          return;
+        }
+        setOrgs(null);
+        setListError("No pudimos identificar la empresa activa. Intenta cargar la lista de nuevo.");
+        return;
+      }
+      setOrgs(sortOrganizations(list.items));
+      setListError(null);
+    }).catch((e: unknown) => {
+      if (!controller.signal.aborted) {
+        if (reloadOnFailure) {
+          announceSwitch();
+          reloadDashboard();
+        } else {
+          setListError(getErrorMessage(e));
+        }
+      }
+    }).finally(() => {
+      if (!controller.signal.aborted) setLoadingList(false);
+    });
+  }, [user.organization_id]);
+
+  const refresh = (reloadOnFailure = false) => {
+    setLoadingList(true);
+    setListError(null);
+    return load(reloadOnFailure);
+  };
 
   useEffect(() => {
-    load();
+    void load();
     return () => loading.current?.abort();
   }, [load]);
 
@@ -72,6 +109,8 @@ export function OrganizationSwitcher({ user }: { user: User }) {
 
   const handleChange = async (id: string) => {
     if (!id || id === active || switching) return;
+    loading.current?.abort();
+    setLoadingList(false);
     setSwitching(true);
     setError(null);
     try {
@@ -87,7 +126,7 @@ export function OrganizationSwitcher({ user }: { user: User }) {
         reloadDashboard();
         return;
       }
-      if (refreshListAfterFailedSwitch(status)) load();
+      if (refreshListAfterFailedSwitch(status)) await refresh(status === 409);
       setSwitching(false);
     }
   };
@@ -103,11 +142,11 @@ export function OrganizationSwitcher({ user }: { user: User }) {
           value={orgs ? active : ""}
           onChange={(e) => handleChange(e.target.value)}
           onFocus={() => {
-            if (orgs && !switching) load();
+            if (orgs && !switching) void refresh();
           }}
           disabled={!orgs || switching}
-          aria-busy={switching || !orgs || undefined}
-          aria-describedby={error ? errorId : undefined}
+          aria-busy={switching || loadingList || undefined}
+          aria-describedby={error || listError ? errorId : undefined}
           className={`${SELECT} h-9 font-semibold`}
         >
           {orgs ? (
@@ -127,10 +166,15 @@ export function OrganizationSwitcher({ user }: { user: User }) {
           Superadmin{user.home_organization_name ? ` · tu empresa: ${user.home_organization_name}` : ""}
         </p>
       )}
-      {error && (
+      {(error || listError) && (
         <p id={errorId} role="alert" className="mt-1.5 text-xs text-lt-red">
-          {error}
+          {error}{error && listError ? " " : ""}{listError}
         </p>
+      )}
+      {listError && (
+        <ActionButton variant="secondary" size="sm" className="mt-2" onClick={() => void refresh()} disabled={loadingList || switching}>
+          Reintentar lista
+        </ActionButton>
       )}
     </div>
   );

@@ -47,6 +47,7 @@ export interface User {
   email: string;
   full_name: string;
   role: Role;
+  organization_id: string;
   organization_name: string;
   mfa_enabled: boolean;
   last_login_at: string | null;
