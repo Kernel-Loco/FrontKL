@@ -433,6 +433,8 @@ export interface ScoringWeightsUpdateResult {
   category_weights: Record<Category, number>;
   band_cutoffs: BandCutoffs;
   recalculated_domains: number;
+  /** Dominios con score de ML sin severidades guardadas que un PUT con los mismos pesos no pudo poner al día (RC-310). */
+  skipped_domains?: number;
   unchanged: boolean;
 }
 

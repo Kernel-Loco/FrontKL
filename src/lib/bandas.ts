@@ -2,7 +2,7 @@
 // del juego con que se calculó. El portal no tiene cortes fijos: busca un score en los rangos que mandó la API y, solo
 // para la vista previa del editor de pesos, arma los rangos de unos cortes que todavía no se guardan, con la misma regla
 // que cirdan/score/criterio.py.
-import type { Band, BandCutoffs, BandRange, Grade } from "@/types";
+import type { Band, BandCutoffs, BandRange, Grade, ScoringWeightsUpdateResult } from "@/types";
 
 /** Valores enteros mínimos de cada banda, como el CHECK de la migración 022 de BackKL. */
 export const ANCHO_MINIMO_BANDA = 10;
@@ -54,4 +54,24 @@ export function vistaPrevia(c: BandCutoffs): VistaPrevia {
 /** Si dos juegos de cortes son iguales. */
 export function mismosCortes(a: BandCutoffs, b: BandCutoffs): boolean {
   return a.medium === b.medium && a.high === b.high && a.critical === b.critical;
+}
+
+const dominios = (n: number) => `${n} ${n === 1 ? "dominio" : "dominios"}`;
+
+/**
+ * Lo que dice el editor después del PUT de pesos. Un PUT con los mismos pesos y cortes no crea versión, pero puede
+ * poner al día los dominios cuyo último score salió con otra versión, así que `unchanged: false` no siempre quiere decir
+ * versión nueva (RC-310).
+ */
+export function mensajeDePesos(r: ScoringWeightsUpdateResult, versionAnterior: number): string {
+  const saltados = r.skipped_domains
+    ? ` ${r.skipped_domains === 1 ? "Quedó" : "Quedaron"} sin recalcular ${dominios(r.skipped_domains)} con score de ML sin severidades guardadas, hasta su próximo escaneo.`
+    : "";
+  if (r.unchanged) return `Los pesos y los cortes no cambiaron; sigue activa la versión ${r.rule_set_version}.${saltados}`;
+  if (r.rule_set_version === versionAnterior) {
+    const venia = r.recalculated_domains === 1 ? "venía" : "venían";
+    return `Los pesos y los cortes no cambiaron; sigue activa la versión ${r.rule_set_version} y se puso al día el score de ${dominios(r.recalculated_domains)} que ${venia} de otra versión.${saltados}`;
+  }
+  const nuevos = `${r.band_cutoffs.medium}, ${r.band_cutoffs.high} y ${r.band_cutoffs.critical}`;
+  return `Se activó la versión ${r.rule_set_version}, con los cortes ${nuevos}, y se recalculó el score de ${dominios(r.recalculated_domains)}.`;
 }

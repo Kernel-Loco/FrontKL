@@ -48,6 +48,7 @@ export function ScoringWeightsView({ weights }: { weights: ScoringWeights }) {
             initialWeights={weights.category_weights}
             initialCutoffs={weights.band_cutoffs}
             templateCutoffs={weights.band_cutoffs_template}
+            initialVersion={weights.rule_set_version}
           />
         </Card>
 
