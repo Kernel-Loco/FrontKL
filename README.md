@@ -46,6 +46,8 @@ La sesión expira a los 15 min sin actividad (aviso un minuto antes) y a las 8 h
 
 En Detalle de dominio, «Proveedores visibles desde el DNS» muestra los servidores MX y NS guardados en el activo raíz que devuelve `/domains/{fqdn}/assets`. Una lista vacía significa que no se registraron servidores; un tipo ausente significa que no está disponible. Los nombres observados no confirman quién presta el servicio y pueden estar desactualizados, especialmente si no se consultó DNS en el último escaneo.
 
+En Bitácora, los registros siguen siendo de ejemplo y «Verificar integridad» permanece deshabilitado: no se ha conectado una consulta ni una verificación real de la cadena. Los eventos de tipo `platform` representan acciones del superadmin de LowTide.
+
 ## Estructura
 
 El portal se llama **LowTide**: el acceso (login, MFA, registro y recuperación) es claro, y el panel es oscuro con un botón para cambiar a modo claro (`ThemeToggle`). Todo el texto está en español.
