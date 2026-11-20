@@ -21,7 +21,7 @@ test("toUser arma session_limits con los dos campos de /auth/me", () => {
   const user = toUser({ ...base, idle_timeout_seconds: 900, absolute_expires_in_seconds: 28_000 });
   assert.deepEqual(user.session_limits, { idle_timeout_seconds: 900, absolute_expires_in_seconds: 28_000 });
   assert.equal(user.role, "gerente");
-  assert.equal("organization_id" in user, false);
+  assert.equal(user.organization_id, "o1");
 });
 
 test("toUser acepta el tope absoluto en 0 (la sesión ya llegó a las 8 h)", () => {

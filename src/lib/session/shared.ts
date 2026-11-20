@@ -15,6 +15,7 @@ export function toUser(user: ApiUser): User {
     email: user.email,
     full_name: user.full_name,
     role: ROLE_FROM_API[user.role],
+    organization_id: user.organization_id,
     organization_name: user.organization_name,
     mfa_enabled: user.mfa_enabled,
     last_login_at: user.last_login_at,

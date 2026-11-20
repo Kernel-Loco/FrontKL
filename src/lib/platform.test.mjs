@@ -6,6 +6,7 @@ import { test } from "node:test";
 import {
   ORGANIZATION_CHANNEL,
   canWorkIn,
+  organizationListState,
   organizationOptionLabel,
   refreshListAfterFailedSwitch,
   reloadAfterFailedSwitch,
@@ -72,8 +73,29 @@ test("7. tras un error sin respuesta clara recarga, y tras 404 o 409 vuelve a pe
   assert.equal(refreshListAfterFailedSwitch(500), false);
   const selector = leer("../components/OrganizationSwitcher.tsx");
   assert.match(selector, /if \(reloadAfterFailedSwitch\(status\)\) \{[\s\S]{0,200}?announceSwitch\(\);\s*reloadDashboard\(\);/);
-  assert.match(selector, /if \(refreshListAfterFailedSwitch\(status\)\) load\(\);/);
-  assert.match(selector, /onFocus=\{\(\) => \{\s*if \(orgs && !switching\) load\(\);/);
+  assert.match(selector, /if \(refreshListAfterFailedSwitch\(status\)\) await refresh\(status === 409\);/);
+  assert.match(selector, /onFocus=\{\(\) => \{\s*if \(orgs && !switching\) void refresh\(\);/);
+});
+
+test("9. se detecta un cambio de empresa y se rechazan listas sin una única activa", () => {
+  const casa = org("1", "Casa", { active: true });
+  const otra = org("2", "Otra");
+  assert.equal(organizationListState([casa, otra], "1"), "current");
+  assert.equal(organizationListState([casa, otra], "2"), "changed");
+  assert.equal(organizationListState([otra], "1"), "invalid");
+  assert.equal(organizationListState([casa, { ...otra, active: true }], "1"), "invalid");
+  const selector = leer("../components/OrganizationSwitcher.tsx");
+  assert.match(selector, /state === "changed"[\s\S]*?announceSwitch\(\);\s*reloadDashboard\(\);/);
+  assert.match(selector, /state === "invalid"[\s\S]*?setOrgs\(null\)/);
+  assert.match(selector, /if \(reloadOnFailure\) \{\s*announceSwitch\(\);\s*reloadDashboard\(\);/);
+});
+
+test("10. una carga fallida permite reintentar sin confundirla con un cambio fallido", () => {
+  const selector = leer("../components/OrganizationSwitcher.tsx");
+  assert.match(selector, /setListError\(getErrorMessage\(e\)\)/);
+  assert.match(selector, /onClick=\{\(\) => void refresh\(\)\} disabled=\{loadingList \|\| switching\}/);
+  assert.match(selector, /Reintentar lista/);
+  assert.match(selector, /loading\.current\?\.abort\(\);\s*setLoadingList\(false\);\s*setSwitching\(true\)/);
 });
 
 test("8. las demás pestañas recargan cuando una cambia de empresa", () => {
