@@ -438,7 +438,7 @@ export interface ScoringWeightsUpdateResult {
   unchanged: boolean;
 }
 
-// ---------------------------------------------------------------- Provisional: activos (tabla assets)
+// ---------------------------------------------------------------- Activos (tabla assets, RC-231)
 
 /** `GET /api/v1/domains/{fqdn}/assets` */
 export interface Asset {
@@ -450,6 +450,19 @@ export interface Asset {
   attributes: Record<string, unknown>;
   first_seen_at: string;
   last_seen_at: string;
+}
+
+/** `GET /api/v1/assets`: el inventario de toda la empresa, paginado (RC-231). */
+export interface OrganizationAsset extends Asset {
+  domain: string;
+  /** La IP del activo (la de un `ip` o la de un `service`); null en los demás. */
+  ip: string | null;
+  parent_type: AssetType | null;
+}
+
+export interface OrganizationAssets extends ListResponse<OrganizationAsset> {
+  limit: number;
+  offset: number;
 }
 
 // ---------------------------------------------------------------- Provisional: escaneos (scans, scan_source_runs)

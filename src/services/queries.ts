@@ -10,6 +10,7 @@ import type {
   DomainFindings,
   DomainScore,
   ListResponse,
+  OrganizationAssets,
   Scan,
   ScoreHistory,
   ScoringWeights,
@@ -28,8 +29,13 @@ export const getScoreHistory = (fqdn: string) => apiGet<ScoreHistory>(`/domains/
 
 export const getActionPlan = (fqdn: string) => apiGet<ActionPlan>(`/domains/${path(fqdn)}/action-plan`);
 
-/** Provisional: aún no está en el contrato #21. */
 export const getDomainAssets = (fqdn: string) => apiGet<ListResponse<Asset>>(`/domains/${path(fqdn)}/assets`);
+
+/**
+ * Inventario de toda la empresa (RC-231). `query` sale de consultaActivos() (src/lib/filtrosActivos.ts): domain, type,
+ * q, limit y offset. `total` cuenta todos los del filtro, no solo la página.
+ */
+export const getAssets = (query: string) => apiGet<OrganizationAssets>(query ? `/assets?${query}` : "/assets");
 
 /** Solo Admin. */
 export const getTxtVerifications = () => apiGet<ListResponse<TxtVerification>>("/domains/txt");
