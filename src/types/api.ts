@@ -455,7 +455,7 @@ export interface Asset {
 /** `GET /api/v1/assets`: el inventario de toda la empresa, paginado (RC-231). */
 export interface OrganizationAsset extends Asset {
   domain: string;
-  /** La IP de un activo `ip`; null en los demás. */
+  /** La IP del activo (la de un `ip` o la de un `service`); null en los demás. */
   ip: string | null;
   parent_type: AssetType | null;
 }

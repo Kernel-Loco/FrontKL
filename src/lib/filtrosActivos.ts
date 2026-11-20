@@ -1,7 +1,8 @@
 // Filtros de la pantalla 'Activos' (RC-231): de los parámetros de la URL a la consulta de GET /api/v1/assets.
 // Sin imports, para que node --test lo cargue sin alias. Un valor que la API rechazaría con 422 se descarta aquí:
-// un tipo que no existe, un dominio que no es de la empresa, un texto vacío o de más de 200 caracteres y una página
-// fuera de rango vuelven a su valor por omisión, así la pantalla nunca cae por un enlace editado a mano.
+// un tipo que no existe, un dominio que no es de la empresa, un texto vacío, de más de 200 caracteres o con caracteres
+// de control (PostgreSQL no acepta el nulo) y una página fuera de rango vuelven a su valor por omisión, así la pantalla
+// nunca cae por un enlace editado a mano.
 
 export const TIPOS_ACTIVO = ["domain", "subdomain", "certificate", "ip", "service", "api_doc", "email"] as const;
 export type TipoActivoFiltro = (typeof TIPOS_ACTIVO)[number];
@@ -11,6 +12,7 @@ export const POR_PAGINA = 50;
 /** Tope de offset de la API (le=1_000_000). */
 const MAX_OFFSET = 1_000_000;
 const MAX_TEXTO = 200;
+const CONTROL = /[\u0000-\u001f\u007f]/;
 
 export interface FiltrosActivos {
   dominio: string;
@@ -36,7 +38,7 @@ export function leerFiltros(
   return {
     dominio: dominios.includes(dominio) ? dominio : "",
     tipo: (TIPOS_ACTIVO as readonly string[]).includes(tipo) ? (tipo as TipoActivoFiltro) : "",
-    texto: texto.length <= MAX_TEXTO ? texto : "",
+    texto: texto.length <= MAX_TEXTO && !CONTROL.test(texto) ? texto : "",
     pagina: Number.isInteger(pagina) && pagina >= 1 && pagina <= maxPagina ? pagina : 1,
   };
 }
@@ -63,6 +65,16 @@ export function urlFiltros(filtros: FiltrosActivos): string {
   if (filtros.pagina > 1) query.set("pagina", String(filtros.pagina));
   const qs = query.toString();
   return qs ? `?${qs}` : "";
+}
+
+/**
+ * El conteo de arriba de la tabla: '51–100 de 120 activos'. Una página fuera de rango (sin filas y con total) dice
+ * solo el total, nunca un rango al revés como '451–450 de 120'.
+ */
+export function conteo(total: number, offset: number, enPagina: number): string {
+  const nombre = total === 1 ? "activo" : "activos";
+  if (total === 0 || enPagina === 0) return `${total} ${nombre}`;
+  return `${offset + 1}–${offset + enPagina} de ${total} ${nombre}`;
 }
 
 /** Número de páginas para un total (al menos 1). */

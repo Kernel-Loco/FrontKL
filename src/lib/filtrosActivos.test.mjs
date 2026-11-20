@@ -3,7 +3,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { consultaActivos, leerFiltros, paginas, POR_PAGINA, TIPOS_ACTIVO, urlFiltros } from "./filtrosActivos.ts";
+import { conteo, consultaActivos, leerFiltros, paginas, POR_PAGINA, TIPOS_ACTIVO, urlFiltros } from "./filtrosActivos.ts";
 
 const leer = (ruta) => readFileSync(new URL(ruta, import.meta.url), "utf8");
 const DOMINIOS = ["acme-demo.mx", "acme-tienda.mx"];
@@ -23,6 +23,8 @@ test("2. descarta lo que la API rechazaría o lo que no es de la empresa", () =>
   // Un parámetro repetido llega como arreglo: no se toma ninguno.
   assert.equal(leerFiltros({ dominio: ["acme-demo.mx", "acme-tienda.mx"] }, DOMINIOS).dominio, "");
   assert.equal(leerFiltros({ q: "x".repeat(200) }, DOMINIOS).texto.length, 200);
+  // PostgreSQL no acepta el nulo en un text: con él la API respondería 422. Tampoco otros caracteres de control.
+  for (const q of ["a\u0000b", "\u0000", "a\u001fb", "a\u007fb"]) assert.equal(leerFiltros({ q }, DOMINIOS).texto, "", q);
 });
 
 test("3. la consulta de la API pagina con offset y la exportación no lleva limit ni offset", () => {
@@ -56,6 +58,15 @@ test("5. páginas: al menos una", () => {
   assert.equal(paginas(POR_PAGINA + 1), 2);
 });
 
+test("5b. el conteo nunca muestra un rango al revés", () => {
+  assert.equal(conteo(0, 0, 0), "0 activos");
+  assert.equal(conteo(1, 0, 1), "1–1 de 1 activo");
+  assert.equal(conteo(120, 50, 50), "51–100 de 120 activos");
+  assert.equal(conteo(120, 100, 20), "101–120 de 120 activos");
+  // Página 10 con 120 activos: la API da items vacío con offset 450.
+  assert.equal(conteo(120, 450, 0), "120 activos");
+});
+
 test("6. los tipos son los mismos que acepta la API y que tienen etiqueta", () => {
   const api = leer("../types/api.ts").match(/export type AssetType =([^;]+);/)[1];
   assert.deepEqual([...api.matchAll(/"([a-z_]+)"/g)].map((m) => m[1]).sort(), [...TIPOS_ACTIVO].sort());
@@ -84,4 +95,24 @@ test("8. la pantalla exporta solo CSV con los filtros y sin paginar, y tiene est
   assert.match(tabla, /<EmptyState title="Ningún activo coincide">/);
   const exportar = leer("../services/exportService.ts");
   assert.match(exportar, /downloadAssets[\s\S]*?\/assets\?\$\{query\}[\s\S]*?"csv"/);
+  // ApiExport pinta un botón por cada formato que recibe, no el par fijo CSV y JSON.
+  const boton = leer("../components/screens/shared/ApiExport.tsx");
+  assert.match(boton, /formats = \["csv", "json"\]/);
+  assert.match(boton, /\{formats\.map\(\(format\) =>/);
+  assert.doesNotMatch(boton, /\["csv", "json"\](?: as const)?\)\.map/);
+  // Exportar se apaga sin autorización vigente, como responde la API.
+  assert.match(tabla, /disabled=\{total === 0 \|\| sinCarta\}/);
+  assert.match(leer("../app/(dashboard)/dashboard/activos/page.tsx"), /d\.authorization\.status === "valid"/);
+});
+
+test("9. los select no navegan al cambiar y la tabla no se vuelve a montar con los filtros", () => {
+  const tabla = leer("../components/screens/activos/AssetsInventory.tsx");
+  assert.doesNotMatch(tabla, /<select[^>]*onChange=\{[^}]*router\.push/);
+  assert.match(tabla, /onChange=\{\(e\) => setDominio\(e\.target\.value\)\}/);
+  assert.match(tabla, /urlFiltros\(\{ dominio, tipo, texto: texto\.trim\(\)\.slice\(0, 200\), pagina: 1 \}\)/);
+  assert.doesNotMatch(leer("../app/(dashboard)/dashboard/activos/page.tsx"), /key=\{/);
+});
+
+test("10. la sección tiene su propio error.tsx", () => {
+  assert.match(leer("../app/(dashboard)/dashboard/activos/error.tsx"), /<SectionError \{\.\.\.props\} section="Activos" \/>/);
 });

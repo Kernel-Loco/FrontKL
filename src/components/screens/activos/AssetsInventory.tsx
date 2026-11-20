@@ -12,6 +12,7 @@ import { INPUT, SELECT } from "@/components/ui/Field";
 import { ApiExport } from "@/components/screens/shared/ApiExport";
 import { ASSET_TYPE_LABELS } from "@/config/labels";
 import {
+  conteo,
   consultaActivos,
   paginas,
   POR_PAGINA,
@@ -27,39 +28,52 @@ import type { OrganizationAssets } from "@/types";
 const hayFiltros = (f: FiltrosActivos) => Boolean(f.dominio || f.tipo || f.texto);
 
 /**
- * Tabla del inventario de la organización (RC-231). Dominio y tipo se aplican al elegirlos y el texto al buscar: cada
- * cambio vuelve a la página 1 y la página del servidor pide a la API solo esa página. La exportación trae todas las
- * páginas con los mismos filtros, de los dominios con autorización vigente.
+ * Tabla del inventario de la organización (RC-231). Dominio, tipo y texto se aplican juntos con el botón Buscar (o con
+ * Enter), no al cambiar un select: así el teclado recorre las opciones sin navegar y el foco no se pierde (WCAG 3.2.2).
+ * Cada búsqueda vuelve a la página 1 y la página del servidor pide a la API solo esa página. El componente no se vuelve
+ * a montar al navegar: los campos se igualan a los filtros de la URL cuando estos cambian (atrás, Limpiar o una página).
+ * La exportación trae todas las páginas con los filtros aplicados, de los dominios con autorización vigente.
  */
 export function AssetsInventory({
   filtros,
   dominios,
+  conCarta,
   activos,
   canOpenDetail,
 }: {
   filtros: FiltrosActivos;
   dominios: string[];
+  /** Los fqdn con autorización vigente, los únicos que exporta la API. */
+  conCarta: string[];
   activos: OrganizationAssets;
   canOpenDetail: boolean;
 }) {
   const ids = { dominio: useId(), tipo: useId(), texto: useId() };
   const router = useRouter();
   const pathname = usePathname();
+  const [dominio, setDominio] = useState(filtros.dominio);
+  const [tipo, setTipo] = useState(filtros.tipo);
   const [texto, setTexto] = useState(filtros.texto);
+  // Los campos siguen a la URL cuando cambian los filtros aplicados (estado derivado de props, como pide React).
+  const clave = urlFiltros({ ...filtros, pagina: 1 });
+  const [claveVista, setClaveVista] = useState(clave);
+  if (clave !== claveVista) {
+    setClaveVista(clave);
+    setDominio(filtros.dominio);
+    setTipo(filtros.tipo);
+    setTexto(filtros.texto);
+  }
 
-  const ir = (cambios: Partial<FiltrosActivos>) =>
-    router.push(`${pathname}${urlFiltros({ ...filtros, pagina: 1, ...cambios })}`);
   const buscar = (e: FormEvent) => {
     e.preventDefault();
-    ir({ texto: texto.trim().slice(0, 200) });
+    router.push(`${pathname}${urlFiltros({ dominio, tipo, texto: texto.trim().slice(0, 200), pagina: 1 })}`);
   };
 
   const total = activos.total;
   const ultima = paginas(total);
-  const desde = total === 0 ? 0 : activos.offset + 1;
-  const hasta = activos.offset + activos.items.length;
   const enlacePagina = (pagina: number) => `${pathname}${urlFiltros({ ...filtros, pagina })}`;
   const fueraDeRango = activos.items.length === 0 && total > 0;
+  const sinCarta = filtros.dominio ? !conCarta.includes(filtros.dominio) : conCarta.length === 0;
 
   return (
     <Card padded={false}>
@@ -67,7 +81,7 @@ export function AssetsInventory({
         className="grid gap-3 border-b border-lt-border p-5 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,2fr)_auto]">
         <div>
           <label htmlFor={ids.dominio} className="mb-1.5 block text-xs font-medium text-lt-muted">Dominio</label>
-          <select id={ids.dominio} value={filtros.dominio} onChange={(e) => ir({ dominio: e.target.value })}
+          <select id={ids.dominio} value={dominio} onChange={(e) => setDominio(e.target.value)}
             className={`${SELECT} font-mono text-[13px]`}>
             <option value="">Todos</option>
             {dominios.map((d) => <option key={d} value={d}>{d}</option>)}
@@ -75,7 +89,7 @@ export function AssetsInventory({
         </div>
         <div>
           <label htmlFor={ids.tipo} className="mb-1.5 block text-xs font-medium text-lt-muted">Tipo</label>
-          <select id={ids.tipo} value={filtros.tipo} onChange={(e) => ir({ tipo: e.target.value as TipoActivoFiltro | "" })}
+          <select id={ids.tipo} value={tipo} onChange={(e) => setTipo(e.target.value as TipoActivoFiltro | "")}
             className={SELECT}>
             <option value="">Todos</option>
             {TIPOS_ACTIVO.map((t) => <option key={t} value={t}>{ASSET_TYPE_LABELS[t]}</option>)}
@@ -94,14 +108,20 @@ export function AssetsInventory({
 
       <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3">
         <p className="text-xs text-lt-muted" aria-live="polite">
-          {total === 0 ? "0 activos" : `${desde}–${hasta} de ${total} ${total === 1 ? "activo" : "activos"}`}
+          {conteo(total, activos.offset, activos.items.length)}
           {hayFiltros(filtros) && " con estos filtros"}
         </p>
         <div className="flex flex-col items-end gap-1">
           <ApiExport filename={filtros.dominio ? `${filtros.dominio}-activos` : "activos"} label="Exportar activos"
-            formats={["csv"]} disabled={total === 0}
+            formats={["csv"]} disabled={total === 0 || sinCarta}
             download={(_, signal) => downloadAssets(consultaActivos(filtros, false), signal)} />
-          <p className="text-[11px] text-lt-faint">Todas las páginas con estos filtros, solo de dominios con autorización vigente.</p>
+          <p className="text-[11px] text-lt-faint">
+            {sinCarta
+              ? filtros.dominio
+                ? "Este dominio no tiene autorización vigente: no se puede exportar."
+                : "Ningún dominio tiene autorización vigente: no hay nada que exportar."
+              : "Todas las páginas con estos filtros, solo de dominios con autorización vigente."}
+          </p>
         </div>
       </div>
 
@@ -150,7 +170,7 @@ export function AssetsInventory({
         </TableWrap>
       )}
 
-      {total > POR_PAGINA && (
+      {total > POR_PAGINA && !fueraDeRango && (
         <nav aria-label="Páginas de activos" className="flex items-center justify-between gap-3 border-t border-lt-border px-5 py-3">
           {filtros.pagina > 1
             ? <ActionLink href={enlacePagina(Math.min(filtros.pagina - 1, ultima))} size="sm"><ChevronLeft aria-hidden="true" className="h-4 w-4" />Anterior</ActionLink>

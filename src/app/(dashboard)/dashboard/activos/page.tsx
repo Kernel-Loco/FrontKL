@@ -19,7 +19,10 @@ export default async function ActivosPage({ searchParams }: Props) {
   const { user, forbidden } = await checkSectionAccess("activos");
   if (forbidden) return forbidden;
 
-  const dominios = (await getDomains()).items.map((d) => d.fqdn);
+  const lista = (await getDomains()).items;
+  const dominios = lista.map((d) => d.fqdn);
+  // La exportación solo trae dominios con autorización vigente (la API responde 403 con ?domain sin ella).
+  const conCarta = lista.filter((d) => d.authorization.status === "valid").map((d) => d.fqdn);
   const filtros = leerFiltros(await searchParams, dominios);
   const activos = await getAssets(consultaActivos(filtros));
 
@@ -30,9 +33,9 @@ export default async function ActivosPage({ searchParams }: Props) {
         description="Subdominios, certificados, IP, servicios y correos que dejan expuestos todos los dominios de la organización."
       />
       <AssetsInventory
-        key={JSON.stringify(filtros)}
         filtros={filtros}
         dominios={dominios}
+        conCarta={conCarta}
         activos={activos}
         canOpenDetail={canAccessSection(user.role, "detalle")}
       />
