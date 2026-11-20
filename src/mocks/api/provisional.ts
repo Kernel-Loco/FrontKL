@@ -116,7 +116,7 @@ export const mockSettings: OrgSettings = {
     { id: "b0000000-0000-4000-8000-000000000003", kind: "siem_cef", name: "SIEM corporativo (CEF)", endpoint: "https://siem.acme-demo.mx/cef", enabled: false, events: ["finding.created", "finding.resolved"] },
   ],
   api_keys: [
-    { id: "c0000000-0000-4000-8000-000000000001", name: "SIEM corporativo", key_prefix: "CIRDAN_FAKE_7f3a", scopes: ["findings:read", "scores:read"], created_at: "2026-09-10T11:00:00-06:00", expires_at: "2026-12-09T11:00:00-06:00", last_used_at: "2026-10-13T23:00:00-06:00", revoked_at: null },
+    { id: "c0000000-0000-4000-8000-000000000001", name: "SIEM corporativo", key_prefix: "CIRDAN_FAKE_7f3a", domain: null, scopes: ["read"], created_by: "alex.morgan@acme-demo.mx", created_at: "2026-09-10T11:00:00-06:00", expires_at: "2026-12-09T11:00:00-06:00", last_used_at: "2026-10-13T23:00:00-06:00", revoked_at: null, status: "active" },
   ],
 };
 

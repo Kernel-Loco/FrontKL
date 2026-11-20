@@ -579,11 +579,14 @@ export interface ApiKey {
   id: string;
   name: string;
   key_prefix: string;
+  domain: string | null;
   scopes: string[];
+  created_by: string;
   created_at: string;
   expires_at: string;
   last_used_at: string | null;
   revoked_at: string | null;
+  status: "active" | "expired" | "revoked";
 }
 
 /** `GET /api/v1/settings` */
@@ -646,7 +649,7 @@ export interface AlertPolicies {
 /** `POST /api/v1/api-keys`. Vigencia máxima de 90 días. */
 export interface ApiKeyRequest {
   name: string;
-  scopes: string[];
+  domain: string | null;
   expires_in_days: number;
   /**
    * Declaración del Administrador de que la llave es para un sistema de su propia empresa, no de un
@@ -657,9 +660,8 @@ export interface ApiKeyRequest {
 }
 
 /** La llave completa solo viaja en esta respuesta; después solo se ve su prefijo. */
-export interface ApiKeyCreated {
-  api_key: ApiKey;
-  secret: string;
+export interface ApiKeyCreated extends ApiKey {
+  key: string;
 }
 
 /** `POST /api/v1/integrations` */

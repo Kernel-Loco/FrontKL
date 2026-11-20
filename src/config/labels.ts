@@ -234,9 +234,5 @@ export const AUDIT_ACTION_LABELS: Record<string, string> = {
 };
 
 export const API_SCOPE_LABELS: Record<string, string> = {
-  "findings:read": "Leer hallazgos",
-  "scores:read": "Leer scores",
-  "domains:read": "Leer dominios",
-  "reports:read": "Leer reportes",
-  "scans:write": "Lanzar escaneos",
+  read: "Solo lectura",
 };

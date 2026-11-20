@@ -6,6 +6,7 @@ import { apiGet } from "@/lib/apiServer";
 import type {
   Asset,
   ActionPlan,
+  ApiKey,
   Domain,
   DomainFindings,
   DomainScore,
@@ -19,6 +20,8 @@ import type {
 const path = (fqdn: string) => encodeURIComponent(fqdn);
 
 export const getDomains = () => apiGet<ListResponse<Domain>>("/domains");
+
+export const getApiKeys = () => apiGet<ListResponse<ApiKey>>("/api-keys");
 
 export const getDomainFindings = (fqdn: string) => apiGet<DomainFindings>(`/domains/${path(fqdn)}/findings`);
 
