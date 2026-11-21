@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import {
   bloquesDeRespuesta,
   citasDeRespuesta,
+  esRespuestaAutomatica,
   hallazgosParaAsistente,
   LIMITE_DIARIO_ASISTENTE,
   MAX_HALLAZGOS_ASISTENTE,
@@ -34,6 +35,8 @@ interface Intercambio {
   respuesta: string;
   /** Títulos de los hallazgos enviados, en el orden de `finding_ids`: el primero es el [H1] de la respuesta. */
   titulos: string[];
+  /** Ningún modelo respondió: es la respuesta automática con los pasos del plan de acción, no de IA. */
+  automatica: boolean;
 }
 
 function Texto({ tramos }: { tramos: Tramo[] }) {
@@ -118,12 +121,20 @@ export function AssistantPanel({ domain, findings }: { domain: string; findings:
     setError(null);
     setAnuncio("Preparando la respuesta.");
     try {
-      const { answer } = await askAssistant(domain, limpia, enviados.map((f) => f.id), actual.signal);
+      const { answer, source } = await askAssistant(domain, limpia, enviados.map((f) => f.id), actual.signal);
       const titulos = enviados.map((f) => f.title);
-      setIntercambios((previos) => [{ id: siguienteId.current++, pregunta: limpia, respuesta: answer, titulos }, ...previos]);
+      const automatica = esRespuestaAutomatica(source);
+      setIntercambios((previos) => [
+        { id: siguienteId.current++, pregunta: limpia, respuesta: answer, titulos, automatica },
+        ...previos,
+      ]);
       // Solo se borra si sigue siendo lo enviado: un borrador escrito durante la espera se queda.
       setPregunta((actualTexto) => (actualTexto === texto ? "" : actualTexto));
-      setAnuncio("Llegó la respuesta del asistente.");
+      setAnuncio(
+        automatica
+          ? "El asistente de IA no respondió. Llegó una respuesta automática con los pasos del plan de acción."
+          : "Llegó la respuesta del asistente.",
+      );
     } catch (falla) {
       if (actual.signal.aborted) return;
       setAnuncio("");
@@ -163,7 +174,8 @@ export function AssistantPanel({ domain, findings }: { domain: string; findings:
             y la criticidad de hasta {MAX_HALLAZGOS_ASISTENTE} hallazgos, los más graves de la lista con tus filtros; nunca
             la evidencia. No escribas contraseñas ni datos personales en la pregunta. LowTide no guarda tus preguntas ni
             las respuestas. Tienes {LIMITE_DIARIO_ASISTENTE} preguntas cada 24 horas, y cada una cuenta aunque el
-            asistente no responda o salgas de la pantalla antes de la respuesta.
+            asistente no responda o salgas de la pantalla antes de la respuesta. Si ningún modelo de IA responde, verás
+            una respuesta automática con los pasos del plan de acción, marcada como tal.
           </p>
         </div>
       </div>
@@ -240,6 +252,11 @@ export function AssistantPanel({ domain, findings }: { domain: string; findings:
           const citas = citasDeRespuesta(intercambio.respuesta, total);
           return (
             <article key={intercambio.id} className="rounded-lg border border-lt-border bg-lt-bg p-4">
+              {intercambio.automatica && (
+                <p className="mb-2 inline-flex rounded-md bg-lt-raised px-2 py-0.5 text-[11px] font-semibold text-lt-text">
+                  Respuesta automática · no es de IA
+                </p>
+              )}
               <p className="text-sm font-semibold text-lt-text break-words">{intercambio.pregunta}</p>
               <div className="mt-2">
                 <Respuesta texto={intercambio.respuesta} />
@@ -256,10 +273,20 @@ export function AssistantPanel({ domain, findings }: { domain: string; findings:
                   </ul>
                 </div>
               )}
-              <p className="mt-3 text-[11px] leading-relaxed text-lt-faint">
-                Respuesta generada por IA sobre {total} {total === 1 ? "hallazgo" : "hallazgos"}.
-                Puede equivocarse: confírmala con la explicación de cada hallazgo.
-              </p>
+              {intercambio.automatica ? (
+                <p className="mt-3 text-[11px] leading-relaxed text-lt-faint">
+                  Ningún modelo de IA respondió. Son los pasos del plan de acción para {total}{" "}
+                  {total === 1 ? "hallazgo" : "hallazgos"} y no contestan tu pregunta.{" "}
+                  <Link href={`/dashboard/plan?dominio=${encodeURIComponent(domain)}`} className={TEXT_LINK}>
+                    Ver el plan de acción
+                  </Link>
+                </p>
+              ) : (
+                <p className="mt-3 text-[11px] leading-relaxed text-lt-faint">
+                  Respuesta generada por IA sobre {total} {total === 1 ? "hallazgo" : "hallazgos"}.
+                  Puede equivocarse: confírmala con la explicación de cada hallazgo.
+                </p>
+              )}
             </article>
           );
         })}
