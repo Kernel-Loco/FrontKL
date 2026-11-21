@@ -12,9 +12,9 @@ export function parseRetryAfter(headers: Headers): number | undefined {
   return Number.isFinite(seconds) && seconds > 0 ? Math.ceil(seconds) : undefined;
 }
 
-/** Une la señal del llamador con el tope de tiempo. */
-export function withTimeout(signal?: AbortSignal | null): AbortSignal {
-  const timeout = AbortSignal.timeout(REQUEST_TIMEOUT_MS);
+/** Une la señal del llamador con el tope de tiempo (`ms`, por omisión el de todas las peticiones). */
+export function withTimeout(signal?: AbortSignal | null, ms = REQUEST_TIMEOUT_MS): AbortSignal {
+  const timeout = AbortSignal.timeout(ms);
   return signal ? AbortSignal.any([signal, timeout]) : timeout;
 }
 
