@@ -50,6 +50,17 @@ export function preguntaValida(texto: string): string | null {
   return pregunta && pregunta.length <= MAX_LARGO_PREGUNTA ? pregunta : null;
 }
 
+/**
+ * De dónde salió la respuesta (`source` de la API): `ai` si respondió un modelo y `template` si ninguno respondió y la
+ * API armó una respuesta automática con los pasos del plan de acción (#42) de los hallazgos enviados.
+ */
+export type FuenteRespuesta = "ai" | "template";
+
+/** Si la respuesta es la automática del plan de acción. Sin `source` (una API anterior) cuenta como de IA. */
+export function esRespuestaAutomatica(source: unknown): boolean {
+  return source === "template";
+}
+
 export type CodigoFallaAsistente = "assistant_404" | "assistant_429" | "assistant_503";
 
 const CODIGOS_DE_FALLA: Partial<Record<number, CodigoFallaAsistente>> = {

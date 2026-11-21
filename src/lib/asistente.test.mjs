@@ -7,6 +7,7 @@ import nextConfig from "../../next.config.ts";
 import {
   bloquesDeRespuesta,
   citasDeRespuesta,
+  esRespuestaAutomatica,
   fallaDelAsistente,
   hallazgosParaAsistente,
   MAX_HALLAZGOS_ASISTENTE,
@@ -206,4 +207,38 @@ test("9. solo Analista y Admin ven el asistente, sobre la lista filtrada de Hall
   assert.match(pagina, /canAsk=\{can\(user\.role, "ask_assistant"\)\}/);
   const explorador = leer("../components/screens/hallazgos/FindingsExplorer.tsx");
   assert.match(explorador, /\{canAsk && findings\.length > 0 && <AssistantPanel domain=\{domain\} findings=\{visible\} \/>\}/);
+});
+
+test("10. la respuesta automática del plan de acción se marca como tal y se lee como lista numerada con sus citas", () => {
+  assert.equal(esRespuestaAutomatica("template"), true);
+  assert.equal(esRespuestaAutomatica("ai"), false);
+  // Una API anterior no manda source: la respuesta cuenta como de IA.
+  assert.equal(esRespuestaAutomatica(undefined), false);
+  // La forma que arma template_answer de cirdan/api/asistente.py: aviso, línea vacía y un paso por regla.
+  const plantilla = [
+    "Respuesta automática, no es de IA: ningún modelo de IA respondió, así que no contesta tu pregunta.",
+    "",
+    "1. **Brecha de datos** [H2]: Cambia las contraseñas.",
+    "2. **SPF débil** [H1, H3]: Publica un SPF con -all.",
+  ].join("\n");
+  assert.deepEqual(bloquesDeRespuesta(plantilla), [
+    { tipo: "parrafo", tramos: [{ texto: "Respuesta automática, no es de IA: ningún modelo de IA respondió, así que no contesta tu pregunta.", negrita: false }] },
+    {
+      tipo: "numerada",
+      inicio: 1,
+      elementos: [
+        [{ texto: "Brecha de datos", negrita: true }, { texto: " [H2]: Cambia las contraseñas.", negrita: false }],
+        [{ texto: "SPF débil", negrita: true }, { texto: " [H1, H3]: Publica un SPF con -all.", negrita: false }],
+      ],
+    },
+  ]);
+  assert.deepEqual(citasDeRespuesta(plantilla, 3), [2, 1, 3]);
+
+  const panel = leer("../components/screens/hallazgos/AssistantPanel.tsx");
+  assert.match(panel, /const automatica = esRespuestaAutomatica\(source\);/);
+  assert.match(panel, /intercambio\.automatica && \([\s\S]*?Respuesta automática · no es de IA/);
+  // La automática no dice que la generó una IA y enlaza al plan de acción del dominio.
+  assert.match(panel, /intercambio\.automatica \? \([\s\S]*?Ningún modelo de IA respondió[\s\S]*?\/dashboard\/plan\?dominio=\$\{encodeURIComponent\(domain\)\}[\s\S]*?\) : \([\s\S]*?Respuesta generada por IA/);
+  assert.match(panel, /Llegó una respuesta automática con los pasos del plan de acción/);
+  assert.match(leer("../services/assistantService.ts"), /source\?: FuenteRespuesta;/);
 });

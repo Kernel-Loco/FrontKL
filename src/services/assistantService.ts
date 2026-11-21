@@ -1,12 +1,14 @@
 // Asistente de IA sobre los hallazgos (#38, RC-77), desde el navegador. Solo Analista y Admin, como la API.
 import { apiClient, ApiError } from "@/lib/apiClient";
-import { fallaDelAsistente, TIEMPO_MAXIMO_ASISTENTE_MS } from "@/lib/asistente";
+import { fallaDelAsistente, TIEMPO_MAXIMO_ASISTENTE_MS, type FuenteRespuesta } from "@/lib/asistente";
 import { ServiceError } from "./errors";
 
 /** Respuesta de `POST /api/v1/domains/{fqdn}/assistant`. La API no guarda ni la pregunta ni la respuesta. */
 export interface AssistantAnswer {
   answer: string;
   finding_ids: string[];
+  /** `template` si ningún modelo respondió y `answer` es la respuesta automática del plan de acción. */
+  source?: FuenteRespuesta;
 }
 
 /**
