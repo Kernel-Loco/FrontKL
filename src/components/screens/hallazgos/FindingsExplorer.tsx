@@ -10,6 +10,7 @@ import { CATEGORY_LABELS, SEVERITY_LABELS, SOURCE_LABELS } from "@/config/labels
 import { findingsCountLabel, NO_FINDINGS_PARTIAL } from "@/lib/cobertura";
 import { downloadFindings } from "@/services/exportService";
 import type { Category, DomainFinding, Severity } from "@/types";
+import { AssistantPanel } from "./AssistantPanel";
 import { ExplanationPanel } from "./ExplanationPanel";
 
 export function FindingsExplorer({
@@ -18,6 +19,7 @@ export function FindingsExplorer({
   initialRule = "",
   partialCoverage = false,
   unscored = false,
+  canAsk = false,
 }: {
   domain: string;
   findings: DomainFinding[];
@@ -25,6 +27,8 @@ export function FindingsExplorer({
   partialCoverage?: boolean;
   /** Dominio sin score: ningún escaneo calculó su riesgo. */
   unscored?: boolean;
+  /** Analista y Admin ven el asistente de IA (RC-77), sobre los hallazgos de la lista filtrada. */
+  canAsk?: boolean;
 }) {
   const ids = { search: useId(), category: useId(), severity: useId(), rule: useId() };
   const [query, setQuery] = useState("");
@@ -168,6 +172,7 @@ export function FindingsExplorer({
         </div>
         {selected && <ExplanationPanel key={selected.id} finding={selected} />}
       </div>
+      {canAsk && findings.length > 0 && <AssistantPanel domain={domain} findings={visible} />}
     </div>
   );
 }
