@@ -6,9 +6,9 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { SEGURIDAD } from "./seguridad.ts";
 
-// Huella de las fronteras y los controles del resumen de seguridad para clientes del 10 de noviembre de 2026, que
+// Huella de las fronteras y los controles del resumen de seguridad para clientes del 20 de noviembre de 2026, que
 // se revisó contra el modelo de amenazas: solo trae controles que ya funcionan.
-const HUELLA_DEL_RESUMEN = "f3a19c91f56f7670df5e68a338518389729dec824c473aeaba3a62fd4968ba9b";
+const HUELLA_DEL_RESUMEN = "0297ba7298bae3d7042cc62c93e50a97ef214ad3b9a4ae6f1ff289f8b919f8a1";
 
 const controles = SEGURIDAD.grupos.flatMap((grupo) => grupo.controles);
 
@@ -28,11 +28,11 @@ const PROHIBIDO = [
 ];
 const RUTA_DEL_REPO = /\b(src|cirdan|db|docs|pruebas|scripts)\/|\.(py|sql|tsx?|mjs|md|ya?ml)\b/;
 
-test("trae las 5 fronteras y los 24 controles, sin repetir ni dejar vacíos", () => {
+test("trae las 5 fronteras y los 26 controles, sin repetir ni dejar vacíos", () => {
   assert.equal(SEGURIDAD.fronteras.length, 5);
   assert.deepEqual(SEGURIDAD.fronteras.map((f) => f.id), ["TB1", "TB2", "TB3", "TB4", "TB5"]);
-  assert.equal(controles.length, 24);
-  assert.equal(new Set(controles.map((c) => c.tema)).size, 24);
+  assert.equal(controles.length, 26);
+  assert.equal(new Set(controles.map((c) => c.tema)).size, 26);
   assert.equal(new Set(SEGURIDAD.grupos.map((g) => g.donde)).size, SEGURIDAD.grupos.length);
   for (const [camino, texto] of textos(SEGURIDAD)) assert.ok(texto.trim().length > 0, camino);
 });

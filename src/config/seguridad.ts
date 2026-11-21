@@ -22,13 +22,13 @@ export interface GrupoDeControles {
 
 export const SEGURIDAD = {
   titulo: "Cómo cuida LowTide los datos de sus clientes",
-  fecha: "10 de noviembre de 2026",
+  fecha: "20 de noviembre de 2026",
   intro: "LowTide descubre lo que una empresa expone en internet solo con información pública y con las peticiones que autoriza su carta, y da un score de riesgo de 0 a 100 con plan de acción. Esta página sale del modelo de amenazas del equipo y lista solo los controles que ya funcionan hoy. Lo planeado aparece punteado en el diagrama y no se cuenta aquí.",
   diagrama: {
     src: "/seguridad/arquitectura.png",
     width: 1890,
     height: 1770,
-    alt: "Diagrama de arquitectura de LowTide: el navegador del usuario, el portal web, la API, el almacén de sesiones, la base de datos aislada por empresa, los recolectores, las fuentes públicas y los sitios del cliente, con cinco fronteras de confianza marcadas de TB1 a TB5. Los servicios de terceros aparecen punteados porque están planeados.",
+    alt: "Diagrama de arquitectura de LowTide: el navegador del usuario, el portal web, la API, el almacén de sesiones, la base de datos aislada por empresa, los recolectores, las fuentes públicas y los sitios del cliente, con cinco fronteras de confianza marcadas de TB1 a TB5. El inicio de sesión con Microsoft y el correo aparecen punteados porque están planeados, y las otras fuentes pasivas porque están apagadas.",
   },
   fronterasIntro: "Son las líneas rojas del diagrama. Al cruzar cada una, LowTide deja de confiar en lo que recibe.",
   fronteras: [
@@ -36,7 +36,7 @@ export const SEGURIDAD = {
     { id: "TB2", nombre: "Portal y API", texto: "La API no confía en el portal. Valida la sesión en cada petición y de ella saca la empresa." },
     { id: "TB3", nombre: "API y datos", texto: "La base de datos aísla a cada empresa aunque la API tuviera un error. El almacén de sesiones pide contraseña y ninguno de los dos queda expuesto a internet." },
     { id: "TB4", nombre: "Recolectores, fuentes públicas y sitios del cliente", texto: "Lo que responden las fuentes y los sitios es un dato externo, y se valida antes de guardarse." },
-    { id: "TB5", nombre: "API y servicios de terceros", texto: "Microsoft, asistente de IA y correo. Están planeados y todavía no se conectan." },
+    { id: "TB5", nombre: "API y servicios de terceros", texto: "Asistente de IA, Microsoft y correo. El asistente de IA ya se conecta y solo recibe hallazgos que el usuario tiene en pantalla. Microsoft y el correo están planeados y todavía no se conectan." },
   ] satisfies Frontera[],
   grupos: [
     {
@@ -52,7 +52,7 @@ export const SEGURIDAD = {
         },
         {
           tema: "Fórmulas escondidas en las descargas CSV",
-          texto: "Los textos que vienen de sitios ajenos se neutralizan antes de exportarse, y la descarga pide sesión y autorización vigente.",
+          texto: "Los textos que vienen de sitios ajenos se neutralizan antes de exportarse, tanto en los archivos que arma el servidor como en los que arma el navegador. Los datos de cada descarga se piden con la sesión de quien la hace.",
         },
       ],
     },
@@ -116,7 +116,7 @@ export const SEGURIDAD = {
         },
         {
           tema: "Que la aplicación gane privilegios en la base",
-          texto: "La única función con privilegios elevados, la del inicio de sesión, está limitada a 4 columnas y tiene pruebas automáticas.",
+          texto: "Solo cuatro funciones de la base corren con privilegios elevados y cada una hace lo mínimo: la del inicio de sesión devuelve 4 columnas, la de las llaves de API busca una llave por su huella y dos reservan y ajustan el cupo diario de cada fuente. La reserva respeta el tope diario dentro de la base. El ajuste de lo gastado al terminar acepta cualquier cantidad y no revisa el tope. Todas tienen pruebas automáticas.",
         },
         {
           tema: "Saber qué software usa otra empresa",
@@ -129,7 +129,7 @@ export const SEGURIDAD = {
       controles: [
         {
           tema: "Escanear un dominio que no es del cliente",
-          texto: "Ningún escaneo corre sin carta de autorización vigente y sin un registro TXT de verificación en el DNS del dominio, consultado justo antes. Lo exigen el código y la base de datos.",
+          texto: "Ningún escaneo corre sin carta de autorización vigente y sin un registro TXT de verificación en el DNS del dominio, consultado justo antes. Lo exigen el código y la base de datos, que frena una revocación desde que el equipo la registra.",
         },
         {
           tema: "No saber de dónde salió un dato",
@@ -167,6 +167,19 @@ export const SEGURIDAD = {
         {
           tema: "Respuestas incompletas de una fuente",
           texto: "Si la fuente de certificados no responde, el respaldo cubre los certificados vigentes y el escaneo se marca como parcial, con las reglas afectadas señaladas como sin cobertura.",
+        },
+      ],
+    },
+    {
+      donde: "Servicios de terceros",
+      controles: [
+        {
+          tema: "Hallazgos de la empresa en manos del proveedor de IA",
+          texto: "Al asistente solo le llegan el título, la categoría y la criticidad de los hallazgos que el usuario tiene en pantalla, y su pregunta, sin evidencia ni correos. Según sus términos, los proveedores no entrenan con esos datos ni los guardan.",
+        },
+        {
+          tema: "Que el asistente lea datos de otra empresa",
+          texto: "Lo que recibe el asistente lo arma la API con la sesión del usuario y el aislamiento por empresa de la base. El asistente no tiene herramientas: solo lee ese texto y responde.",
         },
       ],
     },
