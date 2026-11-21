@@ -8,7 +8,7 @@ import { SEGURIDAD } from "./seguridad.ts";
 
 // Huella de las fronteras y los controles del resumen de seguridad para clientes del 20 de noviembre de 2026, que
 // se revisó contra el modelo de amenazas: solo trae controles que ya funcionan.
-const HUELLA_DEL_RESUMEN = "0297ba7298bae3d7042cc62c93e50a97ef214ad3b9a4ae6f1ff289f8b919f8a1";
+const HUELLA_DEL_RESUMEN = "9662a768f0177ca9838a21a7eab2e1d6e3f24583284e930a6b4aa2da43f16645";
 
 const controles = SEGURIDAD.grupos.flatMap((grupo) => grupo.controles);
 

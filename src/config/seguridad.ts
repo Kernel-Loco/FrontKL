@@ -36,7 +36,7 @@ export const SEGURIDAD = {
     { id: "TB2", nombre: "Portal y API", texto: "La API no confía en el portal. Valida la sesión en cada petición y de ella saca la empresa." },
     { id: "TB3", nombre: "API y datos", texto: "La base de datos aísla a cada empresa aunque la API tuviera un error. El almacén de sesiones pide contraseña y ninguno de los dos queda expuesto a internet." },
     { id: "TB4", nombre: "Recolectores, fuentes públicas y sitios del cliente", texto: "Lo que responden las fuentes y los sitios es un dato externo, y se valida antes de guardarse." },
-    { id: "TB5", nombre: "API y servicios de terceros", texto: "Asistente de IA, Microsoft y correo. El asistente de IA ya se conecta y solo recibe hallazgos que el usuario tiene en pantalla. Microsoft y el correo están planeados y todavía no se conectan." },
+    { id: "TB5", nombre: "API y servicios de terceros", texto: "Asistente de IA, Microsoft y correo. El asistente de IA ya se conecta y solo recibe hasta 20 hallazgos abiertos del dominio que se consulta. Microsoft y el correo están planeados y todavía no se conectan." },
   ] satisfies Frontera[],
   grupos: [
     {
@@ -175,7 +175,7 @@ export const SEGURIDAD = {
       controles: [
         {
           tema: "Hallazgos de la empresa en manos del proveedor de IA",
-          texto: "Al asistente solo le llegan el título, la categoría y la criticidad de los hallazgos que el usuario tiene en pantalla, y su pregunta, sin evidencia ni correos. Según sus términos, los proveedores no entrenan con esos datos ni los guardan.",
+          texto: "Al asistente solo le llegan el título, la categoría y la criticidad de hasta 20 hallazgos abiertos del dominio, nunca su evidencia, y la pregunta tal como la escribe el usuario. Por eso el panel pide no escribir contraseñas ni datos personales. Según sus términos, los proveedores no entrenan con esos datos ni los guardan.",
         },
         {
           tema: "Que el asistente lea datos de otra empresa",
