@@ -12,8 +12,14 @@ const SECURITY_HEADERS = [
   { key: "X-Content-Type-Options", value: "nosniff" },
 ];
 
+// Corte del reenvío de /api/v1/* a FastAPI. Next corta a los 30 s por omisión y responde un 500 genérico, pero el
+// asistente de IA (RC-77) prueba dos proveedores de 15 s cada uno: con 40 s su 503 llega con su mensaje. Va por
+// debajo de TIEMPO_MAXIMO_ASISTENTE_MS (src/lib/asistente.ts) y lo revisa asistente.test.mjs.
+const PROXY_TIMEOUT_MS = 40_000;
+
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  experimental: { proxyTimeout: PROXY_TIMEOUT_MS },
   // Solo la imagen del despliegue (Dockerfile, RC-91) compila standalone. Sin la variable, npm start sigue igual.
   ...(process.env.NEXT_OUTPUT === "standalone" && { output: "standalone" as const }),
   // En todas las páginas y archivos del portal. Lo que se reenvía a FastAPI (/api/v1/*) no pasa por aquí: Next

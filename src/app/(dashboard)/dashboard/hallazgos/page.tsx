@@ -10,7 +10,7 @@ import { resultDomains } from "@/components/screens/shared/domainState";
 import { coverageIncomplete } from "@/lib/cobertura";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { canAccessSection, SECTIONS } from "@/config/permissions";
+import { can, canAccessSection, SECTIONS } from "@/config/permissions";
 import { getDomainFindings, getDomainScore, getDomains } from "@/services/queries";
 
 export const metadata: Metadata = { title: SECTIONS.hallazgos.label };
@@ -74,6 +74,7 @@ export default async function HallazgosPage({ searchParams }: Props) {
         initialRule={initialRule}
         partialCoverage={coverageIncomplete(score)}
         unscored={!score}
+        canAsk={can(user.role, "ask_assistant")}
       />
     </div>
   );

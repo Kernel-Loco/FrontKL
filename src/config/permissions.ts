@@ -109,12 +109,13 @@ export const ROLE_PERMISSIONS: Record<Role, readonly SectionId[]> = {
 };
 
 /** Acciones que no son de una sección completa. */
-export type Capability = "register_domain" | "verify_txt" | "request_scan" | "request_report";
+export type Capability = "register_domain" | "verify_txt" | "request_scan" | "request_report" | "ask_assistant";
 
+/** `ask_assistant` (RC-77): el asistente de IA de Hallazgos. La API lo da solo a Analista y Admin. */
 const CAPABILITIES: Record<Role, readonly Capability[]> = {
-  analista: ["request_scan", "request_report"],
+  analista: ["request_scan", "request_report", "ask_assistant"],
   gerente: ["request_report"],
-  admin: ["register_domain", "verify_txt", "request_scan", "request_report"],
+  admin: ["register_domain", "verify_txt", "request_scan", "request_report", "ask_assistant"],
 };
 
 export function canAccessSection(role: Role, id: SectionId): boolean {
