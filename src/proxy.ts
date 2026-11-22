@@ -4,9 +4,8 @@
 // También pone la CSP con nonce de cada página (RC-89, src/lib/csp.ts).
 import { NextResponse, type NextRequest } from "next/server";
 import { NONCE_HEADER, nuevoNonce, politicaDeContenido } from "@/lib/csp";
+import { proxyRedirect } from "@/lib/proxyRedirect";
 import { SESSION_COOKIE } from "@/lib/session/shared";
-
-const GUEST_ONLY = ["/login", "/signup"];
 
 /** Cache-Control de toda página (RC-89). */
 const CACHE_PAGINA = "private, no-cache, no-store, max-age=0, must-revalidate, no-transform";
@@ -15,25 +14,12 @@ const CACHE_PAGINA = "private, no-cache, no-store, max-age=0, must-revalidate, n
  * punto": /dashboard/dominios/olmardo.com es una página. */
 const ARCHIVO_PUBLICO = /\.(?:svg|png|jpe?g|gif|webp|avif|ico|txt|xml|webmanifest|json|pdf|woff2?)$/i;
 
-function matches(pathname: string, base: string) {
-  return pathname === base || pathname.startsWith(`${base}/`);
-}
-
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   // Solo mira si existe la cookie (httpOnly); la valida FastAPI en cada página (getServerSession).
   const hasSession = Boolean(request.cookies.get(SESSION_COOKIE)?.value);
-  const redirectTo = (path: string) => NextResponse.redirect(new URL(path, request.url));
-
-  if (pathname === "/") {
-    return redirectTo(hasSession ? "/dashboard" : "/login");
-  }
-  if (!hasSession && matches(pathname, "/dashboard")) {
-    return redirectTo("/login");
-  }
-  if (hasSession && GUEST_ONLY.some((base) => matches(pathname, base))) {
-    return redirectTo("/dashboard");
-  }
+  const destino = proxyRedirect(pathname, hasSession);
+  if (destino) return NextResponse.redirect(new URL(destino, request.url));
 
   // Next lee la CSP de la petición para poner el nonce en sus scripts; la respuesta lleva la misma.
   const nonce = nuevoNonce();

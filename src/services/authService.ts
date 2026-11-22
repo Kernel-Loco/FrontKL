@@ -5,6 +5,9 @@ import { apiClient, ApiError } from "@/lib/apiClient";
 import { toUser } from "@/lib/session/shared";
 import type {
   ApiUser,
+  LoginLinkRedeemRequest,
+  LoginLinkRequest,
+  LoginLinkRequestResponse,
   LoginRequest,
   LoginResponse,
   MfaEnableRequest,
@@ -33,6 +36,16 @@ import { ServiceError } from "./errors";
 
 export async function login(payload: LoginRequest): Promise<LoginResponse> {
   return apiClient.post<LoginResponse>("/auth/login", payload);
+}
+
+/** Pide el enlace para entrar por correo (#28, RC-63). La API responde igual exista o no la cuenta. */
+export async function requestLoginLink(payload: LoginLinkRequest): Promise<LoginLinkRequestResponse> {
+  return apiClient.post<LoginLinkRequestResponse>("/auth/link/request", payload);
+}
+
+/** Canjea el token del enlace por la sesión; con MFA devuelve el mfa_token, como el login. */
+export async function redeemLoginLink(payload: LoginLinkRedeemRequest): Promise<LoginResponse> {
+  return apiClient.post<LoginResponse>("/auth/link/verify", payload);
 }
 
 export async function verifyMfa(payload: MfaVerifyRequest): Promise<MfaVerifyResponse> {

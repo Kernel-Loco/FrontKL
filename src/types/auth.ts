@@ -102,6 +102,22 @@ export interface LoginRequest {
 /** Con MFA activo, el login pide el código; sin MFA, ya trae la sesión (cookie) y el usuario. */
 export type LoginResponse = { mfa_required: true; mfa_token: string } | { mfa_required: false; user: ApiUser };
 
+/** Pedir el enlace para entrar por correo (POST /auth/link/request, #28, RC-63). Lleva captcha, como el login. */
+export interface LoginLinkRequest {
+  email: string;
+  captcha: string;
+}
+
+/** Siempre 202 con el mismo texto, exista o no la cuenta (decisión 7 de RC-327). */
+export interface LoginLinkRequestResponse {
+  detail: string;
+}
+
+/** Canjear el token del enlace (POST /auth/link/verify): responde como el login. */
+export interface LoginLinkRedeemRequest {
+  token: string;
+}
+
 export interface MfaVerifyRequest {
   mfa_token: string;
   code: string;
