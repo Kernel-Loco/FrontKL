@@ -17,7 +17,7 @@ import { TextInput } from "@/components/TextInput";
 import { writeFlow } from "@/lib/flowStorage";
 import { ceremonyErrorMessage, isCeremonyAborted } from "@/lib/passkeys";
 import { loginSchema, type LoginValues } from "@/lib/validation";
-import { login, passkeyLoginOptions, passkeyLoginVerify } from "@/services/authService";
+import { login, passkeyLoginOptions, passkeyLoginVerify, requestLoginLink } from "@/services/authService";
 import { getErrorMessage } from "@/services/errors";
 
 const CAPTCHA_MISSING = "Marca 'No soy un robot' y espera a que diga Verificado.";
@@ -37,6 +37,9 @@ export function LoginForm() {
   // Cuenta los intentos que llegaron a la API: cada uno gasta su captcha y el widget resuelve otro.
   const [attempts, setAttempts] = useState(0);
   const [passkeyBusy, setPasskeyBusy] = useState(false);
+  // Enlace al correo (#28, RC-63): el texto de la API, igual para todos, y si el pedido está en curso.
+  const [linkNotice, setLinkNotice] = useState<string | null>(null);
+  const [linkBusy, setLinkBusy] = useState(false);
   // Frena un segundo clic antes de que React pinte el botón como ocupado.
   const buttonActive = useRef(false);
   // En el servidor no hay WebAuthn: el botón aparece solo en un navegador que lo admite, sin romper la hidratación.
@@ -45,6 +48,8 @@ export function LoginForm() {
     register,
     handleSubmit,
     resetField,
+    trigger,
+    getValues,
     formState: { errors, isSubmitting },
   } = useForm<LoginValues>({ resolver: zodResolver(loginSchema) });
 
@@ -74,6 +79,33 @@ export function LoginForm() {
     } finally {
       buttonActive.current = false;
       setPasskeyBusy(false);
+    }
+  };
+
+  /** Pide el enlace con el correo del formulario y el mismo captcha. La respuesta es la misma exista o no la cuenta,
+   * y dice que si no llega se entra con contraseña o passkey (decisión 7 de RC-327): se muestra tal cual. */
+  const onLink = async () => {
+    if (buttonActive.current) return;
+    setFormError(null);
+    setLinkNotice(null);
+    if (!(await trigger("email"))) return;
+    if (!captcha) {
+      setFormError(CAPTCHA_MISSING);
+      return;
+    }
+    buttonActive.current = true;
+    setLinkBusy(true);
+    try {
+      const { detail } = await requestLoginLink({ email: getValues("email"), captcha });
+      setLinkNotice(detail);
+    } catch (error) {
+      setFormError(getErrorMessage(error));
+    } finally {
+      // La API ya gastó este captcha: se resuelve otro para el siguiente intento.
+      setCaptcha(null);
+      setAttempts((n) => n + 1);
+      buttonActive.current = false;
+      setLinkBusy(false);
     }
   };
 
@@ -135,14 +167,19 @@ export function LoginForm() {
       />
       <Captcha renew={attempts} onChange={onCaptcha} />
       {formError && <Notice tone="error">{formError}</Notice>}
-      <Button type="submit" loading={busy && !passkeyBusy} disabled={passkeyBusy} className="!mt-6">
+      {linkNotice && <Notice>{linkNotice}</Notice>}
+      <Button type="submit" loading={busy && !passkeyBusy} disabled={passkeyBusy || linkBusy} className="!mt-6">
         Iniciar sesión
       </Button>
       {supportsPasskeys && (
-        <Button variant="secondary" onClick={onPasskey} loading={passkeyBusy} disabled={busy}>
+        <Button variant="secondary" onClick={onPasskey} loading={passkeyBusy} disabled={busy || linkBusy}>
           Entrar con passkey
         </Button>
       )}
+      {/* Junto a la contraseña, sin esconderla (decisión 7 de RC-327). */}
+      <Button variant="secondary" onClick={onLink} loading={linkBusy} disabled={busy || passkeyBusy}>
+        Entrar con un enlace al correo
+      </Button>
     </form>
   );
 }
