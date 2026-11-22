@@ -32,7 +32,9 @@ test("Syft saca el SBOM en SPDX y la corrida lo guarda", () => {
 test("subir, firmar y atestar solo en push y por digest", () => {
   const firma = paso("Subir a ghcr.io, firmar y atestar el SBOM");
   assert.ok(firma.includes("if: github.event_name == 'push'"));
-  assert.ok(firma.includes("RepoDigests"));
+  assert.ok(firma.includes('imagetools inspect "$IMAGEN:$GITHUB_SHA"'));
+  assert.ok(firma.includes('digest="$IMAGEN@$sha"'));
+  assert.ok(!firma.includes("RepoDigests"));
   assert.ok(firma.includes('cosign sign --yes "$digest"'));
   assert.ok(firma.includes("cosign attest --yes --type spdxjson"));
   for (const otro of pasos.filter((p) => !p.startsWith("name: Subir a ghcr.io"))) {
