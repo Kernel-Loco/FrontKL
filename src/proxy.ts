@@ -8,6 +8,9 @@ import { SESSION_COOKIE } from "@/lib/session/shared";
 
 const GUEST_ONLY = ["/login", "/signup"];
 
+/** Cache-Control de toda página (RC-89). */
+const CACHE_PAGINA = "private, no-cache, no-store, max-age=0, must-revalidate, no-transform";
+
 function matches(pathname: string, base: string) {
   return pathname === base || pathname.startsWith(`${base}/`);
 }
@@ -36,6 +39,12 @@ export function proxy(request: NextRequest) {
   requestHeaders.set("Content-Security-Policy", csp);
   const response = NextResponse.next({ request: { headers: requestHeaders } });
   response.headers.set("Content-Security-Policy", csp);
+  // no-transform: Cloudflare no toca la página (Email Address Obfuscation y el script de JavaScript detections no se
+  // inyectan, y ese script no llevaría el nonce). El resto es el Cache-Control que Next pone a una página dinámica.
+  // Costo aceptado (Ernesto, 22 nov): ni Next ni Cloudflare comprimen una respuesta con no-transform, así que el HTML
+  // de las páginas va sin gzip (/login, 22 KB en vez de 5 KB). Lo de _next/static no pasa por aquí y sí va comprimido.
+  // Las páginas de no encontrado se quedan sin no-transform: Next les pone su propio Cache-Control.
+  response.headers.set("Cache-Control", CACHE_PAGINA);
   return response;
 }
 
@@ -46,14 +55,13 @@ export const config = {
     "/dashboard/:path*",
     "/login/:path*",
     "/signup",
-    // Toda página, para la CSP. Fuera /api/v1/* (lo reenvía a FastAPI, que pone su CSP), los archivos de
-    // _next/static e _next/image, favicon.ico y las precargas, que no son documentos.
+    // Toda página, para la CSP. Fuera solo /api/v1/* (lo reenvía a FastAPI, que pone su CSP), los archivos de
+    // _next/static e _next/image y las precargas de next/link, que no son documentos. El resto de /api/ y
+    // /favicon.ico sí pasan: si no existen, Next responde su página de no encontrado, que también lleva scripts.
+    // Las precargas del navegador (Purpose: prefetch) también pasan: lo que bajan puede acabar en pantalla.
     {
-      source: "/((?!api/|_next/static|_next/image|favicon.ico).*)",
-      missing: [
-        { type: "header", key: "next-router-prefetch" },
-        { type: "header", key: "purpose", value: "prefetch" },
-      ],
+      source: "/((?!api/v1(?:/|$)|_next/static|_next/image).*)",
+      missing: [{ type: "header", key: "next-router-prefetch" }],
     },
   ],
 };

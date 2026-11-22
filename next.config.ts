@@ -9,12 +9,15 @@ const API_INTERNAL_URL = (process.env.API_INTERNAL_URL ?? "http://127.0.0.1:8000
 // HSTS va sin preload, igual que en la API (cirdan/api/main.py de BackKL): hstspreload.org acepta el dominio de quien
 // lo inscriba y salir de la lista tarda meses. Por http (npm run dev o start en local) el navegador lo ignora.
 // Permissions-Policy no apaga publickey-credentials-get: las passkeys lo usan.
+// Referrer-Policy same-origin: el Referer completo solo dentro del portal y nada hacia otros sitios. Con no-referrer
+// el navegador manda Origin: null en un POST de formulario normal y la API lo rechaza (same_origin_writes de
+// cirdan/api/main.py). La API sigue con no-referrer: solo responde JSON.
 const SECURITY_HEADERS = [
   { key: "X-Frame-Options", value: "DENY" },
   { key: "Content-Security-Policy", value: "frame-ancestors 'none'" },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" },
-  { key: "Referrer-Policy", value: "no-referrer" },
+  { key: "Referrer-Policy", value: "same-origin" },
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), usb=()" },
 ];
 

@@ -36,7 +36,8 @@ test("3. next.config.ts manda HSTS sin preload y las cabeceras de RC-283 en todo
   assert.equal(cabeceras["X-Frame-Options"], "DENY");
   assert.equal(cabeceras["X-Content-Type-Options"], "nosniff");
   assert.equal(cabeceras["Content-Security-Policy"], "frame-ancestors 'none'");
-  assert.equal(cabeceras["Referrer-Policy"], "no-referrer");
+  // same-origin y no no-referrer: con no-referrer un POST de formulario sale con Origin: null (hallazgo 9 de RC-89).
+  assert.equal(cabeceras["Referrer-Policy"], "same-origin");
   assert.doesNotMatch(cabeceras["Permissions-Policy"], /publickey-credentials/);
 });
 
@@ -44,7 +45,20 @@ test("4. proxy.ts pone la CSP en la petición y en la respuesta, y cubre toda p�
   const proxy = readFileSync(new URL("../proxy.ts", import.meta.url), "utf8");
   assert.match(proxy, /requestHeaders\.set\("Content-Security-Policy", csp\)/);
   assert.match(proxy, /response\.headers\.set\("Content-Security-Policy", csp\)/);
-  assert.match(proxy, /source: "\/\(\(\?!api\/\|_next\/static\|_next\/image\|favicon\.ico\)\.\*\)"/);
+  // El matcher de la CSP solo deja fuera /api/v1/* y los archivos de _next (lo demás de /api/ y /favicon.ico dan
+  // la página de no encontrado, con scripts).
+  const source = proxy.match(/source: "([^"]+)"/)[1];
+  const cubre = (ruta) => new RegExp(`^${source}$`).test(ruta);
+  for (const ruta of ["/dashboard", "/demo", "/api", "/api/", "/api/v2/x", "/api/v1x", "/favicon.ico", "/terminos"])
+    assert.ok(cubre(ruta), ruta);
+  for (const ruta of ["/api/v1", "/api/v1/", "/api/v1/auth/me", "/_next/static/chunks/a.js", "/_next/image"])
+    assert.ok(!cubre(ruta), ruta);
+  // Solo se saltan las precargas de next/link, no las del navegador (Purpose: prefetch).
+  assert.match(proxy, /missing: \[\{ type: "header", key: "next-router-prefetch" \}\]/);
+  assert.doesNotMatch(proxy, /key: "purpose"/);
+  // no-transform en cada página: Cloudflare no inyecta scripts sin nonce (hallazgo 4 de RC-89).
+  assert.match(proxy, /const CACHE_PAGINA = "private, no-cache, no-store, max-age=0, must-revalidate, no-transform";/);
+  assert.match(proxy, /response\.headers\.set\("Cache-Control", CACHE_PAGINA\)/);
   // Las rutas de sesión siguen en el matcher aunque sean precargas.
   for (const ruta of ['"/"', '"/dashboard/:path*"', '"/login/:path*"', '"/signup"']) assert.ok(proxy.includes(ruta), ruta);
 });
