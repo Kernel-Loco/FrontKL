@@ -18,7 +18,7 @@ export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   // Solo mira si existe la cookie (httpOnly); la valida FastAPI en cada página (getServerSession).
   const hasSession = Boolean(request.cookies.get(SESSION_COOKIE)?.value);
-  const destino = proxyRedirect(pathname, hasSession);
+  const destino = proxyRedirect(request.nextUrl.pathname, hasSession);
   if (destino) return NextResponse.redirect(new URL(destino, request.url));
 
   // Next lee la CSP de la petición para poner el nonce en sus scripts; la respuesta lleva la misma.
