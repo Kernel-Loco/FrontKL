@@ -9,18 +9,12 @@ import { CHECKBOX, Field, INPUT } from "@/components/ui/Field";
 import { InlineAlert } from "@/components/ui/InlineAlert";
 import { registerDomain } from "@/services/domainService";
 import { getErrorMessage } from "@/services/errors";
-import type { Category, Domain, TxtVerification } from "@/types";
+import { ANEXO_A, PLANTILLA_VIGENTE, actividadesMarcadas } from "@/lib/anexoA";
+import type { Domain, TxtVerification } from "@/types";
 
 const MAX_PDF_BYTES = 5 * 1024 * 1024;
 
-const SCOPES: { id: Category; label: string }[] = [
-  { id: "infrastructure", label: "Infraestructura: subdominios, certificados y servicios expuestos (CT, Shodan)" },
-  { id: "digital_identity", label: "Identidad digital: dominios parecidos (CT)" },
-  { id: "configuration", label: "Configuración: registros DNS y de seguridad del correo (DNS, WHOIS)" },
-  { id: "data_leaks", label: "Fugas de datos: correos corporativos en brechas (HIBP)" },
-];
-
-type Errors = Partial<Record<"fqdn" | "signer_name" | "signer_title" | "signer_email" | "letter" | "valid_from" | "valid_until" | "confirm", string>>;
+type Errors = Partial<Record<"fqdn" | "signer_name" | "signer_title" | "signer_email" | "letter" | "valid_from" | "valid_until" | "activities" | "confirm", string>>;
 
 export function RegisterDomainForm({ onRegistered }: { onRegistered: (domain: Domain, txt: TxtVerification) => void }) {
   const formRef = useRef<HTMLFormElement>(null);
@@ -39,6 +33,7 @@ export function RegisterDomainForm({ onRegistered }: { onRegistered: (domain: Do
     const signer_email = value("signer_email");
     const valid_from = value("valid_from");
     const valid_until = value("valid_until");
+    const activities = actividadesMarcadas(data.getAll("activities"));
 
     const next: Errors = {};
     if (!fqdn) next.fqdn = "Escribe el dominio.";
@@ -51,6 +46,7 @@ export function RegisterDomainForm({ onRegistered }: { onRegistered: (domain: Do
     if (!valid_from) next.valid_from = "Elige la fecha de inicio.";
     if (!valid_until) next.valid_until = "Elige la fecha de fin.";
     else if (valid_from && valid_until <= valid_from) next.valid_until = "Debe ser posterior al inicio.";
+    if (activities.length === 0) next.activities = "Marca al menos una actividad que autoriza la carta.";
     if (data.get("confirm") !== "on") next.confirm = "Confirma que la organización autorizó el monitoreo pasivo.";
     setErrors(next);
     setResult(null);
@@ -59,7 +55,17 @@ export function RegisterDomainForm({ onRegistered }: { onRegistered: (domain: Do
     setBusy(true);
     try {
       const { domain, txt } = await registerDomain(
-        { fqdn, signer_name, signer_title, signer_email, valid_from, valid_until, passive_monitoring_confirmed: true },
+        {
+          fqdn,
+          signer_name,
+          signer_title,
+          signer_email,
+          valid_from,
+          valid_until,
+          passive_monitoring_confirmed: true,
+          template_version: PLANTILLA_VIGENTE,
+          activities,
+        },
         letter,
       );
       onRegistered(domain, txt);
@@ -78,7 +84,7 @@ export function RegisterDomainForm({ onRegistered }: { onRegistered: (domain: Do
   return (
     <Card
       title="Registrar dominio"
-      description="Revisa el alcance completo de monitoreo autorizado."
+      description="Marca las actividades del Anexo A que autoriza la carta firmada."
       icon={<Globe aria-hidden="true" className="h-4 w-4" />}
       action={
         <Badge tone="indigo">
@@ -132,18 +138,31 @@ export function RegisterDomainForm({ onRegistered }: { onRegistered: (domain: Do
             <input id="valid_until" name="valid_until" type="date" className={INPUT} {...err("valid_until")} />
           </Field>
         </div>
-        <div>
-          <p className="mb-2 text-xs font-medium text-lt-muted">Alcance completo autorizado</p>
+        <fieldset aria-describedby={errors.activities ? "activities-error" : undefined}>
+          <legend className="mb-2 text-xs font-medium text-lt-muted">Actividades que autoriza la carta (Anexo A)</legend>
           <ul className="space-y-2">
-            {SCOPES.map((s) => (
-              <li key={s.id} className="text-[13px] text-lt-text">{s.label}</li>
+            {ANEXO_A.map((a) => (
+              <li key={a.id}>
+                <label className="flex items-start gap-2.5 text-[13px] text-lt-text">
+                  <input type="checkbox" name="activities" value={a.id} defaultChecked className={`${CHECKBOX} mt-0.5`} />
+                  <span>
+                    {a.id}. {a.label}
+                  </span>
+                </label>
+              </li>
             ))}
           </ul>
-        </div>
+          <p className="mt-2 text-xs text-lt-faint">Desmarca las que la carta firmada no autoriza. Esas fuentes no corren en los análisis.</p>
+          {errors.activities && (
+            <p id="activities-error" className="mt-1.5 text-xs font-medium text-lt-red">
+              {errors.activities}
+            </p>
+          )}
+        </fieldset>
         <div className="rounded-lg border border-lt-border bg-lt-raised/60 p-3.5">
           <label className="flex items-start gap-2.5 text-[13px] text-lt-muted">
             <input type="checkbox" name="confirm" className={`${CHECKBOX} mt-0.5`} {...err("confirm")} />
-            Confirmo que la carta está firmada, que autoriza el dominio y su alcance completo, y que tengo permiso para registrarlo para mi organización.
+            Confirmo que la carta está firmada, que autoriza el dominio y las actividades marcadas, y que tengo permiso para registrarlo para mi organización.
           </label>
           {errors.confirm && (
             <p id="confirm-error" className="mt-1.5 text-xs font-medium text-lt-red">

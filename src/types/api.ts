@@ -60,6 +60,9 @@ export interface Domain {
     valid_until: string | null;
     /** Propuesto: correo de quien firmó la autorización. */
     signer_email: string | null;
+    /** Versión de la plantilla y actividades del Anexo A de la carta (RC-59). Opcionales en los datos de ejemplo. */
+    template_version?: number | null;
+    activities?: number[] | null;
   };
   txt: { status: TxtStatus; checked_at: string | null };
   /** `can_scan` solo con autorización vigente, TXT verificado y dominio verificado. */
@@ -624,6 +627,10 @@ export interface DomainRegistrationRequest {
   valid_until: string;
   /** Confirmación de que la organización autorizó el monitoreo pasivo. */
   passive_monitoring_confirmed: true;
+  /** Versión de la plantilla de la carta. Hoy solo existe la 1. */
+  template_version: 1;
+  /** Actividades del Anexo A que autoriza la carta (1 a 11). */
+  activities: number[];
 }
 
 /** `GET /api/v1/domains/txt` (solo Admin): el registro que cada dominio debe publicar. */
