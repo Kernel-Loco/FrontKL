@@ -58,6 +58,12 @@ test("4. proxy.ts pone la CSP en la petición y en la respuesta, y cubre toda p�
   assert.doesNotMatch(proxy, /key: "purpose"/);
   // no-transform en cada página: Cloudflare no inyecta scripts sin nonce (hallazgo 4 de RC-89).
   assert.match(proxy, /const CACHE_PAGINA = "private, no-cache, no-store, max-age=0, must-revalidate, no-transform";/);
+  // Los archivos de public/ se quedan con el Cache-Control de Next. Una página con punto (un dominio) no.
+  const archivo = new RegExp(proxy.match(/const ARCHIVO_PUBLICO = \/(.+)\/i;/)[1], "i");
+  for (const ruta of ["/lowtide-mark.svg", "/seguridad/arquitectura.png", "/favicon.ico"]) assert.ok(archivo.test(ruta), ruta);
+  for (const ruta of ["/dashboard/dominios/olmardo.com", "/dashboard/dominios/acme-demo.mx", "/terminos"])
+    assert.ok(!archivo.test(ruta), ruta);
+  assert.match(proxy, /if \(!ARCHIVO_PUBLICO\.test\(pathname\)\) response\.headers\.set\("Cache-Control", CACHE_PAGINA\)/);
   assert.match(proxy, /response\.headers\.set\("Cache-Control", CACHE_PAGINA\)/);
   // Las rutas de sesión siguen en el matcher aunque sean precargas.
   for (const ruta of ['"/"', '"/dashboard/:path*"', '"/login/:path*"', '"/signup"']) assert.ok(proxy.includes(ruta), ruta);

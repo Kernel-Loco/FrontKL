@@ -5,7 +5,7 @@ const API_INTERNAL_URL = (process.env.API_INTERNAL_URL ?? "http://127.0.0.1:8000
 
 // Ningún sitio mete el portal en un marco (protege la pantalla de login) y el navegador no adivina el tipo de
 // una respuesta (RC-283). Esta CSP de un solo punto queda para lo que no pasa por src/proxy.ts (archivos de
-// _next/static, favicon). Las páginas llevan además la CSP completa con nonce de proxy.ts (RC-89).
+// _next/static y _next/image). Las páginas llevan además la CSP completa con nonce de proxy.ts (RC-89).
 // HSTS va sin preload, igual que en la API (cirdan/api/main.py de BackKL): hstspreload.org acepta el dominio de quien
 // lo inscriba y salir de la lista tarda meses. Por http (npm run dev o start en local) el navegador lo ignora.
 // Permissions-Policy no apaga publickey-credentials-get: las passkeys lo usan.

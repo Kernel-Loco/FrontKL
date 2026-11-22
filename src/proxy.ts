@@ -11,6 +11,10 @@ const GUEST_ONLY = ["/login", "/signup"];
 /** Cache-Control de toda página (RC-89). */
 const CACHE_PAGINA = "private, no-cache, no-store, max-age=0, must-revalidate, no-transform";
 
+/** Archivos de public/ (imágenes, íconos): se quedan con el Cache-Control de Next y comprimidos. No basta con "trae
+ * punto": /dashboard/dominios/olmardo.com es una página. */
+const ARCHIVO_PUBLICO = /\.(?:svg|png|jpe?g|gif|webp|avif|ico|txt|xml|webmanifest|json|pdf|woff2?)$/i;
+
 function matches(pathname: string, base: string) {
   return pathname === base || pathname.startsWith(`${base}/`);
 }
@@ -44,7 +48,7 @@ export function proxy(request: NextRequest) {
   // Costo aceptado (Ernesto, 22 nov): ni Next ni Cloudflare comprimen una respuesta con no-transform, así que el HTML
   // de las páginas va sin gzip (/login, 22 KB en vez de 5 KB). Lo de _next/static no pasa por aquí y sí va comprimido.
   // Las páginas de no encontrado se quedan sin no-transform: Next les pone su propio Cache-Control.
-  response.headers.set("Cache-Control", CACHE_PAGINA);
+  if (!ARCHIVO_PUBLICO.test(pathname)) response.headers.set("Cache-Control", CACHE_PAGINA);
   return response;
 }
 
