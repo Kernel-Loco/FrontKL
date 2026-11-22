@@ -60,7 +60,12 @@ test("3. /privacidad y /terminos se abren sin sesión: el proxy las deja pasar",
     const respuesta = pedir(ruta);
     assert.equal(respuesta.headers.get("x-middleware-next"), "1", `${ruta} no pasa sin sesión`);
     assert.equal(respuesta.headers.get("location"), null, `${ruta} redirige sin sesión`);
-    for (const patron of config.matcher) assert.ok(!patron.startsWith(ruta), `el proxy intercepta ${ruta}`);
+    // Desde RC-89 el proxy pasa por toda página para ponerle la CSP (la regla con source), pero ninguna ruta de
+    // sesión es de las legales: arriba se ve que pasan sin redirigir.
+    for (const patron of config.matcher.filter((p) => typeof p === "string")) {
+      assert.ok(!patron.startsWith(ruta), `el proxy intercepta ${ruta}`);
+    }
+    assert.match(respuesta.headers.get("content-security-policy") ?? "", /frame-ancestors 'none'/);
   }
   // Control: el panel sí manda al login sin sesión, así que la prueba de arriba distingue.
   assert.match(pedir("/dashboard").headers.get("location") ?? "", /\/login$/);
