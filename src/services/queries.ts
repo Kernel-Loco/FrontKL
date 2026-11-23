@@ -14,6 +14,7 @@ import type {
   Scan,
   ScoreHistory,
   ScoringWeights,
+  SignatureRequestList,
   TxtVerification,
 } from "@/types";
 
@@ -39,6 +40,9 @@ export const getAssets = (query: string) => apiGet<OrganizationAssets>(query ? `
 
 /** Solo Admin. */
 export const getTxtVerifications = () => apiGet<ListResponse<TxtVerification>>("/domains/txt");
+
+/** Cartas mandadas a firmar con Mifiel y el modo de la API (RC-211, solo Admin). */
+export const getSignatureRequests = () => apiGet<SignatureRequestList>("/signature-requests");
 
 export const getScoringWeights = () => apiGet<ScoringWeights>("/scoring/weights");
 

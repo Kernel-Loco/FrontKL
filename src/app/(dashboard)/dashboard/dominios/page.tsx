@@ -7,7 +7,7 @@ import { RegisteredDomainsTable } from "@/components/screens/dominios/Registered
 import { Card } from "@/components/ui/Card";
 import { can, canAccessSection, SECTIONS } from "@/config/permissions";
 import { cantidad } from "@/lib/format";
-import { getDomains, getTxtVerifications } from "@/services/queries";
+import { getDomains, getSignatureRequests, getTxtVerifications } from "@/services/queries";
 
 export const metadata: Metadata = { title: SECTIONS.dominios.label };
 
@@ -22,7 +22,13 @@ export default async function DominiosPage() {
     <div className="space-y-8">
       <PageHeader title={SECTIONS.dominios.label} description="Solo se escanean y reportan dominios con autorización vigente." />
       {isAdmin ? (
-        <DomainsAdmin domains={domains} txt={(await getTxtVerifications()).items} />
+        <DomainsAdmin
+          domains={domains}
+          txt={(await getTxtVerifications()).items}
+          // Sin la lista (API sin RC-211, o 403 al Admin de plataforma en otra empresa, porque la firma la hace un Admin de
+          // la propia empresa) la página sigue con la carta subida a mano.
+          signatures={await getSignatureRequests().catch(() => ({ items: [], total: 0, mode: "off" as const }))}
+        />
       ) : (
         <Card
           title="Dominios registrados"

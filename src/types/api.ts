@@ -617,6 +617,47 @@ export interface OrgSettings {
 
 export type ScopeCategory = Category;
 
+/** Estado de una carta mandada a firmar con Mifiel (RC-211, tabla signature_requests). */
+export type SignatureRequestStatus =
+  | "creating"
+  | "sent"
+  | "signed"
+  | "accepted"
+  | "rejected"
+  | "cancelled"
+  | "expired"
+  | "failed";
+
+/** `GET /api/v1/signature-requests` y la respuesta de enviar, consultar, cancelar y confirmar (solo Admin). */
+export interface SignatureRequest {
+  id: string;
+  fqdn: string;
+  provider: "mifiel";
+  environment: "sandbox" | "production";
+  status: SignatureRequestStatus;
+  /** Nombre, cargo y correo de quien firma: null fuera de creating, sent o signed o con la carta vencida (RC-274). */
+  signer_name: string | null;
+  signer_title: string | null;
+  signer_email: string | null;
+  valid_from: string;
+  valid_until: string;
+  template_version: number;
+  activities: number[];
+  signed_at: string | null;
+  last_checked_at: string | null;
+  last_error: string | null;
+  created_at: string;
+  updated_at: string;
+  decided_at: string | null;
+}
+
+export interface SignatureRequestList {
+  items: SignatureRequest[];
+  total: number;
+  /** Modo de la API: off (solo se puede subir lo firmado en la web de Mifiel), sandbox o production. */
+  mode: "off" | "sandbox" | "production";
+}
+
 /** `POST /api/v1/domains` (solo Admin). La carta se añade en el servicio. */
 export interface DomainRegistrationRequest {
   fqdn: string;
