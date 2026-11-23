@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: "Recuperar contraseña" };
 export default function ForgotPasswordPage() {
   return (
     <div className="space-y-6">
-      <AuthTitle eyebrow="Recuperar acceso" description="Ingresa el correo de tu cuenta y te enviaremos un código de verificación.">
+      <AuthTitle eyebrow="Recuperar acceso" description="Ingresa el correo de tu cuenta y te enviaremos un enlace para elegir una contraseña nueva.">
         Recuperar contraseña
       </AuthTitle>
       <ForgotPasswordForm />

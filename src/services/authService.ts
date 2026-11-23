@@ -26,9 +26,9 @@ import type {
   PasswordChangeRequest,
   PasswordChangeResponse,
   PasswordResetConfirmRequest,
+  PasswordResetConfirmResponse,
   PasswordResetRequest,
-  PasswordResetVerifyRequest,
-  PasswordResetVerifyResponse,
+  PasswordResetRequestResponse,
   RegisterRequest,
   User,
 } from "@/types";
@@ -112,10 +112,19 @@ export async function changePassword(payload: PasswordChangeRequest): Promise<Pa
   return apiClient.post<PasswordChangeResponse>("/auth/password", payload);
 }
 
-// --- Aún sin backend: las cuentas las crea un Administrador y la recuperación por correo llega después.
+/** Pide el enlace para recuperar la contraseña (RC-335). La respuesta es la misma exista o no la cuenta. */
+export async function requestPasswordReset(payload: PasswordResetRequest): Promise<PasswordResetRequestResponse> {
+  return apiClient.post<PasswordResetRequestResponse>("/auth/password-reset", payload);
+}
+
+/** Canjea el token del enlace por la contraseña nueva. La API gasta el token antes de revisar la contraseña. */
+export async function resetPassword(payload: PasswordResetConfirmRequest): Promise<PasswordResetConfirmResponse> {
+  return apiClient.post<PasswordResetConfirmResponse>("/auth/password-reset/confirm", payload);
+}
+
+// --- Aún sin backend: las cuentas las crea un Administrador.
 
 const NO_SIGNUP = "El registro abierto no está disponible: un Administrador te invita desde «Usuarios y roles».";
-const NO_RESET = "La recuperación por correo todavía no está disponible. Pide a un Administrador que restablezca tu contraseña.";
 
 export async function register(payload: RegisterRequest): Promise<User> {
   // TODO: invitaciones de usuarios (POST /users/invitations) en lugar de registro abierto.
@@ -123,18 +132,3 @@ export async function register(payload: RegisterRequest): Promise<User> {
   throw new ServiceError("signup_disabled", NO_SIGNUP);
 }
 
-export async function requestPasswordReset(payload: PasswordResetRequest): Promise<void> {
-  // TODO: conectar con backend → POST /auth/password-reset (responde igual exista o no el correo).
-  void payload;
-  throw new ServiceError("reset_disabled", NO_RESET);
-}
-
-export async function verifyResetCode(payload: PasswordResetVerifyRequest): Promise<PasswordResetVerifyResponse> {
-  void payload;
-  throw new ServiceError("reset_disabled", NO_RESET);
-}
-
-export async function resetPassword(payload: PasswordResetConfirmRequest): Promise<void> {
-  void payload;
-  throw new ServiceError("reset_disabled", NO_RESET);
-}
