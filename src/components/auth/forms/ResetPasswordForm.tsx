@@ -17,16 +17,24 @@ import { getErrorMessage } from "@/services/errors";
 
 const NO_TOKEN = "El enlace no es válido o ya venció. Pide otro desde «¿Olvidaste tu contraseña?».";
 
-const noSubscribe = () => () => {};
 let captured: string | null | undefined;
 
+/** Pegar otro enlace en la misma pestaña solo cambia el #, sin cargar la página: se escucha hashchange para tomarlo. */
+function subscribeHash(onChange: () => void) {
+  window.addEventListener("hashchange", onChange);
+  return () => window.removeEventListener("hashchange", onChange);
+}
+
 /** El token del enlace (PORTAL_URL/forgot-password/reset#t=<token>, RC-335) va después de #, así que el navegador no
- * lo manda al servidor del portal ni en el Referer. Se lee una vez y se quita de la barra de direcciones y del
- * historial, para que no quede a la vista ni se comparta al copiar la URL. */
+ * lo manda al servidor del portal ni en el Referer. Cada vez que llega un # se lee y se quita de la barra de direcciones
+ * y del historial, para que no quede a la vista ni se comparta al copiar la URL. Un # sin token no borra el que ya se
+ * tomó. */
 function readResetToken(): string | null {
-  if (captured === undefined) {
-    captured = tokenFromHash(window.location.hash);
-    if (window.location.hash) window.history.replaceState(null, "", window.location.pathname);
+  const hash = window.location.hash;
+  if (captured === undefined || hash) {
+    const fresh = tokenFromHash(hash);
+    if (captured === undefined || fresh !== null) captured = fresh;
+    if (hash) window.history.replaceState(null, "", window.location.pathname);
   }
   return captured;
 }
@@ -42,11 +50,10 @@ function forgetResetToken() {
 export function ResetPasswordForm() {
   const router = useRouter();
   // undefined en el servidor (todavía no se sabe), null sin token válido.
-  const linkToken = useSyncExternalStore(noSubscribe, readResetToken, () => undefined);
-  const [spent, setSpent] = useState(false);
+  // Tras un envío el token ya se olvidó (forgetResetToken), así que vale null hasta que llegue otro enlace.
+  const token = useSyncExternalStore(subscribeHash, readResetToken, () => undefined);
   const [formError, setFormError] = useState<string | null>(null);
   const [navigating, setNavigating] = useState(false);
-  const token = spent ? null : linkToken;
   const {
     register,
     control,
@@ -64,13 +71,12 @@ export function ResetPasswordForm() {
       setNavigating(true);
       router.replace(passkeys_removed > 0 ? "/login?notice=reset_passkeys" : "/login?notice=reset");
     } catch (error) {
-      setSpent(true);
       setFormError(getErrorMessage(error));
     }
   };
 
   // Tras guardar, el token ya no existe: el spinner evita mostrar «enlace no válido» mientras se va al login.
-  if (linkToken === undefined || navigating) {
+  if (token === undefined || navigating) {
     return (
       <div className="flex justify-center py-8" role="status" aria-label="Cargando">
         <Spinner className="h-6 w-6" />
@@ -112,7 +118,7 @@ export function ResetPasswordForm() {
         error={errors.confirmPassword?.message}
         {...register("confirmPassword")}
       />
-      {formError && <Notice tone="error">{formError}</Notice>}
+      {/* Un error de envío lleva a la vista sin token: el de un enlace anterior no se muestra sobre el nuevo. */}
       <Button type="submit" loading={isSubmitting || navigating} className="mt-2">
         Guardar contraseña
       </Button>

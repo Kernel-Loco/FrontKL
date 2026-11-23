@@ -34,13 +34,18 @@ test("2. pedir el enlace lleva captcha y muestra el texto de la API tal cual", (
 
 test("3. el token sale del fragmento, se quita de la barra y del historial y solo se gasta al guardar", () => {
   const form = leer("../components/auth/forms/ResetPasswordForm.tsx");
-  assert.match(form, /tokenFromHash\(window\.location\.hash\)/);
+  assert.match(form, /const hash = window\.location\.hash;/);
+  assert.match(form, /tokenFromHash\(hash\)/);
   assert.match(form, /history\.replaceState\(null, "", window\.location\.pathname\)/);
   assert.ok(!form.includes("useEffect"), "abrir la página no debe gastar el token: el revisor de enlaces la abre");
   assert.equal(form.match(/resetPassword\(/g).length, 1);
   assert.ok(form.indexOf("resetPassword({ token, new_password: password })") > form.indexOf("const onSubmit"));
   assert.ok(!/sessionStorage|localStorage|writeFlow/.test(form), "el token no se guarda en ningún lado");
-  assert.match(form, /setSpent\(true\)/, "tras un rechazo no se reintenta con el mismo token");
+  assert.ok(form.indexOf("forgetResetToken();") > form.indexOf("const onSubmit") &&
+    form.indexOf("forgetResetToken();") < form.indexOf("await resetPassword"), "tras un rechazo no se reintenta con el mismo token");
+  assert.match(form, /addEventListener\("hashchange", onChange\)/, "otro enlace pegado en la misma pestaña se toma");
+  assert.match(form, /removeEventListener\("hashchange", onChange\)/);
+  assert.match(form, /useSyncExternalStore\(subscribeHash, readResetToken/);
   assert.match(form, /href="\/forgot-password"/, "ofrece pedir otro enlace");
 });
 
