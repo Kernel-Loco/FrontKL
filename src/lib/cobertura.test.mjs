@@ -39,6 +39,47 @@ test("los códigos sin cobertura se agrupan por motivo y por fuente, en orden fi
   assert.deepEqual(coverageGroups([]), []);
 });
 
+test("con cualquier otro motivo HIBP también dice 'Sin cobertura de HIBP', con el motivo después (RC-54)", () => {
+  const gaps = [
+    { code: "breach_exposure", source: "hibp", reason: "source_partial" },     // 403 sin correos de GitHub
+    { code: "dmarc_missing", source: "dns", reason: "source_partial" },
+    { code: "breach_exposure_old", source: "hibp", reason: "source_failed" },  // HIBP caído
+    { code: "breach_exposure_no_passwords", source: "hibp", reason: "source_not_run" },
+    { code: "breach_exposure", source: "hibp", reason: "partially_checked" },  // por correo: parcial con hallazgos
+  ];
+  assert.deepEqual(coverageLines(gaps), [
+    "Sin cobertura de HIBP: no respondió la fuente: Have I Been Pwned (breach_exposure_old)",
+    "Sin cobertura de HIBP: no corrió en este escaneo (fuente apagada): Have I Been Pwned (breach_exposure_no_passwords)",
+    "Sin cobertura de HIBP: la fuente respondió pero no pudo revisarlas: Have I Been Pwned (breach_exposure)",
+    "La fuente respondió pero no pudo revisarlas: DNS (dmarc_missing)",
+    "Revisadas solo en una parte de lo de la fuente: Have I Been Pwned (breach_exposure)",
+  ]);
+  for (const line of coverageLines(gaps.slice(0, 4)).filter((l) => l.includes("Have I Been Pwned"))) {
+    assert.match(line, /^Sin cobertura de HIBP/);
+  }
+});
+
+test("sin llave, HIBP dice 'Sin cobertura de HIBP' en su propio grupo, aparte de Shodan (RC-54)", () => {
+  const gaps = [
+    { code: "breach_exposure", source: "hibp", reason: "no_api_key" },
+    { code: "exposed_iot_device", source: "shodan", reason: "no_api_key" },
+    { code: "breach_exposure_old", source: "hibp", reason: "no_api_key" },
+    { code: "x_llave", source: "fuente_nueva", reason: "no_api_key" },
+    { code: "y_llave", source: "constructor", reason: "no_api_key" },
+  ];
+  assert.deepEqual(coverageLines(gaps), [
+    "Sin cobertura de HIBP: Have I Been Pwned (breach_exposure, breach_exposure_old)",
+    "Sin llave de la API de host de Shodan: Shodan (exposed_iot_device)",
+    "Sin llave de la fuente: fuente_nueva (x_llave); constructor (y_llave)",
+  ]);
+  const groups = coverageGroups(gaps);
+  assert.deepEqual(groups.map((g) => g.reason), ["no_api_key", "no_api_key", "no_api_key"]);
+  // Las claves de la lista (motivo y texto) no se repiten aunque no_api_key salga varias veces.
+  assert.equal(new Set(groups.map((g) => `${g.reason}:${g.label}`)).size, groups.length);
+  assert.ok(coverageIncomplete({ partial_coverage: false, coverage_gaps: gaps.slice(0, 1) }));
+  assert.doesNotMatch(coverageLines(gaps.slice(0, 1))[0], /0/);
+});
+
 test("un motivo que el portal no conoce va en 'Otro motivo', no se descarta", () => {
   const groups = coverageGroups([
     { code: "spf_missing", source: "dns", reason: "motivo_nuevo" },

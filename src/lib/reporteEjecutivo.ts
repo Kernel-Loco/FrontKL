@@ -142,7 +142,8 @@ export function buildExecutivePdf(r: ExecutiveReport, labels: ReportLabels): jsP
   if (r.findings_omitted > 0) {
     notes.push(`Y ${r.findings_omitted} hallazgos abiertos más, de menor severidad. La lista completa está en la exportación de hallazgos del portal.`);
   }
-  for (const a of r.attributions) notes.push(`${a.text} Licencia: ${a.license_url}.`);
+  // «Fuente: Have I Been Pwned» con su enlace, como el reporte HTML de BackKL (RC-54)
+  for (const a of r.attributions) notes.push(`Fuente: ${a.name} (${a.url}). ${a.text} Licencia: ${a.license_url}.`);
   notes.push("LowTide - Confidencial. Solo observación pasiva de fuentes públicas, con autorización firmada del dominio.");
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7.5);

@@ -5,6 +5,8 @@ import { SeverityBadge } from "@/components/ui/Badge";
 import { InlineAlert } from "@/components/ui/InlineAlert";
 import { Spinner } from "@/components/Spinner";
 import { EXPOSICION_LABELS, scoreMethodText, SENSIBILIDAD_LABELS, SEVERITY_LABELS } from "@/config/labels";
+import { SourceAttribution } from "@/components/screens/shared/SourceAttribution";
+import { atribucionDe } from "@/lib/atribucion";
 import { cveFacts } from "@/lib/cobertura";
 import { marcosDelHallazgo, MARCOS_ATRIBUCION } from "@/lib/marcos";
 import { getFindingExplanation } from "@/services/domainService";
@@ -45,6 +47,7 @@ function factorsOf(explanation: FindingExplanation): Factor[] {
 /** Panel «¿Por qué tiene severidad …?» del hallazgo elegido: qué significa, cómo se calculó, factores y CVE (RC-229). */
 export function ExplanationPanel({ finding }: { finding: DomainFinding }) {
   const [state, setState] = useState<{ id: string; data?: FindingExplanation; error?: string } | null>(null);
+  const atribucion = atribucionDe(finding.source);
 
   useEffect(() => {
     let cancelled = false;
@@ -243,6 +246,7 @@ export function ExplanationPanel({ finding }: { finding: DomainFinding }) {
           </dl>
         </details>
       )}
+      {atribucion && <SourceAttribution atribucion={atribucion} className="mt-4" />}
       <p className="mt-4 text-[11px] leading-relaxed text-lt-faint">
         Solo observación: se reporta la exposición; nunca se usan las credenciales filtradas ni se accede a los sistemas.
       </p>

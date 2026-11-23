@@ -66,6 +66,7 @@ test("1. 8 hallazgos de texto largo caben en 1 a 2 páginas", () => {
 test("2. trae la atribución de Have I Been Pwned, el 'Y N más' y los datos del JSON", () => {
   const t = texto(buildExecutivePdf(reporte(8), LABELS));
   assert.match(t, /Have I Been Pwned/);
+  assert.match(t, /Fuente: Have I Been Pwned \(https:\/\/haveibeenpwned\.com\)/);   // RC-54
   assert.match(t, /creativecommons\.org\/licenses\/by\/4\.0/);
   assert.match(t, /Y 32 hallazgos abiertos/);
   assert.match(t, /acme-demo\.mx/);

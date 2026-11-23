@@ -15,7 +15,7 @@ export function CoverageGapsList({ gaps }: { gaps: CoverageGap[] | undefined }) 
       <p className="mt-2">Reglas sin revisar en el último escaneo:</p>
       <ul className="mt-1 space-y-1">
         {groups.map((group) => (
-          <li key={group.reason}>
+          <li key={`${group.reason}:${group.label}`}>
             <span className="font-semibold">{group.label}:</span>{" "}
             {group.sources.map((s, index) => (
               <span key={`${s.source ?? "sin-fuente"}-${s.name}`}>
