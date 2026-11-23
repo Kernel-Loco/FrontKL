@@ -183,8 +183,9 @@ export interface Kri {
 
 /**
  * Por qué el escaneo del score no revisó un código (RC-229). source_failed: la fuente no respondió. source_not_run: no
- * corrió en ese escaneo (apagada o aún no existía). no_api_key: Shodan sin la API de host. source_partial: la fuente
- * respondió pero no pudo revisarlo. partially_checked: la fuente revisó solo una parte de lo suyo (sources_partial).
+ * corrió en ese escaneo (apagada o aún no existía). no_api_key: Shodan sin la API de host o HIBP sin la llave de la
+ * plataforma (RC-54). source_partial: la fuente respondió pero no pudo revisarlo. partially_checked: la fuente revisó
+ * solo una parte de lo suyo (sources_partial).
  */
 export type CoverageGapReason = "source_failed" | "source_not_run" | "no_api_key" | "source_partial" | "partially_checked";
 

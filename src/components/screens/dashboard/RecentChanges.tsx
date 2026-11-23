@@ -1,6 +1,8 @@
 import { Card } from "@/components/ui/Card";
+import { SourceAttribution } from "@/components/screens/shared/SourceAttribution";
 import { CATEGORY_LABELS } from "@/config/labels";
 import { newAssetsText, type NewAssetCounts } from "@/lib/activosNuevos";
+import { atribucionesDe } from "@/lib/atribucion";
 import { formatDateTime } from "@/lib/format";
 import type { DomainFinding, ScanStatus } from "@/types";
 
@@ -80,6 +82,9 @@ export function RecentChanges({ summaries, changes, more }: { summaries: ScanSum
               ))}
               {more > 0 && <li className="pt-3 text-xs text-lt-muted">y {more} más</li>}
             </ul>
+            {atribucionesDe(changes.map((c) => c.finding)).map((a) => (
+              <SourceAttribution key={a.url} atribucion={a} className="pt-2" />
+            ))}
           </div>
         )}
       </div>

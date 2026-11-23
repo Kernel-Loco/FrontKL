@@ -9,10 +9,39 @@ export const NO_FINDINGS_PARTIAL = "Sin hallazgos en las fuentes que respondiero
 export const COVERAGE_GAP_REASON_LABELS: Record<CoverageGapReason, string> = {
   source_failed: "No respondió la fuente",
   source_not_run: "No corrió en este escaneo (fuente apagada)",
-  no_api_key: "Sin llave de la API de host de Shodan",
+  no_api_key: "Sin llave de la fuente",
   source_partial: "La fuente respondió pero no pudo revisarlas",
   partially_checked: "Revisadas solo en una parte de lo de la fuente",
 };
+
+/**
+ * Con no_api_key cada fuente va en su propio grupo con su texto (RC-54): sin la API de host Shodan no revisa algunos
+ * códigos y sin la llave de la plataforma HIBP no revisa ninguno, y el portal dice «Sin cobertura de HIBP», nunca 0.
+ * Una fuente que no está aquí usa el texto general de COVERAGE_GAP_REASON_LABELS.
+ */
+export const NO_API_KEY_LABELS: Record<string, string> = {
+  shodan: "Sin llave de la API de host de Shodan",
+  hibp: "Sin cobertura de HIBP",
+};
+
+/**
+ * Fuentes con su propio texto con los demás motivos (RC-54): si HIBP no respondió, no tuvo correos que consultar o
+ * no hay grabación, el portal también dice «Sin cobertura de HIBP», con el motivo después, y nunca 0. partially_checked
+ * no entra: la búsqueda por correo siempre es parcial y trae hallazgos (ownLabel).
+ */
+export const SOURCE_GAP_LABELS: Record<string, string> = {
+  hibp: "Sin cobertura de HIBP",
+};
+
+/** El texto propio del grupo de una fuente con un motivo, o null si va en el grupo general del motivo. */
+function ownLabel(reason: CoverageGapReason, source: string | null): string | null {
+  if (source === null) return null;
+  if (reason === "no_api_key" && Object.hasOwn(NO_API_KEY_LABELS, source)) return NO_API_KEY_LABELS[source];
+  // partially_checked no: la búsqueda por correo de HIBP siempre es parcial y sí trae hallazgos
+  if (reason === "partially_checked" || !Object.hasOwn(SOURCE_GAP_LABELS, source)) return null;
+  const why = COVERAGE_GAP_REASON_LABELS[reason];
+  return `${SOURCE_GAP_LABELS[source]}: ${why.charAt(0).toLowerCase()}${why.slice(1)}`;
+}
 
 /** Grupo de un motivo que el portal todavía no conoce: se muestra aparte, nunca se descarta. */
 export const OTHER_REASON_LABEL = "Otro motivo";
@@ -37,10 +66,14 @@ export const COVERAGE_SOURCE_LABELS: Record<string, string> = {
   web: "Visita web",
   api_docs: "Documentación de APIs",
   subfinder: "subfinder",
+  hibp: "Have I Been Pwned",
 };
 
 export interface CoverageGroup {
-  /** Un motivo de COVERAGE_GAP_REASON_LABELS o, si la API trae uno nuevo, ese texto tal cual en el grupo «Otro motivo». */
+  /**
+   * Un motivo de COVERAGE_GAP_REASON_LABELS (no_api_key puede repetirse, uno por fuente con texto propio) o, si la API
+   * trae uno nuevo, ese texto tal cual en el grupo «Otro motivo».
+   */
   reason: string;
   label: string;
   /** Una fila por fuente, con sus códigos. `name` es «Fuente sin identificar» si la API no supo cuál. */
@@ -52,7 +85,8 @@ function bySourceOf(gaps: CoverageGap[]): CoverageGroup["sources"] {
   for (const gap of gaps) bySource.set(gap.source, [...(bySource.get(gap.source) ?? []), gap.code]);
   return [...bySource].map(([source, codes]) => ({
     source,
-    name: source === null ? "Fuente sin identificar" : COVERAGE_SOURCE_LABELS[source] ?? source,
+    name: source === null ? "Fuente sin identificar"
+      : Object.hasOwn(COVERAGE_SOURCE_LABELS, source) ? COVERAGE_SOURCE_LABELS[source] : source,
     codes,
   }));
 }
@@ -62,9 +96,16 @@ function bySourceOf(gaps: CoverageGap[]): CoverageGroup["sources"] {
  * portal no conoce van al final, en «Otro motivo», con el motivo junto a cada fuente.
  */
 export function coverageGroups(gaps: CoverageGap[]): CoverageGroup[] {
-  const known = ORDER.flatMap((reason) => {
+  const known = ORDER.flatMap((reason): CoverageGroup[] => {
     const sources = bySourceOf(gaps.filter((g) => g.reason === reason));
-    return sources.length === 0 ? [] : [{ reason, label: COVERAGE_GAP_REASON_LABELS[reason], sources }];
+    if (sources.length === 0) return [];
+    // Las fuentes con texto propio van primero, cada una en su grupo, y las demás juntas en el texto general.
+    const own = sources.filter((s) => ownLabel(reason, s.source) !== null);
+    const rest = sources.filter((s) => !own.includes(s));
+    return [
+      ...own.map((s) => ({ reason, label: ownLabel(reason, s.source) as string, sources: [s] })),
+      ...(rest.length === 0 ? [] : [{ reason, label: COVERAGE_GAP_REASON_LABELS[reason], sources: rest }]),
+    ];
   });
   const unknown = gaps.filter((g) => !(ORDER as string[]).includes(g.reason));
   if (unknown.length === 0) return known;

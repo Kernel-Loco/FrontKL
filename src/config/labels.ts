@@ -39,7 +39,7 @@ export const SOURCE_LABELS: Record<FindingSource, string> = {
   shodan: "Shodan",
   github: "GitHub",
   censys: "Censys",
-  hibp: "HIBP API",
+  hibp: "Have I Been Pwned",
 };
 
 /** Bandas del score (criterio #29): bajo 0–39, medio 40–59, alto 60–79, crítico 80–100. */

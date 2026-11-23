@@ -6,7 +6,9 @@ import { Card } from "@/components/ui/Card";
 import { SELECT } from "@/components/ui/Field";
 import { InlineAlert } from "@/components/ui/InlineAlert";
 import { ApiExport } from "@/components/screens/shared/ApiExport";
+import { SourceAttribution } from "@/components/screens/shared/SourceAttribution";
 import { CATEGORY_LABELS, SEVERITY_LABELS } from "@/config/labels";
+import { atribucionDeRegla } from "@/lib/atribucion";
 import { formatShortDate } from "@/lib/format";
 import { getErrorMessage } from "@/services/errors";
 import { compareScores, downloadComparison } from "@/services/historyService";
@@ -32,12 +34,14 @@ function severityText(item: ComparisonItem) {
 }
 
 function FindingRow({ item }: { item: ComparisonItem }) {
+  const atribucion = atribucionDeRegla(item.rule_code);
   return (
     <li className="py-2 text-sm">
       <span className="block font-medium text-lt-text">{item.title}</span>
       <span className="block text-xs text-lt-muted">
         {item.asset} · {CATEGORY_LABELS[item.category]} · {severityText(item)}
       </span>
+      {atribucion && <SourceAttribution atribucion={atribucion} className="mt-0.5" />}
     </li>
   );
 }

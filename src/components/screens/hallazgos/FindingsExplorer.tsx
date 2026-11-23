@@ -6,7 +6,9 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { INPUT, SELECT } from "@/components/ui/Field";
 import { TD, TH } from "@/components/ui/Card";
 import { ApiExport } from "@/components/screens/shared/ApiExport";
+import { SourceAttribution } from "@/components/screens/shared/SourceAttribution";
 import { CATEGORY_LABELS, SEVERITY_LABELS, SOURCE_LABELS } from "@/config/labels";
+import { atribucionesDe } from "@/lib/atribucion";
 import { findingsCountLabel, NO_FINDINGS_PARTIAL } from "@/lib/cobertura";
 import { downloadFindings } from "@/services/exportService";
 import type { Category, DomainFinding, Severity } from "@/types";
@@ -167,6 +169,9 @@ export function FindingsExplorer({
                   })}
                 </tbody>
               </table>
+              {atribucionesDe(visible).map((a) => (
+                <SourceAttribution key={a.url} atribucion={a} className="border-t border-lt-border px-4 py-2" />
+              ))}
             </div>
           )}
         </div>
