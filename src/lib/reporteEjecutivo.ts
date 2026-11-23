@@ -3,7 +3,7 @@
 // Sin imports con @/ de valores: las etiquetas, scoreCell y formatDate entran como parámetro, así node --test lo carga.
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
-import type { Band, Category, ExecutiveReport, Grade, Severity } from "@/types";
+import type { Band, Category, ExecutiveReport, Grade, ReportFrameworks, Severity } from "@/types";
 
 export const SEVERITIES: Severity[] = ["critical", "high", "medium", "low"];
 export const CATEGORIES: Category[] = ["infrastructure", "digital_identity", "configuration", "data_leaks"];
@@ -32,6 +32,17 @@ export interface ReportLabels {
 export function clip(text: string | null | undefined, max: number): string {
   const t = (text ?? "").split(/\s+/).filter(Boolean).join(" ");
   return t.length > max ? `${t.slice(0, max - 1).trimEnd()}…` : t;
+}
+
+/** "ISO 27001: A.5.17 … · CIS: 5.2 …", como _linea_marcos() de cirdan/reporte.py (RC-160); vacío sin mapeo. */
+export function frameworksLine(f: ReportFrameworks | null | undefined): string {
+  const iso = f?.iso_27001_2022;
+  const cis = f?.cis_controls_v8_1;
+  const parts = [
+    iso ? `ISO 27001: ${`${iso.control_id} ${iso.control_name}`.trim()}` : "",
+    cis ? `CIS: ${`${cis.safeguard_id} ${cis.safeguard_name}`.trim()}` : "",
+  ].filter(Boolean);
+  return parts.join(" - ");
 }
 
 /** Las mismas frases de 'Lectura ejecutiva' que cirdan/reporte.py lectura(). */
@@ -127,7 +138,8 @@ export function buildExecutivePdf(r: ExecutiveReport, labels: ReportLabels): jsP
     body: r.findings.length > 0
       ? r.findings.map((f) => [
           labels.severity[f.severity] ?? f.severity,
-          `${clip(f.title, MAX_TITLE)}\nActivo: ${clip(f.asset, MAX_ASSET)}\nFuente: ${labels.source[f.source] ?? f.source}`,
+          `${clip(f.title, MAX_TITLE)}\nActivo: ${clip(f.asset, MAX_ASSET)}\nFuente: ${labels.source[f.source] ?? f.source}`
+            + (frameworksLine(f.frameworks) ? `\n${frameworksLine(f.frameworks)}` : ""),
           labels.formatDate(f.detected_at),
           clip(f.action, MAX_ACTION) || "-",
         ])

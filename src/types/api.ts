@@ -528,6 +528,14 @@ export interface ExecutiveReportFinding {
   recurrence: Recurrence;
   /** Primera frase de la recomendación de la regla, con tope; vacío si la regla no trae texto. */
   action: string;
+  /** Control ISO 27001 y salvaguarda CIS de la regla (RC-160): número y nombre breve, null sin mapeo. */
+  frameworks?: ReportFrameworks;
+}
+
+/** Los marcos de un hallazgo en los reportes (RC-160): solo ISO y CIS, sin MITRE ni enlaces. */
+export interface ReportFrameworks {
+  iso_27001_2022: { control_id: string; control_name: string } | null;
+  cis_controls_v8_1: { safeguard_id: string; safeguard_name: string } | null;
 }
 
 /**
@@ -548,7 +556,7 @@ export interface ExecutiveReport {
   findings: ExecutiveReportFinding[];
   /** Abiertos que no caben en la lista (van en la exportación de hallazgos). */
   findings_omitted: number;
-  /** La de Have I Been Pwned va siempre (CC BY 4.0). */
+  /** Van siempre la de Have I Been Pwned (CC BY 4.0) y la de CIS Controls (CC BY-NC-ND 4.0, RC-160). */
   attributions: { source: string; name: string; text: string; url: string; license_url: string }[];
 }
 

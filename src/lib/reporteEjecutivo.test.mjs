@@ -5,7 +5,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { test } from "node:test";
 import { exportBlockReasons } from "../components/screens/shared/domainState.ts";
-import { buildExecutivePdf, clip, insights, MAX_ACTION, MAX_ASSET, MAX_PAGES, MAX_TITLE } from "./reporteEjecutivo.ts";
+import { buildExecutivePdf, clip, frameworksLine, insights, MAX_ACTION, MAX_ASSET, MAX_PAGES, MAX_TITLE } from "./reporteEjecutivo.ts";
 
 const SEV = { critical: "Crítico", high: "Alto", medium: "Medio", low: "Bajo" };
 const CAT = { infrastructure: "Infraestructura", digital_identity: "Identidad digital", configuration: "Configuración",
@@ -128,4 +128,30 @@ test("7. cada ReportButton lleva key y el detalle le pasa solo los motivos de la
   const detalle = readFileSync(join(src, "app/(dashboard)/dashboard/dominios/[fqdn]/page.tsx"), "utf8");
   assert.doesNotMatch(detalle, /disabledReason=\{blocked\}/);
   assert.match(detalle, /disabledReason=\{reportBlocked\}/);
+});
+
+test("8. cada hallazgo trae su control ISO 27001 y su salvaguarda CIS, y siguen cabiendo en 2 páginas (RC-160)", () => {
+  const FW = {
+    iso_27001_2022: { control_id: "A.5.17", control_name: "Protección de credenciales" },
+    cis_controls_v8_1: { safeguard_id: "5.2", safeguard_name: "Contraseñas únicas" },
+  };
+  const CIS = { source: "cis", name: "CIS Controls v8.1", url: "https://www.cisecurity.org/controls/v8-1",
+    license_url: "https://creativecommons.org/licenses/by-nc-nd/4.0/",
+    text: "Las salvaguardas de cada hallazgo son de CIS Controls v8.1, bajo la licencia CC BY-NC-ND 4.0." };
+  assert.equal(frameworksLine(FW), "ISO 27001: A.5.17 Protección de credenciales - CIS: 5.2 Contraseñas únicas");
+  assert.equal(frameworksLine(undefined), "");
+  assert.equal(frameworksLine({ iso_27001_2022: null, cis_controls_v8_1: null }), "");
+
+  const largo = reporte(8, { largo: true });
+  largo.findings = largo.findings.map((f) => ({ ...f, frameworks: FW }));
+  largo.attributions = [HIBP, CIS];
+  assert.ok(buildExecutivePdf(largo, LABELS).getNumberOfPages() <= MAX_PAGES);
+
+  const corto = reporte(2);
+  corto.findings[0] = { ...corto.findings[0], frameworks: FW };
+  corto.attributions = [HIBP, CIS];
+  const t = texto(buildExecutivePdf(corto, LABELS));
+  assert.match(t, /ISO 27001: A\.5\.17 Protecci.n de credenciales - CIS: 5\.2 Contrase.as .nicas/);
+  assert.match(t, /by-nc-nd\/4\.0/);
+  assert.equal((t.match(/ISO 27001:/g) ?? []).length, 1);   // el segundo hallazgo no trae mapeo: sin línea
 });
