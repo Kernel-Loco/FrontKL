@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
 import { Card } from "@/components/ui/Card";
+import { ASVS } from "@/config/asvs";
 import { SEGURIDAD } from "@/config/seguridad";
 
 export const metadata = { title: "Seguridad" };
@@ -31,6 +32,12 @@ export default function SeguridadPage() {
           <h1 className="mt-1 text-2xl font-bold tracking-tight sm:text-[1.75rem]">{SEGURIDAD.titulo}</h1>
           <p className="mt-3 text-sm leading-relaxed text-lt-muted">{SEGURIDAD.intro}</p>
           <p className="mt-2 text-xs text-lt-muted">Resumen de seguridad del {SEGURIDAD.fecha}.</p>
+          <p className="mt-4 text-sm">
+            <Link href="/seguridad/asvs" className="font-medium text-lt-indigo-soft underline-offset-2 hover:underline">
+              {ASVS.titulo}
+            </Link>
+            <span className="text-lt-muted">: los {ASVS.requisitos.length} requisitos, uno por uno.</span>
+          </p>
         </div>
 
         <section aria-labelledby="arquitectura">
