@@ -1,5 +1,5 @@
-// Reporte ejecutivo en PDF (#45, RC-70 punto 4): sale del mismo HTML que la API entrega con ?formato=html
-// (BackKL cirdan/reporte.py, html()), no de otro armado en el portal. El HTML trae su @page A4, sus topes de texto,
+// Reporte ejecutivo (#45, RC-70 punto 4) y técnico (#46, RC-81) en PDF: sale del mismo HTML que la API entrega con
+// ?formato=html (BackKL cirdan/reporte.py y cirdan/reporte_tecnico.py, html()), no de otro armado en el portal. El HTML trae su @page A4, sus topes de texto,
 // la letra del score y la atribución de Have I Been Pwned. El portal lo carga en un iframe fuera de la vista y abre la
 // impresión del navegador, donde se elige 'Guardar como PDF'.
 // Sin imports con @/ de valores, así node --test lo carga.
@@ -19,7 +19,7 @@ export function printReportHtml(html: string, doc: Document = document, signal?:
     const frame = doc.createElement("iframe");
     frame.setAttribute("sandbox", SANDBOX);
     frame.setAttribute("aria-hidden", "true");
-    frame.setAttribute("title", "Reporte ejecutivo para imprimir");
+    frame.setAttribute("title", "Reporte para imprimir");
     frame.tabIndex = -1;
     // Fuera de la vista pero con tamaño de hoja: con display:none o 0 px algunos navegadores imprimen la hoja en blanco.
     frame.style.cssText = "position:fixed;left:-10000px;top:0;width:210mm;height:297mm;border:0;";
