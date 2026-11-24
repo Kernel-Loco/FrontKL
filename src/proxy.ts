@@ -4,6 +4,7 @@
 // También pone la CSP con nonce de cada página (RC-89, src/lib/csp.ts).
 import { NextResponse, type NextRequest } from "next/server";
 import { NONCE_HEADER, nuevoNonce, politicaDeContenido } from "@/lib/csp";
+import { CABECERAS_REDIRECCION, sinDiagonalFinal } from "@/lib/diagonalFinal";
 import { proxyRedirect } from "@/lib/proxyRedirect";
 import { SESSION_COOKIE } from "@/lib/session/shared";
 
@@ -16,6 +17,16 @@ const ARCHIVO_PUBLICO = /\.(?:svg|png|jpe?g|gif|webp|avif|ico|txt|xml|webmanifes
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  // La diagonal final se quita aquí y no en Next, para que el 308 lleve las cabeceras (RC-283, src/lib/diagonalFinal.ts).
+  // Con new URL y no con nextUrl.clone(): NextURL vuelve a poner la diagonal al escribir la dirección.
+  const sinDiagonal = sinDiagonalFinal(pathname);
+  if (sinDiagonal) {
+    const destino = new URL(request.url);
+    destino.pathname = sinDiagonal;
+    const redireccion = NextResponse.redirect(destino, 308);
+    for (const { key, value } of CABECERAS_REDIRECCION) redireccion.headers.set(key, value);
+    return redireccion;
+  }
   // Solo mira si existe la cookie (httpOnly); la valida FastAPI en cada página (getServerSession).
   const hasSession = Boolean(request.cookies.get(SESSION_COOKIE)?.value);
   const destino = proxyRedirect(request.nextUrl.pathname, hasSession);
@@ -53,5 +64,8 @@ export const config = {
       source: "/((?!api/v1(?:/|$)|_next/static|_next/image).*)",
       missing: [{ type: "header", key: "next-router-prefetch" }],
     },
+    // Toda ruta con diagonal final, también /api/v1/ y las precargas: la redirección de Next está apagada
+    // (skipTrailingSlashRedirect en next.config.ts) y la hace este proxy.
+    "/:ruta+/",
   ],
 };

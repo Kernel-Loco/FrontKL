@@ -12,6 +12,8 @@ import type {
   LoginResponse,
   MfaEnableRequest,
   MfaEnableResponse,
+  MfaEnrollEnableRequest,
+  MfaEnrollSetupRequest,
   MfaSetupRequest,
   MfaSetupResponse,
   MfaVerifyRequest,
@@ -60,6 +62,16 @@ export async function startMfaSetup(payload: MfaSetupRequest): Promise<MfaSetupR
 /** Guarda el secreto del alta solo si el código de la app es válido. */
 export async function enableMfa(payload: MfaEnableRequest): Promise<MfaEnableResponse> {
   return apiClient.post<MfaEnableResponse>("/auth/mfa/enable", payload);
+}
+
+/** Alta de TOTP al entrar (RC-5): con el token del 403 de /auth/login, la API devuelve el QR. Sin sesión. */
+export async function startMfaEnroll(payload: MfaEnrollSetupRequest): Promise<MfaSetupResponse> {
+  return apiClient.post<MfaSetupResponse>("/auth/mfa/enroll/setup", payload);
+}
+
+/** Activa el TOTP del alta al entrar. Con el primer código válido la API guarda el secreto y crea la sesión. */
+export async function enableMfaEnroll(payload: MfaEnrollEnableRequest): Promise<MfaVerifyResponse> {
+  return apiClient.post<MfaVerifyResponse>("/auth/mfa/enroll/enable", payload);
 }
 
 // --- Passkeys (RC-331). Las opciones y las respuestas de WebAuthn viajan como JSON sin tocarlas.
