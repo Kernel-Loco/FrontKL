@@ -1,9 +1,9 @@
 # Cadena de suministro de la imagen del portal (#82, RC-117). Guía: docs/cadena_de_suministro.md de BackKL.
 #
-# En cada PR a dev o main: compila la imagen, Trivy la revisa y frena con una vulnerabilidad crítica que ya tenga
-# arreglo, y Syft saca su SBOM (artefacto de la corrida). Con un push a dev o main (el merge del PR), además la sube a
-# ghcr.io/kernel-loco/frontkl, la firma con cosign sin llaves (OIDC de GitHub) y le pega el SBOM como atestación
-# firmada. El despliegue verifica esa firma antes de levantarla (infra/verificar_imagenes.sh de BackKL).
+# En cada PR a dev o main: compila la imagen, Trivy la revisa y frena con cualquier vulnerabilidad crítica, sin
+# excepciones, y Syft saca su SBOM (artefacto de la corrida). Con un push a dev o main (el merge del PR), además la
+# sube a ghcr.io/kernel-loco/frontkl, la firma con cosign sin llaves (OIDC de GitHub) y le pega el SBOM como
+# atestación firmada. El despliegue verifica esa firma antes de levantarla (infra/verificar_imagenes.sh de BackKL).
 # La imagen se compila con API_INTERNAL_URL=http://api:8000, el mismo valor que le da docker-compose.despliegue.yml.
 # Herramientas en imágenes con versión fija: ninguna acción de terceros recibe el token.
 name: Imágenes
@@ -43,11 +43,12 @@ jobs:
       - name: Compilar la imagen
         run: docker build --pull --build-arg API_INTERNAL_URL=http://api:8000 -t lowtide-portal:ci .
 
-      # --ignore-unfixed: una crítica sin arreglo publicado no tiene versión a la cual subir. Sale en la tabla, no frena.
+      # Sin excepciones: cualquier crítica frena, tenga arreglo o no (sin --ignore-unfixed ni archivo de excepciones).
+      # Si una no tiene arreglo, se cambia la base o se quita el paquete de la imagen (RC-117).
       - name: Trivy frena con vulnerabilidades críticas
         run: >-
           docker run --rm -v /var/run/docker.sock:/var/run/docker.sock "$TRIVY"
-          image --scanners vuln --severity CRITICAL --ignore-unfixed --exit-code 1 --no-progress lowtide-portal:ci
+          image --scanners vuln --severity CRITICAL --exit-code 1 --no-progress lowtide-portal:ci
 
       - name: Trivy, resumen de altas y críticas (no frena)
         run: >-

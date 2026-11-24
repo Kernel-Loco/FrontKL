@@ -3,8 +3,11 @@
 #
 # Compila con output standalone (next.config.ts lee NEXT_OUTPUT) y corre `node server.js` sin root.
 # La primera construcción necesita internet: npm ci y las fuentes de Google Fonts (next/font).
+#
+# Base Debian 13 (trixie): la de Debian 12 (bookworm) trae zlib1g 1.2.13 con la crítica CVE-2023-45853, que Debian no
+# va a arreglar ahí, y Trivy frena con cualquier crítica y sin excepciones (.github/workflows/imagenes.yml, RC-117).
 
-FROM node:22.23.5-bookworm-slim AS construir
+FROM node:22.23.5-trixie-slim AS construir
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --no-audit --no-fund
@@ -16,7 +19,7 @@ ENV API_INTERNAL_URL=${API_INTERNAL_URL} \
     NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
-FROM node:22.23.5-bookworm-slim
+FROM node:22.23.5-trixie-slim
 WORKDIR /app
 # KEEP_ALIVE_TIMEOUT: Node cierra una conexión ociosa a los 5 s y cloudflared la reutiliza hasta 90 s. Un POST que
 # cloudflared manda justo cuando Node la cierra no se reintenta y da 502. Con 95 s siempre la suelta cloudflared primero.
