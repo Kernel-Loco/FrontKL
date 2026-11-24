@@ -3,12 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import { FileCode, FileDown } from "lucide-react";
 import { ActionButton } from "@/components/ui/ActionButton";
-import { BAND_LABELS, CATEGORY_LABELS, SEVERITY_LABELS, SOURCE_LABELS } from "@/config/labels";
-import { formatDate } from "@/lib/format";
-import { buildExecutivePdf } from "@/lib/reporteEjecutivo";
-import { scoreCell } from "@/lib/riesgo";
+import { printReportHtml } from "@/lib/imprimirReporte";
 import { getErrorMessage } from "@/services/errors";
-import { downloadExecutiveHtml, getExecutiveReport } from "@/services/reportService";
+import { downloadExecutiveHtml } from "@/services/reportService";
 
 interface ReportButtonProps {
   domain: string;
@@ -27,17 +24,24 @@ export function saveBlob(blob: Blob, filename: string) {
   URL.revokeObjectURL(url);
 }
 
+const PDF_HINT = "Abre la impresión del navegador con el reporte: elige Guardar como PDF";
+
 /**
- * Reporte ejecutivo del dominio (#45, RC-70) en PDF y en HTML, con el estado actual de la API. Sin autorización
- * firmada vigente la API responde 403 y ese mensaje se muestra tal cual. Úsalo con key={domain}: el estado (mensaje y
+ * Reporte ejecutivo del dominio (#45, RC-70) en PDF y en HTML, con el estado actual de la API. Los dos salen del mismo
+ * HTML de GET /domains/{fqdn}/report?formato=html: el botón HTML lo descarga y el de PDF lo imprime (RC-70 punto 4,
+ * src/lib/imprimirReporte.ts). Sin autorización firmada vigente la API responde 403 y ese mensaje se muestra tal cual. Úsalo con key={domain}: el estado (mensaje y
  * descarga en curso) es de un dominio, y al cambiar de dominio el botón anterior se desmonta y aborta su petición.
  */
 export function ReportButton({ domain, disabledReason, variant = "secondary", size = "md" }: ReportButtonProps) {
   const [busy, setBusy] = useState<"pdf" | "html" | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const controller = useRef<AbortController | null>(null);
+  const removeFrame = useRef<(() => void) | null>(null);
 
-  useEffect(() => () => controller.current?.abort(), []);
+  useEffect(() => () => {
+    controller.current?.abort();
+    removeFrame.current?.();
+  }, []);
 
   const run = async (format: "pdf" | "html") => {
     if (busy) return;
@@ -46,20 +50,13 @@ export function ReportButton({ domain, disabledReason, variant = "secondary", si
     setBusy(format);
     setMessage(null);
     try {
+      const blob = await downloadExecutiveHtml(domain, current.signal);
+      if (current.signal.aborted) return;
       if (format === "html") {
-        const blob = await downloadExecutiveHtml(domain, current.signal);
-        if (!current.signal.aborted) saveBlob(blob, `${domain}-resumen-ejecutivo.html`);
+        saveBlob(blob, `${domain}-resumen-ejecutivo.html`);
       } else {
-        const report = await getExecutiveReport(domain, current.signal);
-        if (current.signal.aborted) return;
-        buildExecutivePdf(report, {
-          severity: SEVERITY_LABELS,
-          category: CATEGORY_LABELS,
-          band: BAND_LABELS,
-          source: SOURCE_LABELS,
-          formatDate,
-          scoreCell,
-        }).save(`${domain}-resumen-ejecutivo.pdf`);
+        removeFrame.current?.();
+        removeFrame.current = await printReportHtml(await blob.text(), document, current.signal);
       }
     } catch (error) {
       if (!current.signal.aborted) setMessage(getErrorMessage(error, { apiMessageOn403: true }));
@@ -73,7 +70,7 @@ export function ReportButton({ domain, disabledReason, variant = "secondary", si
     <span className="relative inline-flex flex-col items-end">
       <span className="inline-flex gap-2" role="group" aria-label="Reporte ejecutivo">
         <ActionButton variant={variant} size={size} loading={busy === "pdf"} disabled={Boolean(disabledReason) || busy !== null}
-          title={disabledReason} onClick={() => run("pdf")}>
+          title={disabledReason ?? PDF_HINT} onClick={() => run("pdf")}>
           {busy !== "pdf" && <FileDown aria-hidden="true" className={icon} />}
           Exportar PDF
         </ActionButton>

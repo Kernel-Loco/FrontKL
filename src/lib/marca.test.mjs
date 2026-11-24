@@ -22,12 +22,13 @@ test("ningún archivo de src/ escribe el nombre como 'Lowtide'", () => {
   assert.deepEqual(malos, []);
 });
 
-test("la pestaña, el enlace de la barra y el PDF ejecutivo dicen LowTide", () => {
+test("la pestaña y el enlace de la barra dicen LowTide, y el PDF imprime el HTML de la API", () => {
   const leer = (r) => readFileSync(join(SRC, r), "utf8");
   assert.match(leer("app/layout.tsx"), /default: "LowTide", template: "%s · LowTide"/);
   assert.match(leer("components/Sidebar.tsx"), /aria-label="LowTide, ir al dashboard"/);
-  const pdf = leer("lib/reporteEjecutivo.ts");
-  assert.match(pdf, /title: `Resumen ejecutivo de riesgo - \$\{r\.domain\} - LowTide`/);
-  assert.match(pdf, /creator: "LowTide"/);
-  assert.match(pdf, /`LowTide - Confidencial - /);
+  // El PDF es la impresión del HTML de la API (RC-70 punto 4), que dice LowTide en su <title> y su pie
+  // (BackKL cirdan/reporte.py y pruebas/test_reporte.py). El portal ya no arma un PDF aparte.
+  const boton = leer("components/screens/shared/ReportButton.tsx");
+  assert.match(boton, /printReportHtml\(await blob\.text\(\)/);
+  assert.doesNotMatch(boton, /jspdf|reporteEjecutivo/i);
 });
