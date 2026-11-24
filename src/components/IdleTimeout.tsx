@@ -167,9 +167,10 @@ export function IdleTimeout({ limits, userId }: { limits?: SessionLimits; userId
       }
       const idleLeft = idleDeadline.current - at;
       const absoluteLeft = absoluteDeadline.current - at;
-      // Otra pestaña mantiene viva una sesión que esta no confirmó: su tope vencido puede ser el de una sesión anterior
-      // y POST /auth/logout borraría la nueva. No cierra hasta que /auth/me diga cuál es la vigente (#2).
-      if (mustConfirmBeforeMax(idleLeft, absoluteLeft, sharedStore(), at, lastShared.current, confirmedAt.current)) {
+      // Hay actividad posterior al último /auth/me que esta confirmó, de esta o de otra pestaña: su tope vencido puede
+      // ser el de una sesión anterior y POST /auth/logout borraría la nueva. No cierra hasta que /auth/me diga cuál es
+      // la vigente (#2 y tiempos-1).
+      if (mustConfirmBeforeMax(idleLeft, absoluteLeft, sharedStore(), at, confirmedAt.current)) {
         if (pending.current === 0 && at - lastRefresh.current >= CONFIRM_RETRY_MS) {
           lastRefresh.current = at;
           syncWithServer(false);

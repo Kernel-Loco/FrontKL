@@ -48,17 +48,23 @@ function read(store: SharedStore | null, key: string): string | null {
   }
 }
 
-/** Última actividad de cualquier pestaña, nunca después de `now` (una hora en el futuro no alarga el plazo). */
+/**
+ * Última actividad de cualquier pestaña, nunca después de `now`. Una hora más allá de `now` + SHARE_INTERVAL_MS no
+ * vale: el reloj del equipo retrocedió (o la escribió otra cosa) y, recortada a `now`, mantenía viva la sesión en cada
+ * lectura, mandaba /auth/me pasivo sin nadie delante y anulaba los cierres de otras pestañas (revisión de RC-311,
+ * sesion-1).
+ */
 export function readActivity(store: SharedStore | null, now: number): number | undefined {
   const at = parseTime(read(store, ACTIVITY_KEY));
-  return at === undefined ? undefined : Math.min(at, now);
+  if (at === undefined || at > now + SHARE_INTERVAL_MS) return undefined;
+  return Math.min(at, now);
 }
 
-/** Guarda la actividad de esta pestaña si es más reciente que la guardada. */
+/** Guarda la actividad de esta pestaña si es más reciente que la guardada o si la guardada es de un futuro que no vale. */
 export function recordActivity(store: SharedStore | null, at: number): void {
   if (!store || endedHere) return;
   const previous = parseTime(read(store, ACTIVITY_KEY));
-  if (previous !== undefined && previous >= at) return;
+  if (previous !== undefined && previous >= at && previous <= at + SHARE_INTERVAL_MS) return;
   try {
     store.setItem(ACTIVITY_KEY, String(Math.floor(at)));
   } catch {
@@ -101,19 +107,20 @@ export function needsServerCheck(
  * El tope absoluto de esta pestaña venció, pero la inactividad sigue viva por actividad de otra pestaña posterior a la
  * última vez que esta confirmó la sesión con /auth/me: ese tope puede ser el de una sesión anterior y POST
  * /auth/logout borraría la nueva. Antes de cerrar por el tope toca preguntar al servidor (revisión de RC-311, #2).
- * `ownShared` es la última actividad que escribió esta pestaña y `confirmedAt` la hora de su último /auth/me con éxito.
+ * `confirmedAt` es la hora de su último /auth/me con éxito. No se exime la actividad propia: si el /auth/me falla o
+ * tarda y el usuario se mueve en esta pestaña, la suya taparía la ajena y cerraría con el tope de la sesión vieja
+ * (tiempos-1). Con una sola pestaña solo cuesta un /auth/me más al llegar al tope, que da 401 y cierra con 'max'.
  */
 export function mustConfirmBeforeMax(
   idleLeft: number,
   absoluteLeft: number,
   store: SharedStore | null,
   now: number,
-  ownShared: number,
   confirmedAt: number,
 ): boolean {
   if (absoluteLeft > 0 || idleLeft <= 0) return false;
   const at = readActivity(store, now);
-  return at !== undefined && at > ownShared && at > confirmedAt;
+  return at !== undefined && at > confirmedAt;
 }
 
 /** Avisa a las demás pestañas que esta cerró la sesión, con el aviso que verá en el login. */

@@ -103,17 +103,45 @@ test("sin localStorage, cada pestaña cuenta sola como antes", async () => {
   assert.equal(sharedIdleDeadline(IDLE, roto, IDLE, 1000), IDLE);
 });
 
-test("la llave solo guarda una hora, nunca retrocede y una hora futura no alarga el plazo", () => {
+test("la llave solo guarda una hora y nunca retrocede", () => {
   const store = almacen();
   recordActivity(store, 5000.7);
-  recordActivity(store, 3000);
+  // Todas las pestañas usan el mismo reloj: una escritura algo más vieja (dentro del margen) no la hace retroceder.
+  recordActivity(store, 5000 - SHARE_INTERVAL_MS);
   assert.deepEqual([...store.datos], [[ACTIVITY_KEY, "5000"]]);
-  store.setItem(ACTIVITY_KEY, String(10 * IDLE));
+  // Dentro del margen de una escritura, una hora apenas adelantada cuenta como ahora y no se pisa.
+  store.setItem(ACTIVITY_KEY, String(1000 + SHARE_INTERVAL_MS));
   assert.equal(readActivity(store, 1000), 1000);
-  assert.equal(sharedIdleDeadline(0, store, IDLE, 1000), 1000 + IDLE);
+  recordActivity(store, 1000);
+  assert.equal(store.getItem(ACTIVITY_KEY), String(1000 + SHARE_INTERVAL_MS));
   for (const basura of [null, "", "abc", "-5", "1e20", "12.5", "0", "9".repeat(16), " 5"]) {
     assert.equal(parseTime(basura), undefined, String(basura));
   }
+});
+
+test("una hora futura en la llave (reloj que retrocede) no mantiene viva la sesión ni anula los cierres (sesion-1)", async () => {
+  const { needsServerCheck } = await otraPestana("reloj-atras");
+  const REFRESH = 30_000;
+  const store = almacen();
+  // El reloj del equipo retrocedió 20 min: la llave quedó con una hora que todavía no llega.
+  const futura = 20 * MIN + 1000;
+  store.setItem(ACTIVITY_KEY, String(futura));
+  const quieta = pestana(store, 1000);
+  // recordActivity la pisó con la hora de ahora, así que la quieta cuenta desde ahí y cierra a su plazo.
+  assert.equal(store.getItem(ACTIVITY_KEY), "1000");
+  store.setItem(ACTIVITY_KEY, String(futura));
+  assert.equal(readActivity(store, 2000), undefined);
+  for (let at = 2000; at < 1000 + IDLE; at += 1000) {
+    assert.equal(quieta.tick(at), false, `cerró a los ${at / 1000} s`);
+    // Sin nadie delante, la hora futura no pide /auth/me pasivo cada 30 s, que renovaría la sesión sola.
+    assert.equal(needsServerCheck(at - 1000, at + IDLE, store, at, at - REFRESH, REFRESH), false, `a los ${at / 1000} s`);
+  }
+  assert.equal(quieta.tick(1000 + IDLE), true, "la quieta no cerró con una hora futura en la llave");
+  // El cierre de otra pestaña sigue valiendo: la hora futura no cuenta como un nuevo inicio de sesión.
+  assert.equal(endedElsewhere(`${5 * MIN}:expired`, store, 5 * MIN), "expired");
+  // La primera actividad real la sobrescribe.
+  recordActivity(store, 2 * MIN);
+  assert.equal(store.getItem(ACTIVITY_KEY), String(2 * MIN));
 });
 
 test("si una pestaña cierra la sesión, las demás salen con su aviso, salvo que alguien haya vuelto a entrar", async () => {
@@ -224,15 +252,31 @@ test("una pestaña que vuelve tras su tope de 8 h no cierra por el tope si otra 
   const at = 8 * H + 6 * MIN;
   const idleLeft = 8 * H + 5 * MIN + IDLE - at;
   const absoluteLeft = 8 * H - at;
-  assert.equal(quieta.mustConfirmBeforeMax(idleLeft, absoluteLeft, store, at, 1000, 0), true);
+  assert.equal(quieta.mustConfirmBeforeMax(idleLeft, absoluteLeft, store, at, 0), true);
   // Ya preguntó a /auth/me después de esa actividad: el tope que tiene es el de la sesión vigente y cierra.
-  assert.equal(quieta.mustConfirmBeforeMax(idleLeft, absoluteLeft, store, at, 1000, 8 * H + 5 * MIN + 1), false);
-  // La última actividad es suya (una sola pestaña): cierra por el tope como siempre, sin preguntar.
-  assert.equal(quieta.mustConfirmBeforeMax(idleLeft, absoluteLeft, store, at, 8 * H + 5 * MIN, 0), false);
+  assert.equal(quieta.mustConfirmBeforeMax(idleLeft, absoluteLeft, store, at, 8 * H + 5 * MIN + 1), false);
   // Sin actividad de nadie en el plazo, o con el tope sin vencer, no hay nada que confirmar.
-  assert.equal(quieta.mustConfirmBeforeMax(0, absoluteLeft, store, at, 1000, 0), false);
-  assert.equal(quieta.mustConfirmBeforeMax(idleLeft, 1, store, at, 1000, 0), false);
-  assert.equal(quieta.mustConfirmBeforeMax(idleLeft, absoluteLeft, null, at, 1000, 0), false);
+  assert.equal(quieta.mustConfirmBeforeMax(0, absoluteLeft, store, at, 0), false);
+  assert.equal(quieta.mustConfirmBeforeMax(idleLeft, 1, store, at, 0), false);
+  assert.equal(quieta.mustConfirmBeforeMax(idleLeft, absoluteLeft, null, at, 0), false);
+});
+
+test("la actividad propia no tapa la ajena sin confirmar: sigue preguntando a /auth/me antes de cerrar por el tope (tiempos-1)", async () => {
+  const quieta = await otraPestana("vuelve-y-mueve");
+  const nueva = await otraPestana("sesion-nueva-2");
+  const store = almacen();
+  const H = 60 * MIN;
+  quieta.recordActivity(store, 1000);
+  // Otra pestaña con una sesión nueva tuvo actividad; esta no ha confirmado nada desde las 0 h.
+  nueva.recordActivity(store, 8 * H + 5 * MIN);
+  // El /auth/me de confirmación falló o tarda, y el usuario mueve el ratón en esta pestaña: la última actividad es suya.
+  quieta.recordActivity(store, 8 * H + 6 * MIN);
+  const at = 8 * H + 6 * MIN + 1000;
+  const idleLeft = 8 * H + 6 * MIN + IDLE - at;
+  const absoluteLeft = 8 * H - at;
+  assert.equal(quieta.mustConfirmBeforeMax(idleLeft, absoluteLeft, store, at, 0), true, "cerró con el tope de la sesión vieja");
+  // Una sola pestaña al llegar a su tope: solo cuesta un /auth/me más (401) y luego cierra con 'max'.
+  assert.equal(quieta.mustConfirmBeforeMax(idleLeft, absoluteLeft, store, at, 8 * H + 6 * MIN + 1), false);
 });
 
 test("IdleTimeout pregunta a /auth/me antes de cerrar por un tope que puede ser de la sesión anterior (#2)", () => {
@@ -240,7 +284,7 @@ test("IdleTimeout pregunta a /auth/me antes de cerrar por un tope que puede ser 
   const tick = codigo.slice(codigo.indexOf("const tick = () =>"), codigo.indexOf("if (left <= 0)"));
   assert.match(
     tick,
-    /if \(mustConfirmBeforeMax\(idleLeft, absoluteLeft, sharedStore\(\), at, lastShared\.current, confirmedAt\.current\)\) \{[\s\S]*?syncWithServer\(false\);[\s\S]*?return;\s*\}/,
+    /if \(mustConfirmBeforeMax\(idleLeft, absoluteLeft, sharedStore\(\), at, confirmedAt\.current\)\) \{[\s\S]*?syncWithServer\(false\);[\s\S]*?return;\s*\}/,
   );
   const sync = codigo.slice(codigo.indexOf("const syncWithServer"), codigo.indexOf("useEffect("));
   // La respuesta confirma la sesión desde la hora en que salió la petición.
