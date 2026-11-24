@@ -209,3 +209,55 @@ test("IdleTimeout toma el tope y el usuario de la sesión vigente cuando otra pe
   assert.doesNotMatch(otro, /leaveSession|logout|endSession/);
   assert.match(sinComentarios(leer("../../components/dashboard/DashboardShell.tsx")), /<IdleTimeout limits=\{user\.session_limits\} userId=\{user\.id\} \/>/);
 });
+
+// Ronda 2 de la revisión de riesgo de RC-311.
+
+test("una pestaña que vuelve tras su tope de 8 h no cierra por el tope si otra mantiene una sesión sin confirmar (#2)", async () => {
+  const quieta = await otraPestana("vuelve-tras-8h");
+  const nueva = await otraPestana("sesion-nueva");
+  const store = almacen();
+  const H = 60 * MIN;
+  // La quieta escribió su actividad a las 0 h y se suspendió. A las 7 h alguien entró de nuevo en otra pestaña.
+  quieta.recordActivity(store, 1000);
+  nueva.recordActivity(store, 8 * H + 5 * MIN);
+  // A las 8 h 6 min la quieta se reanuda: su tope venció, pero la inactividad vive por la actividad ajena.
+  const at = 8 * H + 6 * MIN;
+  const idleLeft = 8 * H + 5 * MIN + IDLE - at;
+  const absoluteLeft = 8 * H - at;
+  assert.equal(quieta.mustConfirmBeforeMax(idleLeft, absoluteLeft, store, at, 1000, 0), true);
+  // Ya preguntó a /auth/me después de esa actividad: el tope que tiene es el de la sesión vigente y cierra.
+  assert.equal(quieta.mustConfirmBeforeMax(idleLeft, absoluteLeft, store, at, 1000, 8 * H + 5 * MIN + 1), false);
+  // La última actividad es suya (una sola pestaña): cierra por el tope como siempre, sin preguntar.
+  assert.equal(quieta.mustConfirmBeforeMax(idleLeft, absoluteLeft, store, at, 8 * H + 5 * MIN, 0), false);
+  // Sin actividad de nadie en el plazo, o con el tope sin vencer, no hay nada que confirmar.
+  assert.equal(quieta.mustConfirmBeforeMax(0, absoluteLeft, store, at, 1000, 0), false);
+  assert.equal(quieta.mustConfirmBeforeMax(idleLeft, 1, store, at, 1000, 0), false);
+  assert.equal(quieta.mustConfirmBeforeMax(idleLeft, absoluteLeft, null, at, 1000, 0), false);
+});
+
+test("IdleTimeout pregunta a /auth/me antes de cerrar por un tope que puede ser de la sesión anterior (#2)", () => {
+  const codigo = sinComentarios(leer("../../components/IdleTimeout.tsx"));
+  const tick = codigo.slice(codigo.indexOf("const tick = () =>"), codigo.indexOf("if (left <= 0)"));
+  assert.match(
+    tick,
+    /if \(mustConfirmBeforeMax\(idleLeft, absoluteLeft, sharedStore\(\), at, lastShared\.current, confirmedAt\.current\)\) \{[\s\S]*?syncWithServer\(false\);[\s\S]*?return;\s*\}/,
+  );
+  const sync = codigo.slice(codigo.indexOf("const syncWithServer"), codigo.indexOf("useEffect("));
+  // La respuesta confirma la sesión desde la hora en que salió la petición.
+  assert.match(sync, /const sentAt = Date\.now\(\);/);
+  assert.match(sync, /confirmedAt\.current = Math\.max\(confirmedAt\.current, sentAt\);/);
+  assert.match(sync, /\.finally\(\(\) => \{\s*pending\.current -= 1;\s*\}\)/);
+});
+
+test("la consulta pasiva a /auth/me no cuenta como actividad ni la comparte (regresión 1 y 2 de la ronda 2)", () => {
+  const codigo = sinComentarios(leer("../../components/IdleTimeout.tsx"));
+  const sync = codigo.slice(codigo.indexOf("const syncWithServer"), codigo.indexOf("useEffect("));
+  assert.match(sync, /getCurrentUser\(\{ passive: !own \}\)/);
+  const auth = sinComentarios(leer("../../services/authService.ts"));
+  assert.match(auth, /getCurrentUser\(\{ passive = false \}: \{ passive\?: boolean \} = \{\}\)/);
+  assert.match(auth, /apiClient\.get<ApiUser>\("\/auth\/me", \{ passive \}\)/);
+  const cliente = sinComentarios(leer("../apiClient.ts"));
+  assert.match(cliente, /if \(!passive && typeof window !== "undefined" && isSessionProtected\(path\)\) window\.dispatchEvent\(new Event\(API_ACTIVITY_EVENT\)\);/);
+  // passive no viaja a fetch.
+  assert.match(cliente, /\{ body, headers, timeoutMs, passive, \.\.\.init \}: RequestOptions = \{\}/);
+});

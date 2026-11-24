@@ -109,10 +109,13 @@ export async function logout(): Promise<void> {
   }
 }
 
-/** Usuario de la sesión, o null si terminó. Renueva la inactividad en el servidor. */
-export async function getCurrentUser(): Promise<User | null> {
+/**
+ * Usuario de la sesión, o null si terminó. Renueva la inactividad en el servidor. Con `passive`, la consulta no cuenta
+ * como actividad del usuario en el portal (RC-311).
+ */
+export async function getCurrentUser({ passive = false }: { passive?: boolean } = {}): Promise<User | null> {
   try {
-    return toUser(await apiClient.get<ApiUser>("/auth/me"));
+    return toUser(await apiClient.get<ApiUser>("/auth/me", { passive }));
   } catch (error) {
     if (error instanceof ApiError && error.status === 401) return null;
     throw error;

@@ -13,6 +13,8 @@ export const ACTIVITY_KEY = "lowtide-session-activity";
 export const ENDED_KEY = "lowtide-session-ended";
 /** Cada cuánto, como máximo, una pestaña escribe su actividad (mousemove llega decenas de veces por segundo). */
 export const SHARE_INTERVAL_MS = 1000;
+/** Cada cuánto, como máximo, repite /auth/me una pestaña que espera confirmar su sesión antes de cerrar por el tope. */
+export const CONFIRM_RETRY_MS = 5000;
 
 export type SharedStore = Pick<Storage, "getItem" | "setItem">;
 
@@ -93,6 +95,25 @@ export function needsServerCheck(
   if (after <= before || now - lastRefresh < refreshMs) return false;
   const at = readActivity(store, now);
   return at !== undefined && now - at < refreshMs;
+}
+
+/**
+ * El tope absoluto de esta pestaña venció, pero la inactividad sigue viva por actividad de otra pestaña posterior a la
+ * última vez que esta confirmó la sesión con /auth/me: ese tope puede ser el de una sesión anterior y POST
+ * /auth/logout borraría la nueva. Antes de cerrar por el tope toca preguntar al servidor (revisión de RC-311, #2).
+ * `ownShared` es la última actividad que escribió esta pestaña y `confirmedAt` la hora de su último /auth/me con éxito.
+ */
+export function mustConfirmBeforeMax(
+  idleLeft: number,
+  absoluteLeft: number,
+  store: SharedStore | null,
+  now: number,
+  ownShared: number,
+  confirmedAt: number,
+): boolean {
+  if (absoluteLeft > 0 || idleLeft <= 0) return false;
+  const at = readActivity(store, now);
+  return at !== undefined && at > ownShared && at > confirmedAt;
 }
 
 /** Avisa a las demás pestañas que esta cerró la sesión, con el aviso que verá en el login. */

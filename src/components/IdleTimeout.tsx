@@ -12,8 +12,10 @@ import {
 import {
   ACTIVITY_KEY,
   announceEnded,
+  CONFIRM_RETRY_MS,
   ENDED_KEY,
   endedElsewhere,
+  mustConfirmBeforeMax,
   needsServerCheck,
   recordActivity,
   SHARE_INTERVAL_MS,
@@ -54,6 +56,10 @@ export function IdleTimeout({ limits, userId }: { limits?: SessionLimits; userId
   const absoluteDismissed = useRef(false);
   const ending = useRef(false);
   const lastShared = useRef(0);
+  // Hora en que salió el último /auth/me que respondió bien: su tope absoluto es el de la sesión vigente.
+  const confirmedAt = useRef(0);
+  // Consultas a /auth/me en curso.
+  const pending = useRef(0);
   const [warning, setWarning] = useState<Warning | null>(null);
 
   // Sale por /auth/expirada, que borra la cookie aunque POST /auth/logout falle con la API caída (RC-225).
@@ -92,12 +98,17 @@ export function IdleTimeout({ limits, userId }: { limits?: SessionLimits; userId
   // de otra pestaña: no cuenta como actividad de esta.
   const syncWithServer = useCallback(
     (own = true) => {
-      void getCurrentUser()
+      const sentAt = Date.now();
+      pending.current += 1;
+      // Pasiva, no avisa de actividad: si no, una pestaña quieta la escribiría como suya y las quietas se renovarían
+      // entre sí sin nadie delante (revisión de RC-311, regresiones 1 y 2 de la ronda 2).
+      void getCurrentUser({ passive: !own })
         .then((user) => {
           if (ending.current) return;
           if (!user) {
-            // El servidor ya no reconoce la sesión y no dice por qué: el mismo aviso que /auth/expirada.
-            void endSession("ended");
+            // El servidor ya no reconoce la sesión y no dice por qué: el mismo aviso que /auth/expirada, salvo que ya
+            // venció el tope de 8 h.
+            void endSession(absoluteDeadline.current <= Date.now() ? "max" : "ended");
             return;
           }
           if (userId !== undefined && user.id !== userId) {
@@ -108,10 +119,14 @@ export function IdleTimeout({ limits, userId }: { limits?: SessionLimits; userId
             return;
           }
           const now = Date.now();
+          confirmedAt.current = Math.max(confirmedAt.current, sentAt);
           applyLimits(user.session_limits, now);
           if (own) touch(now);
         })
-        .catch(() => {});
+        .catch(() => {})
+        .finally(() => {
+          pending.current -= 1;
+        });
     },
     [applyLimits, endSession, touch, userId],
   );
@@ -119,6 +134,8 @@ export function IdleTimeout({ limits, userId }: { limits?: SessionLimits; userId
   useEffect(() => {
     const now = Date.now();
     applyLimits(limits, now);
+    // Los vencimientos del render salen del servidor: confirman la sesión de esta pestaña.
+    if (limits) confirmedAt.current = now;
     touch(now);
 
     const onActivity = () => {
@@ -150,6 +167,15 @@ export function IdleTimeout({ limits, userId }: { limits?: SessionLimits; userId
       }
       const idleLeft = idleDeadline.current - at;
       const absoluteLeft = absoluteDeadline.current - at;
+      // Otra pestaña mantiene viva una sesión que esta no confirmó: su tope vencido puede ser el de una sesión anterior
+      // y POST /auth/logout borraría la nueva. No cierra hasta que /auth/me diga cuál es la vigente (#2).
+      if (mustConfirmBeforeMax(idleLeft, absoluteLeft, sharedStore(), at, lastShared.current, confirmedAt.current)) {
+        if (pending.current === 0 && at - lastRefresh.current >= CONFIRM_RETRY_MS) {
+          lastRefresh.current = at;
+          syncWithServer(false);
+        }
+        return;
+      }
       const reason: Reason = absoluteLeft <= idleLeft ? "absolute" : "idle";
       const left = Math.min(idleLeft, absoluteLeft);
       if (left <= 0) {
