@@ -33,7 +33,7 @@ export function weeklyChangeNotes(changes: WeeklyChanges | null): WeeklyChangeNo
 
 /**
  * El texto del aviso del último escaneo. Solo dice lo que la API marcó: sin weekly_changes no afirma que no hubo
- * crecimiento (sin escaneo anterior en 7 días no se calcula) ni que no hubo hallazgos nuevos si el escaneo no los contó.
+ * crecimiento (sin escaneo de base en 14 días no se calcula) ni que no hubo hallazgos nuevos si el escaneo no los contó.
  */
 export function lastScanSummary(point: ScoreHistoryPoint): string {
   const notes = weeklyChangeNotes(point.weekly_changes ?? null);
