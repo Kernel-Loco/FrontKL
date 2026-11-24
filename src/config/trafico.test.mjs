@@ -11,9 +11,16 @@ test("el User-Agent es el de la carta y liga a esta página", () => {
 });
 
 test("dice qué es LowTide y a quién escribir", () => {
-  assert.ok(TRAFICO.queEs.includes("son de LowTide"));
+  assert.ok(TRAFICO.queEs.includes("User-Agent de LowTide"));
+  assert.ok(TRAFICO.queEs.includes("Cualquiera puede copiar un User-Agent"));
+  assert.ok(TRAFICO.queEs.includes("IP de origen"));
+  assert.ok(TRAFICO.queEs.includes("sección 9 de la carta"));
   assert.ok(TRAFICO.cuando.includes("carta de autorización vigente"));
   assert.ok(TRAFICO.cuando.includes("una a la vez por sitio"));
+  assert.ok(TRAFICO.cuando.includes("también entre análisis distintos"));
+  assert.ok(TRAFICO.cuando.includes("tope por análisis que dice la carta"));
+  assert.ok(TRAFICO.contactoDespues.includes("la IP de origen"));
+  assert.ok(TRAFICO.contactoDespues.includes("Solo usamos tu correo y lo que mandes para revisar ese tráfico y responderte"));
   assert.equal(TRAFICO.correo, "seguridad@lowtidesec.com");
   assert.ok(TRAFICO.contactoAntes.endsWith("escribe a "));
 });
