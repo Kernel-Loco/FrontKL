@@ -14,7 +14,9 @@ import { Captcha } from "@/components/auth/Captcha";
 import { Notice } from "@/components/auth/Notice";
 import { Button } from "@/components/Button";
 import { TextInput } from "@/components/TextInput";
+import { ApiError } from "@/lib/apiClient";
 import { writeFlow } from "@/lib/flowStorage";
+import { enrollTokenFrom, MFA_ENROLL_PATH } from "@/lib/mfaEnroll";
 import { ceremonyErrorMessage, isCeremonyAborted } from "@/lib/passkeys";
 import { loginSchema, type LoginValues } from "@/lib/validation";
 import { login, passkeyLoginOptions, passkeyLoginVerify, requestLoginLink } from "@/services/authService";
@@ -24,9 +26,10 @@ const CAPTCHA_MISSING = "Marca 'No soy un robot' y espera a que diga Verificado.
 
 const noSubscribe = () => () => {};
 
-/** Mensaje de una entrada con passkey fallida: del navegador si vino de WebAuthn, de la API si no. */
+/** Mensaje de una entrada con passkey fallida: del navegador si vino de WebAuthn, de la API si no. El 403 de un
+ * Admin sin TOTP (RC-5) trae su propio texto: entrar con contraseña para activarlo. */
 function passkeyMessage(error: unknown) {
-  return ceremonyErrorMessage(error) ?? getErrorMessage(error);
+  return ceremonyErrorMessage(error) ?? getErrorMessage(error, { apiMessageOn403: true });
 }
 
 export function LoginForm() {
@@ -133,7 +136,15 @@ export function LoginForm() {
       }
     } catch (error) {
       resetField("password");
-      setFormError(getErrorMessage(error));
+      // Admin u operador sin TOTP (RC-5): 403 sin sesión con un token para activarlo en la pantalla del alta.
+      const enrollToken = error instanceof ApiError ? enrollTokenFrom(error.status, error.detail) : null;
+      if (enrollToken && error instanceof ApiError) {
+        setNavigating(true);
+        writeFlow("mfaEnroll", { mfa_setup_token: enrollToken, detail: error.message });
+        router.push(MFA_ENROLL_PATH);
+        return;
+      }
+      setFormError(getErrorMessage(error, { apiMessageOn403: true }));
       // La API ya gastó este captcha, haya fallado la contraseña o el propio captcha: se resuelve otro.
       setCaptcha(null);
       setAttempts((n) => n + 1);

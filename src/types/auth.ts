@@ -142,6 +142,17 @@ export interface MfaSetupResponse {
   expires_in_seconds: number;
 }
 
+/** Alta de TOTP al entrar (POST /auth/mfa/enroll/setup, RC-5): el token del 403 de /auth/login, sin sesión. */
+export interface MfaEnrollSetupRequest {
+  mfa_setup_token: string;
+}
+
+/** Activa el TOTP del alta al entrar (POST /auth/mfa/enroll/enable). Con el código válido la API crea la sesión. */
+export interface MfaEnrollEnableRequest {
+  mfa_setup_token: string;
+  code: string;
+}
+
 export interface MfaEnableRequest {
   code: string;
 }
