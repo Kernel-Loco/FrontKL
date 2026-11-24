@@ -220,7 +220,8 @@ export interface ScoreHistoryPoint extends ScoreBase {
 
 /**
  * `weekly_changes` de cirdan/score/cambios.py: activos y hallazgos nuevos del escaneo y crecimiento del inventario
- * frente al escaneo anterior de los últimos 7 días. `assets_growth_percent` es null sin un escaneo anterior en esos 7 días.
+ * en la semana: contra el escaneo más viejo de los 7 días anteriores o, si no hay, el anterior más reciente de hasta
+ * 14 días (RC-73). `assets_growth_percent` y `assets_before` son null sin ese escaneo de base.
  */
 export interface WeeklyChanges {
   previous_scan_id: string | null;
@@ -515,108 +516,6 @@ export interface Report {
   status: ReportStatus;
   generated_at: string | null;
   download_url: string | null;
-}
-
-/** Un hallazgo del reporte ejecutivo: de los más severos, con la primera frase de qué hacer. */
-export interface ExecutiveReportFinding {
-  title: string;
-  severity: Severity;
-  category: Category;
-  asset: string;
-  source: FindingSource;
-  detected_at: string;
-  recurrence: Recurrence;
-  /** Primera frase de la recomendación de la regla, con tope; vacío si la regla no trae texto. */
-  action: string;
-  /** Control ISO 27001 y salvaguarda CIS de la regla (RC-160): número y nombre breve, null sin mapeo. */
-  frameworks?: ReportFrameworks;
-}
-
-/** Los marcos de un hallazgo en los reportes (RC-160): solo ISO y CIS, sin MITRE ni enlaces. */
-export interface ReportFrameworks {
-  iso_27001_2022: { control_id: string; control_name: string } | null;
-  cis_controls_v8_1: { safeguard_id: string; safeguard_name: string } | null;
-}
-
-/**
- * `GET /api/v1/domains/{fqdn}/report` (#45, RC-70): el reporte ejecutivo del estado actual del dominio. El PDF del portal
- * se arma con esto y `?formato=html` da el mismo reporte en HTML. 403 sin autorización firmada vigente.
- */
-export interface ExecutiveReport {
-  domain: string;
-  organization: string;
-  generated_at: string;
-  authorization: { valid_from: string; valid_until: string };
-  score: { score: number; band: Band; grade: Grade; partial_coverage: boolean; computed_at: string } | null;
-  last_scan_at: string | null;
-  /** Todos los abiertos, por severidad y por categoría, aunque la lista traiga solo los más severos. */
-  open_findings: Record<Severity, number>;
-  by_category: Record<Category, number>;
-  total_open: number;
-  findings: ExecutiveReportFinding[];
-  /** Abiertos que no caben en la lista (van en la exportación de hallazgos). */
-  findings_omitted: number;
-  /** Van siempre la de Have I Been Pwned (CC BY 4.0) y la de CIS Controls (CC BY-NC-ND 4.0, RC-160). */
-  attributions: { source: string; name: string; text: string; url: string; license_url: string }[];
-}
-
-/** Un hallazgo del reporte técnico (#46, RC-81): todo su detalle y su remediación completa. */
-export interface TechnicalReportFinding {
-  id: string;
-  title: string;
-  severity: Severity;
-  base_severity: Severity | null;
-  category: Category;
-  rule_code: string;
-  /** Un correo sale solo con su dominio. */
-  asset: string;
-  asset_type: AssetType | null;
-  source: FindingSource;
-  detected_at: string;
-  recurrence: Recurrence;
-  last_scan_id: string | null;
-  cve_id: string | null;
-  cvss: number | null;
-  epss: number | null;
-  /** null: sin dato de KEV todavía. */
-  in_kev: boolean | null;
-  /** Hasta 12 pares, con tope y sin correos completos. */
-  evidence: { key: string; value: string }[];
-  frameworks?: ReportFrameworks;
-  meaning: string;
-  recommendation: string;
-}
-
-/** Una remediación del reporte técnico: una por regla, con los activos que toca (hasta 10). */
-export interface TechnicalRemediation {
-  rule_code: string;
-  title: string;
-  severity: Severity;
-  category: Category;
-  count: number;
-  assets: string[];
-  assets_omitted: number;
-  recommendation: string;
-}
-
-/** Cobertura del último escaneo por fuente, sin el error. */
-export interface TechnicalReportSource {
-  source: string;
-  status: "pending" | "running" | "succeeded" | "failed" | "retrying" | string;
-  attempt: number | null;
-  finished_at: string | null;
-}
-
-/**
- * `GET /api/v1/domains/{fqdn}/report/technical` (#46, RC-81): las cifras, el score y las atribuciones del ejecutivo,
- * más el detalle de cada hallazgo (hasta 200), las remediaciones por regla y la cobertura del último escaneo.
- * Solo Analista, Admin o llave de API (403 al gerente) y con autorización firmada vigente (403 sin ella).
- */
-export interface TechnicalReport extends Omit<ExecutiveReport, "findings"> {
-  kind: "technical";
-  findings: TechnicalReportFinding[];
-  remediations: TechnicalRemediation[];
-  sources: TechnicalReportSource[];
 }
 
 /** `POST /api/v1/reports` */

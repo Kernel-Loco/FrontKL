@@ -12,6 +12,8 @@ import type {
   LoginResponse,
   MfaEnableRequest,
   MfaEnableResponse,
+  MfaEnrollEnableRequest,
+  MfaEnrollSetupRequest,
   MfaSetupRequest,
   MfaSetupResponse,
   MfaVerifyRequest,
@@ -62,6 +64,16 @@ export async function enableMfa(payload: MfaEnableRequest): Promise<MfaEnableRes
   return apiClient.post<MfaEnableResponse>("/auth/mfa/enable", payload);
 }
 
+/** Alta de TOTP al entrar (RC-5): con el token del 403 de /auth/login, la API devuelve el QR. Sin sesión. */
+export async function startMfaEnroll(payload: MfaEnrollSetupRequest): Promise<MfaSetupResponse> {
+  return apiClient.post<MfaSetupResponse>("/auth/mfa/enroll/setup", payload);
+}
+
+/** Activa el TOTP del alta al entrar. Con el primer código válido la API guarda el secreto y crea la sesión. */
+export async function enableMfaEnroll(payload: MfaEnrollEnableRequest): Promise<MfaVerifyResponse> {
+  return apiClient.post<MfaVerifyResponse>("/auth/mfa/enroll/enable", payload);
+}
+
 // --- Passkeys (RC-331). Las opciones y las respuestas de WebAuthn viajan como JSON sin tocarlas.
 
 export async function passkeyLoginOptions(): Promise<PasskeyLoginOptionsResponse> {
@@ -97,10 +109,13 @@ export async function logout(): Promise<void> {
   }
 }
 
-/** Usuario de la sesión, o null si terminó. Renueva la inactividad en el servidor. */
-export async function getCurrentUser(): Promise<User | null> {
+/**
+ * Usuario de la sesión, o null si terminó. Renueva la inactividad en el servidor. Con `passive`, la consulta no cuenta
+ * como actividad del usuario en el portal (RC-311).
+ */
+export async function getCurrentUser({ passive = false }: { passive?: boolean } = {}): Promise<User | null> {
   try {
-    return toUser(await apiClient.get<ApiUser>("/auth/me"));
+    return toUser(await apiClient.get<ApiUser>("/auth/me", { passive }));
   } catch (error) {
     if (error instanceof ApiError && error.status === 401) return null;
     throw error;

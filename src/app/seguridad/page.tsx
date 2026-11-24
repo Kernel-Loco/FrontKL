@@ -1,11 +1,12 @@
 // Página pública: se abre con o sin sesión, porque src/proxy.ts no la intercepta. Todo su texto sale de
-// src/config/seguridad.ts.
+// src/config/seguridad.ts, y el de la sección del tráfico, de src/config/trafico.ts.
 import Image from "next/image";
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
 import { Card } from "@/components/ui/Card";
 import { ASVS } from "@/config/asvs";
 import { SEGURIDAD } from "@/config/seguridad";
+import { TRAFICO } from "@/config/trafico";
 
 export const metadata = { title: "Seguridad" };
 
@@ -102,6 +103,46 @@ export default function SeguridadPage() {
               </Card>
             ))}
           </div>
+        </section>
+
+        <section aria-labelledby={TRAFICO.id}>
+          <h2 id={TRAFICO.id} className={H2}>
+            {TRAFICO.titulo}
+          </h2>
+          <p className="mt-3 text-sm">
+            <code className="break-all rounded-sm bg-lt-surface px-1.5 py-0.5 font-mono text-xs text-lt-text">
+              {TRAFICO.agente}
+            </code>
+          </p>
+          <p className="mt-3 text-sm leading-relaxed text-lt-muted">{TRAFICO.queEs}</p>
+          <p className="mt-2 text-sm leading-relaxed text-lt-muted">{TRAFICO.cuando}</p>
+          <p className="mt-2 text-sm leading-relaxed text-lt-muted">
+            {TRAFICO.contactoAntes}
+            <a
+              href={`mailto:${TRAFICO.correo}`}
+              className="font-medium text-lt-indigo-soft underline-offset-2 hover:underline"
+            >
+              {TRAFICO.correo}
+            </a>
+            {TRAFICO.contactoDespues}
+          </p>
+          <p className="mt-2 text-sm leading-relaxed text-lt-muted">
+            {TRAFICO.privacidadAntes}
+            <a
+              href={`mailto:${TRAFICO.arco}`}
+              className="font-medium text-lt-indigo-soft underline-offset-2 hover:underline"
+            >
+              {TRAFICO.arco}
+            </a>
+            {TRAFICO.avisoAntes}
+            <Link
+              href={TRAFICO.avisoRuta}
+              className="font-medium text-lt-indigo-soft underline-offset-2 hover:underline"
+            >
+              {TRAFICO.aviso}
+            </Link>
+            {TRAFICO.avisoDespues}
+          </p>
         </section>
       </main>
     </div>
