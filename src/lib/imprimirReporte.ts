@@ -8,12 +8,11 @@
  * allow-modals deja abrir el diálogo de impresión. El HTML de la API no trae scripts ni recursos externos. */
 export const SANDBOX = "allow-same-origin allow-modals";
 
-/** Si el navegador no avisa con afterprint, el iframe se quita después de este tiempo. */
-export const LIMPIEZA_MS = 5 * 60_000;
-
 /**
  * Carga `html` en un iframe oculto y abre su impresión. Resuelve cuando se abrió el diálogo. Con `signal` abortado
  * antes de cargar, quita el iframe y no imprime. Devuelve una función que quita el iframe (por ejemplo, al desmontar).
+ * Sin temporizador: en los navegadores donde print() no bloquea, el diálogo puede seguir abierto mucho rato. Si
+ * afterprint no llega, el iframe se quita en la siguiente impresión o al desmontar el botón (ReportButton).
  */
 export function printReportHtml(html: string, doc: Document = document, signal?: AbortSignal): Promise<() => void> {
   return new Promise((resolve, reject) => {
@@ -24,11 +23,7 @@ export function printReportHtml(html: string, doc: Document = document, signal?:
     frame.tabIndex = -1;
     // Fuera de la vista pero con tamaño de hoja: con display:none o 0 px algunos navegadores imprimen la hoja en blanco.
     frame.style.cssText = "position:fixed;left:-10000px;top:0;width:210mm;height:297mm;border:0;";
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    const remove = () => {
-      if (timer !== undefined) clearTimeout(timer);
-      frame.remove();
-    };
+    const remove = () => frame.remove();
     frame.addEventListener("load", () => {
       const win = frame.contentWindow;
       if (signal?.aborted || !win) {
@@ -38,7 +33,6 @@ export function printReportHtml(html: string, doc: Document = document, signal?:
         return;
       }
       win.addEventListener("afterprint", remove, { once: true });
-      timer = setTimeout(remove, LIMPIEZA_MS);
       try {
         win.focus();
         win.print();

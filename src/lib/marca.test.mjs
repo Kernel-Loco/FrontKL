@@ -22,7 +22,7 @@ test("ningún archivo de src/ escribe el nombre como 'Lowtide'", () => {
   assert.deepEqual(malos, []);
 });
 
-test("la pestaña, el enlace de la barra y el PDF ejecutivo dicen LowTide", () => {
+test("la pestaña y el enlace de la barra dicen LowTide, y el PDF imprime el HTML de la API", () => {
   const leer = (r) => readFileSync(join(SRC, r), "utf8");
   assert.match(leer("app/layout.tsx"), /default: "LowTide", template: "%s · LowTide"/);
   assert.match(leer("components/Sidebar.tsx"), /aria-label="LowTide, ir al dashboard"/);

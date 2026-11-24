@@ -28,7 +28,7 @@ test("1. la letra va junto al score y, con cobertura parcial, lleva el mismo avi
   assert.deepEqual(mockWeights.grades.map((g) => [g.grade, g.from, g.to]), [["A", 0, 19], ["B", 20, 39], ["C", 40, 59], ["D", 60, 79], ["F", 80, 100]]);
 });
 
-test("1b. el tablero, el detalle y el PDF pintan la letra que da la API", () => {
+test("1b. el tablero y el detalle pintan la letra que da la API, y el PDF imprime el HTML de la API", () => {
   assert.match(leer("../components/screens/dashboard/DomainsRiskTable.tsx"), /<GradeBadge grade=\{d\.grade\}[^>]*partial=\{partialDomains\.has\(d\.fqdn\)\}/);
   assert.match(leer("../components/screens/detalle/RiskGauge.tsx"), /<GradeBadge grade=\{grade\} band=\{band\} partial=\{partial\}/);
   assert.match(leer("../app/(dashboard)/dashboard/dominios/[fqdn]/page.tsx"), /grade=\{score\.grade\}\s+partial=\{coverageIncomplete\(score\)\}/);
