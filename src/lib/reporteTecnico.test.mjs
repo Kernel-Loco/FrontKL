@@ -31,7 +31,8 @@ test("3. los botones del técnico solo salen con technical y se frenan igual que
   const bloque = boton.slice(boton.indexOf("{technical && ("));
   assert.ok(boton.includes("{technical && ("));
   for (const kind of ["tpdf", "thtml"]) {
-    assert.match(bloque, new RegExp(`loading=\{busy === "${kind}"\} disabled=\{Boolean\(disabledReason\) \|\| busy !== null\}`));
+    // String.raw deja las barras: en un template normal "\|\|" queda como "||" y la expresión aceptaba cualquier texto.
+    assert.match(bloque, new RegExp(String.raw`loading=\{busy === "${kind}"\} disabled=\{Boolean\(disabledReason\) \|\| busy !== null\}`));
     assert.ok(bloque.includes(`onClick={() => run("${kind}")}`), kind);
   }
   assert.match(bloque, /aria-label="Exportar reporte técnico en PDF"/);
