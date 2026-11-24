@@ -28,6 +28,9 @@ const PROXY_TIMEOUT_MS = 40_000;
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // El 308 que quita la diagonal final (/api/v1/ a /api/v1) lo hace src/proxy.ts: el de Next sale sin las cabeceras
+  // de headers() (RC-283, src/lib/diagonalFinal.ts).
+  skipTrailingSlashRedirect: true,
   experimental: { proxyTimeout: PROXY_TIMEOUT_MS },
   // Solo la imagen del despliegue (Dockerfile, RC-91) compila standalone. Sin la variable, npm start sigue igual.
   ...(process.env.NEXT_OUTPUT === "standalone" && { output: "standalone" as const }),
