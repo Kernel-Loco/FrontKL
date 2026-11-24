@@ -4,7 +4,7 @@ import { MfaEnrollForm } from "@/components/auth/forms/MfaEnrollForm";
 
 export const metadata: Metadata = { title: "Activar la verificación en dos pasos" };
 
-// Alta de TOTP al entrar (RC-5): el Admin o el operador sin TOTP llega aquí desde el 403 de /auth/login.
+// Alta de TOTP al entrar (RC-5): el Admin sin TOTP llega aquí desde el 403 de /auth/login.
 export default function MfaEnrollPage() {
   return (
     <div className="space-y-6">

@@ -18,7 +18,7 @@ import type { MfaSetupResponse } from "@/types";
 const MFA_LENGTH = 6;
 
 /**
- * Alta de TOTP al entrar (RC-5): el Admin o el operador sin TOTP llega aquí desde el 403 de /auth/login, sin sesión.
+ * Alta de TOTP al entrar (RC-5): el Admin sin TOTP llega aquí desde el 403 de /auth/login, sin sesión.
  * 1) pide el QR con el token del 403, 2) el primer código válido guarda el secreto y la API crea la sesión.
  * El QR se pide con un botón y no al montar: así React no lo pide dos veces ni gasta el token sin que la persona lo vea.
  */

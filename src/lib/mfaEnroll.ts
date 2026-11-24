@@ -1,4 +1,4 @@
-// Alta de TOTP al entrar (RC-5): el Admin o el operador sin TOTP recibe en /auth/login un 403 sin sesión con
+// Alta de TOTP al entrar (RC-5): el Admin sin TOTP recibe en /auth/login un 403 sin sesión con
 // { mfa_setup_required: true, mfa_setup_token }. Sin React, para probarlas con node --test.
 
 /** Ruta de la pantalla del alta al entrar. */
@@ -15,7 +15,7 @@ export function enrollTokenFrom(status: number, body: unknown): string | null {
   return TOKEN.test(mfa_setup_token) ? mfa_setup_token : null;
 }
 
-/** El QR venció o gastó sus 5 intentos: se pide otro con el mismo token. */
+/** Se mandó un código sin QR pedido: se pide el QR con el mismo token. Con 5 códigos o 3 QR el token se gasta. */
 export function enrollMustRescan(status: number, message: string): boolean {
   return status === 401 && /QR venció|Empieza de nuevo/.test(message);
 }

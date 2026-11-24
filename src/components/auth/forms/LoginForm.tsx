@@ -136,7 +136,7 @@ export function LoginForm() {
       }
     } catch (error) {
       resetField("password");
-      // Admin u operador sin TOTP (RC-5): 403 sin sesión con un token para activarlo en la pantalla del alta.
+      // Admin sin TOTP (RC-5): 403 sin sesión con un token para activarlo en la pantalla del alta.
       const enrollToken = error instanceof ApiError ? enrollTokenFrom(error.status, error.detail) : null;
       if (enrollToken && error instanceof ApiError) {
         setNavigating(true);
