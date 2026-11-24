@@ -126,6 +126,23 @@ export default function SeguridadPage() {
             </a>
             {TRAFICO.contactoDespues}
           </p>
+          <p className="mt-2 text-sm leading-relaxed text-lt-muted">
+            {TRAFICO.privacidadAntes}
+            <a
+              href={`mailto:${TRAFICO.arco}`}
+              className="font-medium text-lt-indigo-soft underline-offset-2 hover:underline"
+            >
+              {TRAFICO.arco}
+            </a>
+            {TRAFICO.avisoAntes}
+            <Link
+              href={TRAFICO.avisoRuta}
+              className="font-medium text-lt-indigo-soft underline-offset-2 hover:underline"
+            >
+              {TRAFICO.aviso}
+            </Link>
+            {TRAFICO.avisoDespues}
+          </p>
         </section>
       </main>
     </div>

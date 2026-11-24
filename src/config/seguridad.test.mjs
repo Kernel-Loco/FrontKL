@@ -7,8 +7,9 @@ import { test } from "node:test";
 import { SEGURIDAD } from "./seguridad.ts";
 
 // Huella de las fronteras y los controles del resumen de seguridad para clientes del 20 de noviembre de 2026, que
-// se revisó contra el modelo de amenazas: solo trae controles que ya funcionan.
-const HUELLA_DEL_RESUMEN = "9662a768f0177ca9838a21a7eab2e1d6e3f24583284e930a6b4aa2da43f16645";
+// se revisó contra el modelo de amenazas: solo trae controles que ya funcionan. El 24 de noviembre cambió el control
+// de peticiones del servidor (SSRF): el 80 una vez sin seguir redirecciones y una petición a la vez por sitio.
+const HUELLA_DEL_RESUMEN = "7edef84d8bac8e3ec3038aaff4bed10d7a8d08c1e958e13cd38dc8099803d324";
 
 const controles = SEGURIDAD.grupos.flatMap((grupo) => grupo.controles);
 

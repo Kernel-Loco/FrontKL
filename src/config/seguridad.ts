@@ -149,7 +149,7 @@ export const SEGURIDAD = {
         },
         {
           tema: "Que un sitio visitado desvíe a LowTide hacia su red interna (SSRF)",
-          texto: "Las visitas solo van a direcciones públicas por el puerto 443, con máximo 3 redirecciones dentro del dominio, una petición por sitio y tope de tamaño y de tiempo.",
+          texto: "Las visitas solo van a direcciones públicas por el puerto 443 y, si este rechaza la conexión o no la acepta a tiempo, una vez por el 80, sin seguir sus redirecciones. En el 443 siguen máximo 3 redirecciones dentro del dominio, una petición a la vez por sitio, con tope de tamaño y de tiempo por petición y el tope de peticiones por análisis de la sección 9 de la carta.",
         },
         {
           tema: "Herramientas de terceros con acceso a llaves",
