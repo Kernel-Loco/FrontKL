@@ -1,9 +1,11 @@
-// Reporte ejecutivo del dominio en PDF (#45, RC-70), de 1 a 2 páginas A4, con el JSON de GET /domains/{fqdn}/report.
+// Reporte ejecutivo del dominio en PDF (#45, RC-70) y, al final, su segunda plantilla: el técnico (#46, RC-81), de 1 a 2 páginas A4, con el JSON de GET /domains/{fqdn}/report.
 // El HTML de la API (?formato=html) sale del mismo JSON: mismas cifras, mismos hallazgos y la atribución de HIBP.
 // Sin imports con @/ de valores: las etiquetas, scoreCell y formatDate entran como parámetro, así node --test lo carga.
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
-import type { Band, Category, ExecutiveReport, Grade, ReportFrameworks, Severity } from "@/types";
+import type {
+  Band, Category, ExecutiveReport, Grade, Recurrence, ReportFrameworks, Severity, TechnicalReport, TechnicalReportFinding,
+} from "@/types";
 
 export const SEVERITIES: Severity[] = ["critical", "high", "medium", "low"];
 export const CATEGORIES: Category[] = ["infrastructure", "digital_identity", "configuration", "data_leaks"];
@@ -46,7 +48,12 @@ export function frameworksLine(f: ReportFrameworks | null | undefined): string {
 }
 
 /** Las mismas frases de 'Lectura ejecutiva' que cirdan/reporte.py lectura(). */
-export function insights(r: ExecutiveReport, labels: Pick<ReportLabels, "category">): string[] {
+/** Lo que lectura() necesita: el ejecutivo y el técnico (RC-81) lo traen igual. */
+export type InsightsInput = Pick<ExecutiveReport, "total_open" | "open_findings" | "by_category" | "findings_omitted"> & {
+  findings: { recurrence: Recurrence }[];
+};
+
+export function insights(r: InsightsInput, labels: Pick<ReportLabels, "category">): string[] {
   if (r.total_open === 0) return ["El dominio no tiene hallazgos abiertos."];
   const high = r.open_findings.critical + r.open_findings.high;
   const out = [
@@ -167,6 +174,177 @@ export function buildExecutivePdf(r: ExecutiveReport, labels: ReportLabels): jsP
     y = 14;
   }
   y = section(doc, "Fuentes y atribuciones", y + 8);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7.5);
+  doc.setTextColor(89, 101, 121);
+  for (const b of blocks) {
+    doc.text(b, MARGIN, y);
+    y += b.length * 3.4 + 1.5;
+  }
+
+  const pages = doc.getNumberOfPages();
+  for (let page = 1; page <= pages; page += 1) {
+    doc.setPage(page);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7);
+    doc.setTextColor(112, 123, 142);
+    doc.text(`LowTide - Confidencial - ${page} / ${pages}`, pageWidth - MARGIN, pageHeight - 8, { align: "right" });
+  }
+  return doc;
+}
+
+// ---------------------------------------------------------------- reporte técnico (#46, RC-81)
+// Con el JSON de GET /domains/{fqdn}/report/technical: las cifras, el score y las atribuciones del ejecutivo, más el
+// detalle de cada hallazgo con su remediación, las remediaciones por regla y la cobertura del último escaneo. El HTML
+// de la API (?formato=html) sale del mismo JSON. No tiene tope de páginas: es para el equipo técnico.
+
+/** Las mismas de ETIQUETA_ESTADO_FUENTE en cirdan/reporte_tecnico.py. */
+export const SOURCE_STATUS_LABELS: Record<string, string> = {
+  succeeded: "Respondió", failed: "Falló", retrying: "Reintentando", pending: "Pendiente", running: "En curso",
+};
+const RECURRENCE_LABELS: Record<string, string> = { new: "Nuevo", recurring: "Recurrente" };
+
+/** Las filas de la tabla de un hallazgo, en el orden del HTML de la API (_bloque_hallazgo). */
+export function findingRows(f: TechnicalReportFinding, labels: ReportLabels): [string, string][] {
+  const sev = (s: string | null) => (s ? labels.severity[s as keyof ReportLabels["severity"]] ?? s : "-");
+  const rows: [string, string][] = [
+    ["Severidad", `${sev(f.severity)} (base: ${sev(f.base_severity)})`],
+    ["Categoría", labels.category[f.category] ?? f.category],
+    ["Regla", f.rule_code],
+    ["Activo", `${f.asset} (${f.asset_type ?? "-"})`],
+    ["Fuente", labels.source[f.source] ?? f.source],
+    ["Detectado", `${labels.formatDate(f.detected_at)} - ${RECURRENCE_LABELS[f.recurrence] ?? f.recurrence}`],
+  ];
+  if (f.cve_id) {
+    const kev = f.in_kev === null ? "sin dato" : f.in_kev ? "sí" : "no";
+    const epss = f.epss !== null ? `${(f.epss * 100).toFixed(1)} %` : "-";
+    rows.push(["Vulnerabilidad", `${f.cve_id} - CVSS ${f.cvss ?? "-"} - EPSS ${epss} - En KEV: ${kev}`]);
+  }
+  for (const e of f.evidence) rows.push([`Evidencia - ${e.key}`, e.value]);
+  // RC-160: el control ISO y la salvaguarda CIS; sin mapeo no hay fila.
+  const iso = f.frameworks?.iso_27001_2022;
+  const cis = f.frameworks?.cis_controls_v8_1;
+  if (iso) rows.push(["ISO/IEC 27001:2022", `${iso.control_id} ${iso.control_name}`.trim()]);
+  if (cis) rows.push(["CIS Controls v8.1", `${cis.safeguard_id} ${cis.safeguard_name}`.trim()]);
+  rows.push(["Qué significa", f.meaning || "-"], ["Remediación", f.recommendation || "-"]);
+  return rows;
+}
+
+/** El PDF del reporte técnico. Como el ejecutivo, es el estado actual del dominio, sin filtro de fechas. */
+export function buildTechnicalPdf(r: TechnicalReport, labels: ReportLabels): jsPDF {
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const width = pageWidth - MARGIN * 2;
+  const bottom = 20;
+  const table = { theme: "grid" as const, headStyles: HEAD, alternateRowStyles: { fillColor: [247, 248, 251] as [number, number, number] },
+    margin: { left: MARGIN, right: MARGIN, bottom } };
+  const styles = { font: "helvetica", fontSize: 7.5, cellPadding: 1.8, textColor: [45, 55, 72] as [number, number, number],
+    overflow: "linebreak" as const, valign: "top" as const };
+
+  doc.setProperties({ title: `Reporte técnico de riesgo - ${r.domain} - LowTide`, creator: "LowTide" });
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(18);
+  doc.setTextColor(28, 34, 48);
+  doc.text("Reporte técnico de riesgo", MARGIN, 20);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8.5);
+  doc.setTextColor(89, 101, 121);
+  doc.text(doc.splitTextToSize(`Dominio: ${r.domain} - Empresa: ${r.organization} - Generado: ${labels.formatDate(r.generated_at)}`, width), MARGIN, 26);
+
+  const s = r.score;
+  let y = section(doc, "Indicadores clave", 35);
+  autoTable(doc, {
+    ...table,
+    startY: y,
+    body: [
+      ["Score y letra", s ? labels.scoreCell(s.score, s.grade, labels.band[s.band], s.partial_coverage) : "Sin score todavía"],
+      ["Hallazgos abiertos", String(r.total_open)],
+      ["Críticos / altos abiertos", String(r.open_findings.critical + r.open_findings.high)],
+      ["Último escaneo", r.last_scan_at ? labels.formatDate(r.last_scan_at) : "Sin fecha"],
+      ["Autorización vigente", `${labels.formatDate(r.authorization.valid_from)} a ${labels.formatDate(r.authorization.valid_until)}`],
+    ],
+    styles,
+    columnStyles: { 0: { cellWidth: 52, fontStyle: "bold" } },
+  });
+
+  y = section(doc, "Lectura", lastY(doc, y) + 8);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8.5);
+  doc.setTextColor(55, 65, 81);
+  for (const line of insights(r, labels)) {
+    const lines = doc.splitTextToSize(`- ${line}`, width);
+    doc.text(lines, MARGIN, y);
+    y += lines.length * 4 + 1.5;
+  }
+
+  y = section(doc, "Cobertura del último escaneo", y + 4);
+  autoTable(doc, {
+    ...table,
+    startY: y,
+    head: [["Fuente", "Estado", "Intentos", "Terminó"]],
+    body: r.sources.length > 0
+      ? r.sources.map((f) => [labels.source[f.source] ?? f.source, SOURCE_STATUS_LABELS[f.status] ?? f.status,
+          f.attempt !== null ? String(f.attempt) : "-", f.finished_at ? labels.formatDate(f.finished_at) : "Sin fecha"])
+      : [["El dominio no tiene escaneos todavía.", "-", "-", "-"]],
+    styles,
+  });
+
+  y = section(doc, "Remediaciones por regla", lastY(doc, y) + 8);
+  autoTable(doc, {
+    ...table,
+    startY: y,
+    head: [["Severidad", "Regla", "Hallazgos", "Activos", "Remediación"]],
+    body: r.remediations.length > 0
+      ? r.remediations.map((x) => [
+          labels.severity[x.severity] ?? x.severity,
+          `${x.title}\nRegla: ${x.rule_code}`,
+          String(x.count),
+          x.assets.join(", ") + (x.assets_omitted ? ` y ${x.assets_omitted} más` : ""),
+          x.recommendation || "-",
+        ])
+      : [["-", "El dominio no tiene hallazgos abiertos.", "-", "-", "-"]],
+    columnStyles: { 0: { cellWidth: 18 }, 1: { cellWidth: 40 }, 2: { cellWidth: 18 }, 3: { cellWidth: 40 } },
+    styles,
+    rowPageBreak: "avoid",
+  });
+
+  y = section(doc, "Detalle de hallazgos", lastY(doc, y) + 8);
+  if (r.findings.length === 0) {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8.5);
+    doc.text("El dominio no tiene hallazgos abiertos.", MARGIN, y);
+    y += 6;
+  }
+  r.findings.forEach((f, i) => {
+    autoTable(doc, {
+      ...table,
+      startY: y,
+      head: [[{ content: `${i + 1}. ${f.title}`, colSpan: 2 }]],
+      body: findingRows(f, labels),
+      styles,
+      columnStyles: { 0: { cellWidth: 52, fontStyle: "bold" } },
+      rowPageBreak: "avoid",
+    });
+    y = lastY(doc, y) + 4;
+  });
+
+  const notes: string[] = [];
+  if (r.findings_omitted > 0) {
+    notes.push(`Y ${r.findings_omitted} hallazgos abiertos más, de menor severidad. La lista completa está en la exportación de hallazgos del portal.`);
+  }
+  for (const a of r.attributions) notes.push(`Fuente: ${a.name} (${a.url}). ${a.text} Licencia: ${a.license_url}.`);
+  notes.push("Los correos van solo con su dominio. La evidencia nunca trae secretos ni contraseñas: solo dónde están.");
+  notes.push("LowTide - Confidencial. Solo observación pasiva de fuentes públicas, con autorización firmada del dominio.");
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7.5);
+  const blocks = notes.map((n) => doc.splitTextToSize(n, width) as string[]);
+  const needed = 10 + blocks.reduce((total, b) => total + b.length * 3.4 + 1.5, 0);
+  if (y + needed > pageHeight - bottom) {
+    doc.addPage();
+    y = 14;
+  }
+  y = section(doc, "Fuentes y atribuciones", y + 4);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7.5);
   doc.setTextColor(89, 101, 121);

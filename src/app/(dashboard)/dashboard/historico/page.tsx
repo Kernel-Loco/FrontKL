@@ -103,7 +103,7 @@ export default async function HistoricoPage({ searchParams }: Props) {
         actions={(
           <>
             {/* key: al cambiar de dominio con el selector se monta otro botón, sin el mensaje ni la descarga del anterior. */}
-            {canReport && <ReportButton key={fqdn} domain={fqdn} />}
+            {canReport && <ReportButton key={fqdn} domain={fqdn} technical={canSeeFindings} />}
             <DomainPicker domains={options} value={fqdn} />
           </>
         )}

@@ -560,6 +560,65 @@ export interface ExecutiveReport {
   attributions: { source: string; name: string; text: string; url: string; license_url: string }[];
 }
 
+/** Un hallazgo del reporte técnico (#46, RC-81): todo su detalle y su remediación completa. */
+export interface TechnicalReportFinding {
+  id: string;
+  title: string;
+  severity: Severity;
+  base_severity: Severity | null;
+  category: Category;
+  rule_code: string;
+  /** Un correo sale solo con su dominio. */
+  asset: string;
+  asset_type: AssetType | null;
+  source: FindingSource;
+  detected_at: string;
+  recurrence: Recurrence;
+  last_scan_id: string | null;
+  cve_id: string | null;
+  cvss: number | null;
+  epss: number | null;
+  /** null: sin dato de KEV todavía. */
+  in_kev: boolean | null;
+  /** Hasta 12 pares, con tope y sin correos completos. */
+  evidence: { key: string; value: string }[];
+  frameworks?: ReportFrameworks;
+  meaning: string;
+  recommendation: string;
+}
+
+/** Una remediación del reporte técnico: una por regla, con los activos que toca (hasta 10). */
+export interface TechnicalRemediation {
+  rule_code: string;
+  title: string;
+  severity: Severity;
+  category: Category;
+  count: number;
+  assets: string[];
+  assets_omitted: number;
+  recommendation: string;
+}
+
+/** Cobertura del último escaneo por fuente, sin el error. */
+export interface TechnicalReportSource {
+  source: string;
+  status: "pending" | "running" | "succeeded" | "failed" | "retrying" | string;
+  attempt: number | null;
+  finished_at: string | null;
+}
+
+/**
+ * `GET /api/v1/domains/{fqdn}/report/technical` (#46, RC-81): las cifras, el score y las atribuciones del ejecutivo,
+ * más el detalle de cada hallazgo (hasta 200), las remediaciones por regla y la cobertura del último escaneo.
+ * Solo Analista, Admin o llave de API (403 al gerente) y con autorización firmada vigente (403 sin ella).
+ */
+export interface TechnicalReport extends Omit<ExecutiveReport, "findings"> {
+  kind: "technical";
+  findings: TechnicalReportFinding[];
+  remediations: TechnicalRemediation[];
+  sources: TechnicalReportSource[];
+}
+
 /** `POST /api/v1/reports` */
 export interface ReportRequest {
   domain: string | null;

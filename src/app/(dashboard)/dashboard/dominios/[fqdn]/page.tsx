@@ -162,7 +162,7 @@ export default async function DomainDetailPage({ params }: Props) {
         actions={
           <>
             {can(user.role, "request_report") && (
-              <ReportButton key={fqdn} domain={fqdn} disabledReason={reportBlocked} />
+              <ReportButton key={fqdn} domain={fqdn} disabledReason={reportBlocked} technical={canSeeFindings} />
             )}
             {can(user.role, "request_report") && <SiemExportButton key={`siem-${fqdn}`} domain={fqdn} />}
             {can(user.role, "request_scan") && <ScanButton domains={domains.items} fixedDomain={fqdn} label="Escanear ahora" />}
