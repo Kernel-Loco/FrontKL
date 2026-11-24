@@ -9,7 +9,17 @@ import {
   idleWarningMs,
   SESSION_REFRESH_INTERVAL_MS,
 } from "@/config/session";
-import { leaveSession, type LoginNotice } from "@/lib/session/logout";
+import {
+  ACTIVITY_KEY,
+  announceEnded,
+  ENDED_KEY,
+  endedElsewhere,
+  recordActivity,
+  SHARE_INTERVAL_MS,
+  sharedIdleDeadline,
+  sharedStore,
+} from "@/lib/session/actividad";
+import { leaveSession, loginNoticeFrom, type LoginNotice } from "@/lib/session/logout";
 import { getCurrentUser, logout } from "@/services/authService";
 import type { SessionLimits } from "@/types";
 
@@ -30,6 +40,7 @@ function formatWait(seconds: number) {
  * Cuenta la sesión con los dos vencimientos del servidor (/auth/me): la inactividad, que cualquier
  * petición autenticada renueva (también el sondeo de un escaneo), y el tope absoluto, que no se puede
  * extender. Sin esos datos usa la configuración local. Avisa antes de cerrar y, al vencer, sale al login.
+ * La inactividad cuenta la actividad de todas las pestañas, porque la sesión es la misma para todas (RC-311).
  */
 export function IdleTimeout({ limits }: { limits?: SessionLimits }) {
   const titleId = useId();
@@ -41,14 +52,31 @@ export function IdleTimeout({ limits }: { limits?: SessionLimits }) {
   const warningOpen = useRef(false);
   const absoluteDismissed = useRef(false);
   const ending = useRef(false);
+  const lastShared = useRef(0);
   const [warning, setWarning] = useState<Warning | null>(null);
 
   // Sale por /auth/expirada, que borra la cookie aunque POST /auth/logout falle con la API caída (RC-225).
   const endSession = useCallback(async (notice: LoginNotice) => {
     if (ending.current) return;
     ending.current = true;
+    announceEnded(sharedStore(), notice, Date.now());
     await logout();
     leaveSession(notice);
+  }, []);
+
+  // Otra pestaña ya cerró la sesión: esta solo sale, sin volver a pedir POST /auth/logout.
+  const leaveFromElsewhere = useCallback((notice: string) => {
+    if (ending.current) return;
+    ending.current = true;
+    leaveSession(loginNoticeFrom(notice));
+  }, []);
+
+  // Esta pestaña tuvo actividad (o el servidor renovó la sesión): mueve su plazo y lo comparte con las demás.
+  const touch = useCallback((at: number) => {
+    idleDeadline.current = at + idleSpan.current;
+    if (at - lastShared.current < SHARE_INTERVAL_MS) return;
+    lastShared.current = at;
+    recordActivity(sharedStore(), at);
   }, []);
 
   const applyLimits = useCallback((next: SessionLimits | undefined, now: number) => {
@@ -68,21 +96,21 @@ export function IdleTimeout({ limits }: { limits?: SessionLimits }) {
         }
         const now = Date.now();
         applyLimits(user.session_limits, now);
-        idleDeadline.current = now + idleSpan.current;
+        touch(now);
       })
       .catch(() => {});
-  }, [applyLimits, endSession]);
+  }, [applyLimits, endSession, touch]);
 
   useEffect(() => {
     const now = Date.now();
     applyLimits(limits, now);
-    idleDeadline.current = now + idleSpan.current;
+    touch(now);
 
     const onActivity = () => {
       // Con el aviso de inactividad abierto, solo el botón "Continuar" mantiene la sesión.
       if (warningOpen.current) return;
       const at = Date.now();
-      idleDeadline.current = at + idleSpan.current;
+      touch(at);
       if (at - lastRefresh.current >= SESSION_REFRESH_INTERVAL_MS) {
         lastRefresh.current = at;
         syncWithServer();
@@ -91,11 +119,13 @@ export function IdleTimeout({ limits }: { limits?: SessionLimits }) {
 
     // El servidor renovó la inactividad con esa petición: el portal cuenta igual que él.
     const onApiActivity = () => {
-      idleDeadline.current = Date.now() + idleSpan.current;
+      touch(Date.now());
     };
 
     const tick = () => {
       const at = Date.now();
+      // Antes de decidir, la última actividad de cualquier pestaña: si el usuario sigue en otra, esta no cierra.
+      idleDeadline.current = sharedIdleDeadline(idleDeadline.current, sharedStore(), idleSpan.current, at);
       const idleLeft = idleDeadline.current - at;
       const absoluteLeft = absoluteDeadline.current - at;
       const reason: Reason = absoluteLeft <= idleLeft ? "absolute" : "idle";
@@ -111,20 +141,35 @@ export function IdleTimeout({ limits }: { limits?: SessionLimits }) {
       setWarning(show ? { reason, secondsLeft: Math.ceil(left / 1000) } : null);
     };
 
+    // Lo que escriben las demás pestañas (el evento no llega a la pestaña que escribió).
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === ACTIVITY_KEY) {
+        // Actividad o "Continuar" en otra pestaña: el aviso de esta se cierra sin esperar al siguiente segundo.
+        tick();
+      } else if (event.key === ENDED_KEY) {
+        const notice = endedElsewhere(event.newValue, sharedStore(), Date.now());
+        if (notice !== undefined) leaveFromElsewhere(notice);
+      }
+    };
+
     ACTIVITY_EVENTS.forEach((event) => window.addEventListener(event, onActivity, { passive: true }));
     window.addEventListener(API_ACTIVITY_EVENT, onApiActivity);
+    window.addEventListener("storage", onStorage);
     const interval = setInterval(tick, 1000);
     return () => {
       ACTIVITY_EVENTS.forEach((event) => window.removeEventListener(event, onActivity));
       window.removeEventListener(API_ACTIVITY_EVENT, onApiActivity);
+      window.removeEventListener("storage", onStorage);
       clearInterval(interval);
     };
-  }, [applyLimits, endSession, limits, syncWithServer]);
+  }, [applyLimits, endSession, leaveFromElsewhere, limits, syncWithServer, touch]);
 
   const keepAlive = () => {
     const now = Date.now();
     warningOpen.current = false;
-    idleDeadline.current = now + idleSpan.current;
+    // Sin esperar el intervalo: las demás pestañas cierran su aviso al momento.
+    lastShared.current = 0;
+    touch(now);
     lastRefresh.current = now;
     setWarning(null);
     syncWithServer();
