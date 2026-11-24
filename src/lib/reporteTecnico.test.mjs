@@ -3,6 +3,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
+import { canAccessSection } from "../config/permissions.ts";
 
 const leer = (ruta) => readFileSync(new URL(ruta, import.meta.url), "utf8");
 const boton = leer("../components/screens/shared/ReportButton.tsx");
@@ -17,7 +18,9 @@ test("2. el botón pide el técnico solo en tpdf y thtml, lo guarda con su nombr
   assert.equal(boton.match(/downloadTechnicalHtml\(/g).length, 1);
   assert.match(boton, /const isTechnical = format === "tpdf" \|\| format === "thtml";/);
   assert.match(boton, /isTechnical \? downloadTechnicalHtml\(domain, current\.signal\) : downloadExecutiveHtml\(domain, current\.signal\)/);
-  assert.match(boton, /saveBlob\(blob, `\$\{domain\}-reporte-tecnico\.html`\)/);
+  // Cada formato con su nombre: el ejecutivo no se guarda como técnico ni al revés.
+  assert.match(boton, /format === "html"\) \{\s*saveBlob\(blob, `\$\{domain\}-resumen-ejecutivo\.html`\)/);
+  assert.match(boton, /format === "thtml"\) \{\s*saveBlob\(blob, `\$\{domain\}-reporte-tecnico\.html`\)/);
   // Una sola impresión para los dos PDF: no hay un segundo armado del técnico en el portal.
   assert.equal(boton.match(/printReportHtml\(/g).length, 1);
   assert.doesNotMatch(boton, /jspdf|reporteEjecutivo|getTechnicalReport/i);
@@ -36,6 +39,8 @@ test("3. los botones del técnico solo salen con technical y se frenan igual que
 });
 
 test("4. las pantallas solo se lo dan a quien ve Hallazgos (la API da 403 al gerente)", () => {
+  // Los mismos roles que LEE_HALLAZGOS de BackKL (cirdan/api/v1.py: analyst y admin).
+  assert.deepEqual(["analista", "gerente", "admin"].map((r) => canAccessSection(r, "hallazgos")), [true, false, true]);
   for (const pagina of ["../app/(dashboard)/dashboard/dominios/[fqdn]/page.tsx", "../app/(dashboard)/dashboard/historico/page.tsx"]) {
     const src = leer(pagina);
     assert.match(src, /const canSeeFindings = canAccessSection\(user\.role, "hallazgos"\);/, pagina);
