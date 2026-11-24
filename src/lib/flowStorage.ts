@@ -8,6 +8,8 @@
 
 export interface FlowData {
   mfa: { mfa_token: string };
+  /** Alta de TOTP al entrar (RC-5): el token del 403 de /auth/login y su texto. */
+  mfaEnroll: { mfa_setup_token: string; detail: string };
   /** El correo que se pidió y el texto de la API, el mismo exista o no la cuenta. */
   reset: { email: string; detail: string };
 }
