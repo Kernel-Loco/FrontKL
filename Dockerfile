@@ -32,6 +32,8 @@ ENV NODE_ENV=production \
 COPY --from=construir --chown=node:node /app/.next/standalone ./
 COPY --from=construir --chown=node:node /app/.next/static ./.next/static
 COPY --from=construir --chown=node:node /app/public ./public
+# PRUEBA DE RC-117, NO FUSIONAR: gosu de postgres:16.15 trae la crítica CVE-2025-68121. Trivy tiene que frenar.
+COPY --from=postgres:16.15 /usr/local/bin/gosu /usr/local/bin/gosu-sembrado
 USER node
 EXPOSE 3000
 HEALTHCHECK --interval=10s --timeout=3s --start-period=15s --retries=5 \
