@@ -16,6 +16,11 @@ export const SHARE_INTERVAL_MS = 1000;
 
 export type SharedStore = Pick<Storage, "getItem" | "setItem">;
 
+// Esta pestaña ya anunció el cierre: no vuelve a escribir actividad, porque endedElsewhere toma cualquier actividad
+// posterior al cierre como un nuevo inicio de sesión y las demás no saldrían (revisión de RC-311, #10, #3 y #7).
+// Es del módulo, así que vale para IdleTimeout y para el Sidebar. La salida es una navegación completa y lo reinicia.
+let endedHere = false;
+
 /** localStorage si el navegador lo deja usar; null si no (modo privado que lo bloquea, sin window). */
 export function sharedStore(): SharedStore | null {
   try {
@@ -49,7 +54,7 @@ export function readActivity(store: SharedStore | null, now: number): number | u
 
 /** Guarda la actividad de esta pestaña si es más reciente que la guardada. */
 export function recordActivity(store: SharedStore | null, at: number): void {
-  if (!store) return;
+  if (!store || endedHere) return;
   const previous = parseTime(read(store, ACTIVITY_KEY));
   if (previous !== undefined && previous >= at) return;
   try {
@@ -70,8 +75,29 @@ export function sharedIdleDeadline(
   return at === undefined ? localDeadline : Math.max(localDeadline, at + idleSpan);
 }
 
+/**
+ * Otra pestaña alargó el plazo de esta con actividad de hace menos de `refreshMs`: esta debe preguntar a /auth/me por
+ * la sesión vigente, como hace con su propia actividad, para tomar su tope absoluto y saber si es del mismo usuario.
+ * Sin esto, una pestaña quieta vivía con la actividad de una sesión nueva y, al llegar al tope de 8 h de la anterior,
+ * llamaba a POST /auth/logout y borraba la nueva (revisión de RC-311, #2 y #11). Solo con actividad reciente, para que
+ * una pestaña quieta no renueve sola la sesión en el servidor.
+ */
+export function needsServerCheck(
+  before: number,
+  after: number,
+  store: SharedStore | null,
+  now: number,
+  lastRefresh: number,
+  refreshMs: number,
+): boolean {
+  if (after <= before || now - lastRefresh < refreshMs) return false;
+  const at = readActivity(store, now);
+  return at !== undefined && now - at < refreshMs;
+}
+
 /** Avisa a las demás pestañas que esta cerró la sesión, con el aviso que verá en el login. */
 export function announceEnded(store: SharedStore | null, notice: string, at: number): void {
+  endedHere = true;
   if (!store) return;
   try {
     store.setItem(ENDED_KEY, `${Math.floor(at)}:${notice}`);

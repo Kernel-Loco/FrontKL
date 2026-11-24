@@ -14,6 +14,7 @@ import {
   announceEnded,
   ENDED_KEY,
   endedElsewhere,
+  needsServerCheck,
   recordActivity,
   SHARE_INTERVAL_MS,
   sharedIdleDeadline,
@@ -42,7 +43,7 @@ function formatWait(seconds: number) {
  * extender. Sin esos datos usa la configuración local. Avisa antes de cerrar y, al vencer, sale al login.
  * La inactividad cuenta la actividad de todas las pestañas, porque la sesión es la misma para todas (RC-311).
  */
-export function IdleTimeout({ limits }: { limits?: SessionLimits }) {
+export function IdleTimeout({ limits, userId }: { limits?: SessionLimits; userId?: string }) {
   const titleId = useId();
   const descriptionId = useId();
   const idleSpan = useRef(effectiveIdleMs(limits?.idle_timeout_seconds));
@@ -73,6 +74,8 @@ export function IdleTimeout({ limits }: { limits?: SessionLimits }) {
 
   // Esta pestaña tuvo actividad (o el servidor renovó la sesión): mueve su plazo y lo comparte con las demás.
   const touch = useCallback((at: number) => {
+    // Ya anunció el cierre: ninguna actividad posterior, ni la del POST /auth/logout, debe invalidar ese aviso.
+    if (ending.current) return;
     idleDeadline.current = at + idleSpan.current;
     if (at - lastShared.current < SHARE_INTERVAL_MS) return;
     lastShared.current = at;
@@ -85,21 +88,33 @@ export function IdleTimeout({ limits }: { limits?: SessionLimits }) {
     absoluteDeadline.current = now + next.absolute_expires_in_seconds * 1000;
   }, []);
 
-  // Renueva la sesión en el servidor y toma de ahí los vencimientos vigentes.
-  const syncWithServer = useCallback(() => {
-    void getCurrentUser()
-      .then((user) => {
-        if (!user) {
-          // El servidor ya no reconoce la sesión y no dice por qué: el mismo aviso que /auth/expirada.
-          void endSession("ended");
-          return;
-        }
-        const now = Date.now();
-        applyLimits(user.session_limits, now);
-        touch(now);
-      })
-      .catch(() => {});
-  }, [applyLimits, endSession, touch]);
+  // Renueva la sesión en el servidor y toma de ahí los vencimientos vigentes. Con `own` en false la pide la actividad
+  // de otra pestaña: no cuenta como actividad de esta.
+  const syncWithServer = useCallback(
+    (own = true) => {
+      void getCurrentUser()
+        .then((user) => {
+          if (ending.current) return;
+          if (!user) {
+            // El servidor ya no reconoce la sesión y no dice por qué: el mismo aviso que /auth/expirada.
+            void endSession("ended");
+            return;
+          }
+          if (userId !== undefined && user.id !== userId) {
+            // Otra persona entró en otra pestaña y la cookie ya es suya: se recarga con su sesión. Sin leaveSession,
+            // que borraría esa cookie, y sin mostrar más los datos de la anterior (revisión de RC-311, #11).
+            ending.current = true;
+            window.location.reload();
+            return;
+          }
+          const now = Date.now();
+          applyLimits(user.session_limits, now);
+          if (own) touch(now);
+        })
+        .catch(() => {});
+    },
+    [applyLimits, endSession, touch, userId],
+  );
 
   useEffect(() => {
     const now = Date.now();
@@ -123,9 +138,16 @@ export function IdleTimeout({ limits }: { limits?: SessionLimits }) {
     };
 
     const tick = () => {
+      if (ending.current) return;
       const at = Date.now();
       // Antes de decidir, la última actividad de cualquier pestaña: si el usuario sigue en otra, esta no cierra.
-      idleDeadline.current = sharedIdleDeadline(idleDeadline.current, sharedStore(), idleSpan.current, at);
+      const before = idleDeadline.current;
+      idleDeadline.current = sharedIdleDeadline(before, sharedStore(), idleSpan.current, at);
+      // Esa actividad puede ser de una sesión nueva: el tope absoluto y el usuario salen del servidor (#2 y #11).
+      if (needsServerCheck(before, idleDeadline.current, sharedStore(), at, lastRefresh.current, SESSION_REFRESH_INTERVAL_MS)) {
+        lastRefresh.current = at;
+        syncWithServer(false);
+      }
       const idleLeft = idleDeadline.current - at;
       const absoluteLeft = absoluteDeadline.current - at;
       const reason: Reason = absoluteLeft <= idleLeft ? "absolute" : "idle";

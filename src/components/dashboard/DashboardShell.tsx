@@ -110,7 +110,7 @@ export function DashboardShell({ user, badges, children }: DashboardShellProps) 
           </a>
         </footer>
       </div>
-      {user && <IdleTimeout limits={user.session_limits} />}
+      {user && <IdleTimeout limits={user.session_limits} userId={user.id} />}
     </div>
   );
 }
