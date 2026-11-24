@@ -10,8 +10,8 @@ import * as LEGAL from "./legal.ts";
 
 const { ARCO, AVISO_INTEGRAL, AVISO_SIMPLIFICADO, POLITICA, TERMINOS } = LEGAL;
 
-// Huella de los textos copiados de las secciones 5.2, 5.7 y 11 de la política 2.2 del 17 nov 2026 de BackKL.
-const HUELLA_DE_LA_POLITICA = "58a1f16c658c15e4130b3933e3eefd21a02d3489ad55f97312e4296db38cf486";
+// Huella de los textos copiados de las secciones 5.2, 5.7 y 11 de la política 2.6 del 24 nov 2026 de BackKL.
+const HUELLA_DE_LA_POLITICA = "d5a6506c83b14cee6d3b9472342fc2607854c6adaed021054745efbcb224b04f";
 
 const leer = (ruta) => readFileSync(new URL(ruta, import.meta.url), "utf8");
 
