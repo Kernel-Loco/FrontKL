@@ -3,7 +3,7 @@
 // quita un paso, baja el nivel o firma en un PR, esta prueba falla.
 //   npm test
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { test } from "node:test";
 
 const raiz = new URL("../../", import.meta.url);
@@ -18,6 +18,16 @@ const paso = (nombre) => {
 test("Trivy frena con vulnerabilidades críticas en la imagen del portal", () => {
   const trivy = paso("Trivy frena con vulnerabilidades críticas");
   for (const opcion of ["--severity CRITICAL", "--exit-code 1", "lowtide-portal:ci"]) assert.ok(trivy.includes(opcion), opcion);
+});
+
+test("Trivy no exceptúa ninguna crítica en la imagen del portal (RC-117)", () => {
+  const trivy = paso("Trivy frena con vulnerabilidades críticas");
+  for (const opcion of ["--ignore-unfixed", "--ignorefile", "--skip-files", "--skip-dirs", "--vex"]) {
+    assert.ok(!trivy.includes(opcion), opcion);
+  }
+  for (const archivo of [".trivyignore", ".trivyignore.yaml", "trivy.yaml"]) {
+    assert.ok(!existsSync(new URL(archivo, raiz)), archivo);
+  }
 });
 
 test("el portal se compila con la misma API_INTERNAL_URL del despliegue", () => {
