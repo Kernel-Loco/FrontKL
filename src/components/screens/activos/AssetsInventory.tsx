@@ -21,7 +21,9 @@ import {
   type FiltrosActivos,
   type TipoActivoFiltro,
 } from "@/lib/filtrosActivos";
-import { formatDateTime } from "@/lib/format";
+import { cantidad, formatDateTime } from "@/lib/format";
+import { conVista, type Vista } from "@/lib/arbolActivos";
+import { AssetsTree } from "./AssetsTree";
 import { downloadAssets } from "@/services/exportService";
 import type { OrganizationAssets } from "@/types";
 
@@ -40,6 +42,7 @@ export function AssetsInventory({
   conCarta,
   activos,
   canOpenDetail,
+  vista = "lista",
 }: {
   filtros: FiltrosActivos;
   dominios: string[];
@@ -47,6 +50,8 @@ export function AssetsInventory({
   conCarta: string[];
   activos: OrganizationAssets;
   canOpenDetail: boolean;
+  /** En el árbol (RC-248) `activos` trae todos los del filtro hasta MAX_ARBOL, sin paginar. */
+  vista?: Vista;
 }) {
   const ids = { dominio: useId(), tipo: useId(), texto: useId() };
   const router = useRouter();
@@ -66,7 +71,7 @@ export function AssetsInventory({
 
   const buscar = (e: FormEvent) => {
     e.preventDefault();
-    router.push(`${pathname}${urlFiltros({ dominio, tipo, texto: texto.trim().slice(0, 200), pagina: 1 })}`);
+    router.push(`${pathname}${conVista(urlFiltros({ dominio, tipo, texto: texto.trim().slice(0, 200), pagina: 1 }), vista)}`);
   };
 
   const total = activos.total;
@@ -102,7 +107,7 @@ export function AssetsInventory({
         </div>
         <div className="flex items-end gap-2">
           <ActionButton type="submit" variant="secondary">Buscar</ActionButton>
-          {hayFiltros(filtros) && <ActionLink href={pathname} variant="ghost">Limpiar</ActionLink>}
+          {hayFiltros(filtros) && <ActionLink href={`${pathname}${conVista("", vista)}`} variant="ghost">Limpiar</ActionLink>}
         </div>
       </form>
 
@@ -136,6 +141,15 @@ export function AssetsInventory({
         ) : (
           <EmptyState title="Sin activos todavía">Aparecen después del primer escaneo de un dominio autorizado.</EmptyState>
         )
+      ) : vista === "arbol" ? (
+        <>
+          {total > activos.items.length && (
+            <p className="px-5 pb-3 text-xs text-lt-amber" role="status">
+              El árbol muestra {activos.items.length} de {cantidad(total, "activo")}. Filtra por dominio o tipo para ver el resto.
+            </p>
+          )}
+          <AssetsTree activos={activos.items} canOpenDetail={canOpenDetail} />
+        </>
       ) : (
         <TableWrap>
           <table className="w-full min-w-[820px]">
@@ -170,7 +184,7 @@ export function AssetsInventory({
         </TableWrap>
       )}
 
-      {total > POR_PAGINA && !fueraDeRango && (
+      {vista === "lista" && total > POR_PAGINA && !fueraDeRango && (
         <nav aria-label="Páginas de activos" className="flex items-center justify-between gap-3 border-t border-lt-border px-5 py-3">
           {filtros.pagina > 1
             ? <ActionLink href={enlacePagina(Math.min(filtros.pagina - 1, ultima))} size="sm"><ChevronLeft aria-hidden="true" className="h-4 w-4" />Anterior</ActionLink>
