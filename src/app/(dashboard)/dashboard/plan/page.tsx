@@ -9,11 +9,12 @@ import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { canAccessSection, SECTIONS } from "@/config/permissions";
 import { coverageIncomplete } from "@/lib/cobertura";
+import { leerAgrupar } from "@/lib/planAcumulado";
 import { getActionPlan, getDomainFindings, getDomains, getDomainScore } from "@/services/queries";
 
 export const metadata: Metadata = { title: SECTIONS.plan.label };
 
-type Props = { searchParams: Promise<{ dominio?: string | string[] }> };
+type Props = { searchParams: Promise<{ dominio?: string | string[]; agrupar?: string | string[] }> };
 
 export default async function ActionPlanPage({ searchParams }: Props) {
   const { user, forbidden } = await checkSectionAccess("plan");
@@ -23,6 +24,7 @@ export default async function ActionPlanPage({ searchParams }: Props) {
   const domains = scoredDomains(domainResponse.items);
   const options = domains.map((domain) => domain.fqdn);
   const fqdn = typeof params.dominio === "string" && options.includes(params.dominio) ? params.dominio : options[0];
+  const agrupar = leerAgrupar(params.agrupar);
 
   if (!fqdn) {
     return (
@@ -39,7 +41,7 @@ export default async function ActionPlanPage({ searchParams }: Props) {
   const canSeeFindings = canAccessSection(user.role, "hallazgos");
   const selectedDomain = domains.find((domain) => domain.fqdn === fqdn);
   const [plan, findings, score] = await Promise.all([
-    getActionPlan(fqdn),
+    getActionPlan(fqdn, agrupar),
     canSeeFindings ? getDomainFindings(fqdn) : Promise.resolve(null),
     getDomainScore(fqdn),
   ]);
@@ -55,7 +57,7 @@ export default async function ActionPlanPage({ searchParams }: Props) {
         actions={<DomainPicker domains={options} value={fqdn} />}
       />
       {canOpenDetail && <DomainTabs tabs={domainTabs(fqdn, findings?.total ?? 0, "plan", canSeeFindings, true, coverageIncomplete(score))} />}
-      <ActionPlanExplorer key={fqdn} plan={plan} canSeeFindings={canSeeFindings} canExport={canExport} />
+      <ActionPlanExplorer key={`${fqdn}-${agrupar}`} plan={plan} canSeeFindings={canSeeFindings} canExport={canExport} />
     </div>
   );
 }

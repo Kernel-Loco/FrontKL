@@ -280,28 +280,57 @@ export interface ScoreComparison extends ListResponse<ComparisonItem> {
 
 // ---------------------------------------------------------------- plan de acción y simulador (#42, #70)
 
-export interface PlanAction {
+/** Cómo agrupa el plan: por regla (lo de siempre) o por activo, una acción por host o IP (RC-263). */
+export type PlanGrouping = "regla" | "activo";
+
+interface PlanActionBase {
   id: string;
+  category: Category;
+  finding_ids: string[];
+  finding_count: number;
+  /** Resolviéndola sola. */
+  score_after: number;
+  score_reduction: number;
+  /** Resolviéndola después de todas las de arriba (RC-263). La última deja el score de resolver todo. */
+  score_after_acumulado: number;
+  score_reduction_acumulado: number;
+}
+
+export interface PlanAction extends PlanActionBase {
+  rule_code: string;
+  recommendation: string;
+}
+
+export interface PlanAssetRecommendation {
   rule_code: string;
   category: Category;
   recommendation: string;
-  finding_ids: string[];
-  finding_count: number;
-  score_after: number;
-  score_reduction: number;
 }
 
-/** `GET /api/v1/domains/{fqdn}/action-plan` */
-export interface ActionPlan {
+/** Con `agrupar=activo`: `id` es el del activo y junta los hallazgos de todas sus reglas. */
+export interface PlanAssetAction extends PlanActionBase {
+  asset_id: string;
+  asset_type: AssetType;
+  asset_value: string;
+  recommendations: PlanAssetRecommendation[];
+  rule_codes: string[];
+  categories: Category[];
+}
+
+interface ActionPlanBase {
   domain: string;
   score_before: number;
   band_before: Band;
   category_scores_before: Record<Category, number>;
   method: ScoreMethod;
   partial_coverage: boolean;
-  actions: PlanAction[];
   total: number;
 }
+
+/** `GET /api/v1/domains/{fqdn}/action-plan?agrupar=regla|activo` */
+export type ActionPlan =
+  | (ActionPlanBase & { grouping: "regla"; actions: PlanAction[] })
+  | (ActionPlanBase & { grouping: "activo"; actions: PlanAssetAction[] });
 
 /** `POST /api/v1/domains/{fqdn}/action-plan/simulate` */
 export interface ActionPlanSimulation {
