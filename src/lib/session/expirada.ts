@@ -29,7 +29,9 @@ export type ExpiradaOutcome = { clearCookie: boolean; location: string };
  *   petición desde otro sitio que no es navegación, como una imagen), borrarla sería sacar al usuario igual.
  * - Salida pedida por el portal (?notice=logout, expired o max) desde una página del mismo origen
  *   (Sec-Fetch-Site: same-origin): borra sin llamar a la API, así cerrar sesión funciona con la API caída (RC-225).
- *   Otro sitio no puede mandar ese encabezado. Un navegador que no lo manda cae en el caso siguiente.
+ *   Otro sitio no puede mandar ese encabezado. Un navegador que no lo manda cae en el caso siguiente, y con la API
+ *   caída no borra: Safari antes de 16.4, o cualquier navegador por http fuera de localhost (Sec-Fetch-* solo va a
+ *   orígenes seguros). El despliegue va por https (docker-compose.despliegue.yml de BackKL) y en la PC es localhost.
  * - Lo demás: pregunta a GET /auth/me. Solo un 401 borra (isSessionRejected de check.ts). Con la sesión válida o la
  *   API sin responder (5xx, 429, 403, tope de tiempo, sin red) no borra y va a /dashboard: con la sesión viva entra,
  *   y con la API caída el layout muestra el aviso de servicio caído (RC-225), que no vuelve a /auth/expirada.
