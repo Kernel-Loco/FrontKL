@@ -28,9 +28,6 @@ export const FUNCIONES_SIMULADAS: readonly FuncionDeServicio[] = [
   "createIntegration",
   "setIntegrationEnabled",
   "getAuditLog",
-  // Alta de dominio y verificación TXT (domainService.ts)
-  "registerDomain",
-  "verifyTxt",
   // Políticas de alerta (settingsService.ts)
   "getSettings",
   "getAlertPolicies",

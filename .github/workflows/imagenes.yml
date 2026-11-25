@@ -1,0 +1,106 @@
+# Cadena de suministro de la imagen del portal (#82, RC-117). Guía: docs/cadena_de_suministro.md de BackKL.
+#
+# En cada PR a dev o main: compila la imagen, Trivy la revisa y frena con cualquier vulnerabilidad crítica, sin
+# excepciones, y Syft saca su SBOM (artefacto de la corrida). Con un push a dev o main (el merge del PR), además la
+# sube a ghcr.io/kernel-loco/frontkl, la firma con cosign sin llaves (OIDC de GitHub) y le pega el SBOM como
+# atestación firmada. El despliegue verifica esa firma antes de levantarla (infra/verificar_imagenes.sh de BackKL).
+# La imagen se compila con API_INTERNAL_URL=http://api:8000, el mismo valor que le da docker-compose.despliegue.yml.
+# Herramientas en imágenes con versión fija: ninguna acción de terceros recibe el token.
+name: Imágenes
+
+on:
+  pull_request:
+    branches: [dev, main]
+  push:
+    branches: [dev, main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: imagenes-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  TRIVY: aquasec/trivy:0.76.2
+  SYFT: anchore/syft:v1.57.2
+  COSIGN: ghcr.io/sigstore/cosign/cosign:v3.1.4
+  IMAGEN: ghcr.io/kernel-loco/frontkl
+
+jobs:
+  portal:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write # subir a ghcr.io (solo en push)
+      id-token: write # firma sin llaves de cosign (solo en push)
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Compilar la imagen
+        run: docker build --pull --build-arg API_INTERNAL_URL=http://api:8000 -t lowtide-portal:ci .
+
+      # Sin excepciones: cualquier crítica frena, tenga arreglo o no (sin --ignore-unfixed ni archivo de excepciones).
+      # Si una no tiene arreglo, se cambia la base o se quita el paquete de la imagen (RC-117).
+      - name: Trivy frena con vulnerabilidades críticas
+        run: >-
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock "$TRIVY"
+          image --scanners vuln --severity CRITICAL --exit-code 1 --no-progress lowtide-portal:ci
+
+      - name: Trivy, resumen de altas y críticas (no frena)
+        run: >-
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock "$TRIVY"
+          image --scanners vuln --severity HIGH,CRITICAL --exit-code 0 --no-progress lowtide-portal:ci
+
+      - name: SBOM con Syft (SPDX JSON)
+        run: |
+          mkdir -p sbom
+          # Con -u la imagen de Syft no puede escribir en su /tmp: va uno propio en memoria, y la caché ahí mismo.
+          docker run --rm -u "$(id -u):$(id -g)" --group-add "$(stat -c %g /var/run/docker.sock)" \
+            --tmpfs /tmp:rw,exec,mode=1777 -e TMPDIR=/tmp -e XDG_CACHE_HOME=/tmp/cache \
+            -v /var/run/docker.sock:/var/run/docker.sock -v "$PWD/sbom:/out" "$SYFT" docker:lowtide-portal:ci -o spdx-json=/out/frontkl.spdx.json
+          test -s sbom/frontkl.spdx.json
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sbom-frontkl
+          path: sbom/frontkl.spdx.json
+          retention-days: 30
+
+      - name: Subir a ghcr.io, firmar y atestar el SBOM
+        if: github.event_name == 'push'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RAMA: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          export DOCKER_CONFIG="$RUNNER_TEMP/docker"
+          mkdir -p "$DOCKER_CONFIG"
+          printf '%s' "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          for etiqueta in "$GITHUB_SHA" "$RAMA"; do
+            docker tag lowtide-portal:ci "$IMAGEN:$etiqueta"
+            docker push -q "$IMAGEN:$etiqueta"
+          done
+          # Se firma el digest, nunca la etiqueta: una etiqueta se puede mover a otra imagen. Se le pide a ghcr.io:
+          # docker inspect puede dar primero el de la imagen local (lowtide-portal@sha256:…), que cosign no encuentra.
+          sha=$(docker buildx imagetools inspect "$IMAGEN:$GITHUB_SHA" --format '{{.Manifest.Digest}}')
+          [[ "$sha" =~ ^sha256:[0-9a-f]{64}$ ]]
+          digest="$IMAGEN@$sha"
+          echo "Imagen: $digest" | tee -a "$GITHUB_STEP_SUMMARY"
+          cosign() {
+            # Con el usuario del runner: el config.json de docker login es 0600 y la imagen corre como nonroot.
+            docker run --rm -u "$(id -u):$(id -g)" --tmpfs /tmp:rw,mode=1777 -e HOME=/tmp \
+              -e ACTIONS_ID_TOKEN_REQUEST_URL -e ACTIONS_ID_TOKEN_REQUEST_TOKEN \
+              -e DOCKER_CONFIG=/docker -v "$DOCKER_CONFIG:/docker:ro" -v "$PWD/sbom:/sbom:ro" "$COSIGN" "$@"
+          }
+          cosign sign --yes "$digest"
+          cosign attest --yes --type spdxjson --predicate /sbom/frontkl.spdx.json "$digest"
+          # La misma verificación que hace el despliegue.
+          cosign verify --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            --certificate-identity "https://github.com/$GITHUB_REPOSITORY/.github/workflows/imagenes.yml@$GITHUB_REF" \
+            "$digest" > /dev/null
+          echo "Firma y SBOM verificados" | tee -a "$GITHUB_STEP_SUMMARY"
+

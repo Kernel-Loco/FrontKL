@@ -47,6 +47,7 @@ export interface User {
   email: string;
   full_name: string;
   role: Role;
+  organization_id: string;
   organization_name: string;
   mfa_enabled: boolean;
   last_login_at: string | null;
@@ -101,6 +102,22 @@ export interface LoginRequest {
 /** Con MFA activo, el login pide el código; sin MFA, ya trae la sesión (cookie) y el usuario. */
 export type LoginResponse = { mfa_required: true; mfa_token: string } | { mfa_required: false; user: ApiUser };
 
+/** Pedir el enlace para entrar por correo (POST /auth/link/request, #28, RC-63). Lleva captcha, como el login. */
+export interface LoginLinkRequest {
+  email: string;
+  captcha: string;
+}
+
+/** Siempre 202 con el mismo texto, exista o no la cuenta (decisión 7 de RC-327). */
+export interface LoginLinkRequestResponse {
+  detail: string;
+}
+
+/** Canjear el token del enlace (POST /auth/link/verify): responde como el login. */
+export interface LoginLinkRedeemRequest {
+  token: string;
+}
+
 export interface MfaVerifyRequest {
   mfa_token: string;
   code: string;
@@ -123,6 +140,17 @@ export interface MfaSetupResponse {
   /** QR dibujado por la API, como data:image/svg+xml. */
   qr_svg: string;
   expires_in_seconds: number;
+}
+
+/** Alta de TOTP al entrar (POST /auth/mfa/enroll/setup, RC-5): el token del 403 de /auth/login, sin sesión. */
+export interface MfaEnrollSetupRequest {
+  mfa_setup_token: string;
+}
+
+/** Activa el TOTP del alta al entrar (POST /auth/mfa/enroll/enable). Con el código válido la API crea la sesión. */
+export interface MfaEnrollEnableRequest {
+  mfa_setup_token: string;
+  code: string;
 }
 
 export interface MfaEnableRequest {
@@ -189,20 +217,25 @@ export interface RegisterRequest {
   password: string;
 }
 
+/** Pedir el enlace para recuperar la contraseña (POST /auth/password-reset, RC-335). */
 export interface PasswordResetRequest {
   email: string;
+  captcha: string;
 }
 
-export interface PasswordResetVerifyRequest {
-  email: string;
-  code: string;
+/** Siempre 202 con el mismo texto, exista o no la cuenta. */
+export interface PasswordResetRequestResponse {
+  detail: string;
 }
 
-export interface PasswordResetVerifyResponse {
-  reset_token: string;
-}
-
+/** Canjear el token del enlace por la contraseña nueva (POST /auth/password-reset/confirm). */
 export interface PasswordResetConfirmRequest {
-  reset_token: string;
+  token: string;
   new_password: string;
+}
+
+/** La API cierra todas las sesiones y borra las passkeys de la cuenta; dice cuántas borró. */
+export interface PasswordResetConfirmResponse {
+  detail: string;
+  passkeys_removed: number;
 }

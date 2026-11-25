@@ -42,15 +42,25 @@ function isSessionProtected(path: string) {
   return !path.startsWith("/auth/") || path === "/auth/me";
 }
 
-type RequestOptions = Omit<RequestInit, "body" | "method"> & { body?: unknown };
+type RequestOptions = Omit<RequestInit, "body" | "method"> & {
+  body?: unknown;
+  /** Tope de tiempo de esta petición; por omisión, el de `REQUEST_TIMEOUT_MS`. */
+  timeoutMs?: number;
+  /** La pide el portal solo, sin nadie delante: no avisa a IdleTimeout de actividad (RC-311). */
+  passive?: boolean;
+};
 
-async function request<T>(method: string, path: string, { body, headers, ...init }: RequestOptions = {}): Promise<T> {
+async function request<T>(
+  method: string,
+  path: string,
+  { body, headers, timeoutMs, passive, ...init }: RequestOptions = {},
+): Promise<T> {
   let response: Response;
   try {
     response = await fetch(`${API_URL}${path}`, {
     ...init,
     method,
-    signal: withTimeout(init.signal),
+    signal: withTimeout(init.signal, timeoutMs),
     // La sesión viaja en la cookie httpOnly emitida por FastAPI; nunca en headers
     // construidos con tokens guardados en el navegador.
     credentials: "same-origin",
@@ -75,7 +85,7 @@ async function request<T>(method: string, path: string, { body, headers, ...init
     throw await apiErrorFromResponse(response);
   }
 
-  if (typeof window !== "undefined" && isSessionProtected(path)) window.dispatchEvent(new Event(API_ACTIVITY_EVENT));
+  if (!passive && typeof window !== "undefined" && isSessionProtected(path)) window.dispatchEvent(new Event(API_ACTIVITY_EVENT));
   if (response.status === 204) return undefined as T;
   return (await response.json()) as T;
 }

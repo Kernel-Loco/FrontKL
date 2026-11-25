@@ -10,14 +10,14 @@ const ACCEPT: Record<ExportFormat | "html", string> = { csv: "text/csv", json: "
  * La API responde 403 si el dominio no tiene una autorización firmada vigente.
  * `path` va sin /api/v1 y ya con su query, sin `formato`.
  */
-export async function downloadExport(path: string, format: ExportFormat | "html", signal?: AbortSignal): Promise<Blob> {
+export function downloadExport(path: string, format: ExportFormat | "html", signal?: AbortSignal): Promise<Blob> {
+  return fetchBlob(`/api/v1${path}${path.includes("?") ? "&" : "?"}formato=${format}`, ACCEPT[format], signal);
+}
+
+async function fetchBlob(url: string, accept: string, signal?: AbortSignal): Promise<Blob> {
   let response: Response;
   try {
-    response = await fetch(`/api/v1${path}${path.includes("?") ? "&" : "?"}formato=${format}`, {
-      credentials: "same-origin",
-      headers: { Accept: ACCEPT[format] },
-      signal: withTimeout(signal),
-    });
+    response = await fetch(url, { credentials: "same-origin", headers: { Accept: accept }, signal: withTimeout(signal) });
   } catch (error) {
     throw new ApiError(statusFromFetchFailure(error, signal), "Sin conexión con el servicio.");
   }
@@ -25,7 +25,24 @@ export async function downloadExport(path: string, format: ExportFormat | "html"
   return response.blob();
 }
 
+/**
+ * Inventario de activos de la empresa desde GET /assets?formato=csv (RC-231), con los filtros de la pantalla y sin
+ * paginar. Solo trae los dominios con autorización vigente; con un dominio sin ella responde 403.
+ */
+export function downloadAssets(query: string, signal?: AbortSignal) {
+  return downloadExport(query ? `/assets?${query}` : "/assets", "csv", signal);
+}
+
 /** Hallazgos abiertos del dominio desde GET /domains/{fqdn}/findings/export. */
 export function downloadFindings(domain: string, format: ExportFormat, signal?: AbortSignal) {
   return downloadExport(`/domains/${encodeURIComponent(domain)}/findings/export`, format, signal);
+}
+
+/**
+ * Salida a SIEM del dominio (GET /domains/{fqdn}/export/siem): NDJSON para el HEC de Splunk con los hallazgos abiertos,
+ * el último escaneo y el último score. Pide sesión. 403 si el plan no la incluye o la empresa está suspendida, y 409 si
+ * hay un escaneo en curso.
+ */
+export function downloadSiem(domain: string, signal?: AbortSignal): Promise<Blob> {
+  return fetchBlob(`/api/v1/domains/${encodeURIComponent(domain)}/export/siem`, "application/x-ndjson", signal);
 }

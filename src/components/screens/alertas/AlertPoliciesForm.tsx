@@ -9,18 +9,21 @@ import { CHECKBOX, INPUT, SELECT } from "@/components/ui/Field";
 import { InlineAlert } from "@/components/ui/InlineAlert";
 import { ALERT_EVENT_LABELS, SEVERITY_LABELS } from "@/config/labels";
 import { mensajeDeExito } from "@/config/simulado";
-import { scoreBand } from "@/lib/format";
+import { bandaEnRangos } from "@/lib/bandas";
 import { getErrorMessage } from "@/services/errors";
 import { updateAlertPolicies } from "@/services/settingsService";
-import type { AlertPolicies, Severity } from "@/types";
+import type { AlertPolicies, BandRange, Severity } from "@/types";
 
-export function AlertPoliciesForm({ initial }: { initial: AlertPolicies }) {
+/** `bands` son las del juego activo de la empresa (`GET /scoring/weights`, RC-237). */
+export function AlertPoliciesForm({ initial, bands }: { initial: AlertPolicies; bands: BandRange[] }) {
   const thresholdId = useId();
   const [policies, setPolicies] = useState(initial);
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<{ tone: "success" | "error"; message: string } | null>(null);
   const threshold = policies.alert_score_threshold;
   const validThreshold = Number.isInteger(threshold) && threshold >= 0 && threshold <= 100;
+  const thresholdBand = validThreshold ? bandaEnRangos(threshold, bands) : null;
+  const highFrom = bands.find((b) => b.band === "high")?.from;
 
   const update = (index: number, change: Partial<AlertPolicies["policies"][number]>) =>
     setPolicies((current) => ({ ...current, policies: current.policies.map((p, i) => (i === index ? { ...p, ...change } : p)) }));
@@ -40,7 +43,7 @@ export function AlertPoliciesForm({ initial }: { initial: AlertPolicies }) {
   };
 
   return (
-    <form onSubmit={onSubmit} className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
+    <form onSubmit={onSubmit} className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
       <Card title="Umbral de riesgo" description="La alerta se crea cuando el score de un dominio llega a este valor o lo pasa." icon={<Gauge aria-hidden="true" className="h-4 w-4" />}>
         <label htmlFor={thresholdId} className="mb-1.5 block text-xs font-medium text-lt-muted">
           Umbral (0 a 100)
@@ -53,7 +56,7 @@ export function AlertPoliciesForm({ initial }: { initial: AlertPolicies }) {
             value={validThreshold ? threshold : 60}
             onChange={(e) => setPolicies((c) => ({ ...c, alert_score_threshold: Number(e.target.value) }))}
             aria-label="Umbral de riesgo"
-            className="flex-1 accent-lt-indigo"
+            className="min-w-0 flex-1 accent-lt-indigo"
           />
           <input
             id={thresholdId}
@@ -67,14 +70,14 @@ export function AlertPoliciesForm({ initial }: { initial: AlertPolicies }) {
         </div>
         {validThreshold ? (
           <p className="mt-3 flex items-center gap-2 text-xs text-lt-muted">
-            Un score de {threshold} está en la banda <BandBadge band={scoreBand(threshold)} />
+            Un score de {threshold} está en la banda {thresholdBand ? <BandBadge band={thresholdBand} /> : "sin banda"}
           </p>
         ) : (
           <p className="mt-3 text-xs font-medium text-lt-red">Escribe un número entero de 0 a 100.</p>
         )}
         <p className="mt-4 text-xs leading-relaxed text-lt-faint">
-          Con el valor por defecto (60), la alerta coincide con el inicio de la banda alta. Las alertas se envían por las integraciones de
-          Webhooks.
+          El umbral no cambia con los cortes de bandas de la empresa.{highFrom !== undefined && ` La banda alta de tu empresa empieza en ${highFrom}.`} Las
+          alertas se envían por las integraciones de Webhooks.
         </p>
       </Card>
 

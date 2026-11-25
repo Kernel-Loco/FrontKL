@@ -3,6 +3,7 @@
 // endpoint; esto solo controla qué ve la interfaz.
 import {
   Bell,
+  Boxes,
   Globe,
   History,
   KeyRound,
@@ -23,6 +24,7 @@ export type SectionId =
   | "dashboard"
   | "dominios"
   | "detalle"
+  | "activos"
   | "hallazgos"
   | "historico"
   | "plan"
@@ -49,6 +51,7 @@ export const SECTIONS: Record<SectionId, SectionConfig> = {
   dashboard: section("dashboard", "Dashboard", "/dashboard", LayoutGrid),
   dominios: section("dominios", "Dominios y autorización", "/dashboard/dominios", Globe),
   detalle: section("detalle", "Detalle de dominio", "/dashboard/detalle", ScanSearch),
+  activos: section("activos", "Activos", "/dashboard/activos", Boxes),
   hallazgos: section("hallazgos", "Hallazgos", "/dashboard/hallazgos", TriangleAlert),
   historico: section("historico", "Reportes e histórico", "/dashboard/historico", History),
   plan: section("plan", "Plan de acción", "/dashboard/plan", ListChecks),
@@ -82,12 +85,15 @@ export interface NavGroup {
   items: SectionId[];
 }
 
-/** Menú de cada rol, en el orden en que aparece en la barra lateral. */
+/**
+ * Menú de cada rol, en el orden en que aparece en la barra lateral. 'Activos' (RC-231) es para los tres: la API da el
+ * inventario a todos los roles, como el de cada dominio en su detalle.
+ */
 export const ROLE_NAVIGATION: Record<Role, NavGroup[]> = {
-  analista: [{ title: "Monitoreo", items: ["dashboard", "dominios", "detalle", "hallazgos", "historico", "plan"] }],
-  gerente: [{ title: "Monitoreo", items: ["dashboard", "dominios", "detalle", "historico", "plan"] }],
+  analista: [{ title: "Monitoreo", items: ["dashboard", "dominios", "detalle", "activos", "hallazgos", "historico", "plan"] }],
+  gerente: [{ title: "Monitoreo", items: ["dashboard", "dominios", "detalle", "activos", "historico", "plan"] }],
   admin: [
-    { title: "Monitoreo", items: ["dashboard", "dominios", "hallazgos", "historico", "plan", "alertas"] },
+    { title: "Monitoreo", items: ["dashboard", "dominios", "activos", "hallazgos", "historico", "plan", "alertas"] },
     { title: "Administración", items: ["admin", "usuarios", "pesos", "api", "webhooks", "bitacora"] },
   ],
 };
@@ -103,12 +109,13 @@ export const ROLE_PERMISSIONS: Record<Role, readonly SectionId[]> = {
 };
 
 /** Acciones que no son de una sección completa. */
-export type Capability = "register_domain" | "verify_txt" | "request_scan" | "request_report";
+export type Capability = "register_domain" | "verify_txt" | "request_scan" | "request_report" | "ask_assistant";
 
+/** `ask_assistant` (RC-77): el asistente de IA de Hallazgos. La API lo da solo a Analista y Admin. */
 const CAPABILITIES: Record<Role, readonly Capability[]> = {
-  analista: ["request_scan", "request_report"],
+  analista: ["request_scan", "request_report", "ask_assistant"],
   gerente: ["request_report"],
-  admin: ["register_domain", "verify_txt", "request_scan", "request_report"],
+  admin: ["register_domain", "verify_txt", "request_scan", "request_report", "ask_assistant"],
 };
 
 export function canAccessSection(role: Role, id: SectionId): boolean {

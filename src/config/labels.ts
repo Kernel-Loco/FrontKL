@@ -39,7 +39,7 @@ export const SOURCE_LABELS: Record<FindingSource, string> = {
   shodan: "Shodan",
   github: "GitHub",
   censys: "Censys",
-  hibp: "HIBP API",
+  hibp: "Have I Been Pwned",
 };
 
 /** Bandas del score (criterio #29): bajo 0–39, medio 40–59, alto 60–79, crítico 80–100. */
@@ -62,6 +62,24 @@ export const SCORE_METHOD_LABELS: Record<ScoreMethod, string> = {
   rules: "Reglas",
   ml: "Modelo de ML",
 };
+
+/** Por qué el score salió por reglas y no por el modelo (domain_scores.model_fallback_reason). */
+export const MODEL_FALLBACK_LABELS: Record<string, string> = {
+  macro_f1_no_supera_reglas: "el modelo todavía no supera a las reglas",
+  artefacto_ml_no_disponible: "el modelo no está disponible",
+  inferencia_ml_no_disponible: "el modelo no pudo calcular este score",
+};
+
+/**
+ * Método del score con la versión del modelo o, si cayó a reglas, el motivo (RC-229). Lo usan el histórico y el panel
+ * del hallazgo: «Modelo de ML v3» o «Reglas: el modelo no está disponible».
+ */
+export function scoreMethodText(method: ScoreMethod, modelVersion?: string | null, fallbackReason?: string | null): string {
+  if (method === "ml") return modelVersion ? `${SCORE_METHOD_LABELS.ml} ${modelVersion}` : SCORE_METHOD_LABELS.ml;
+  return fallbackReason
+    ? `${SCORE_METHOD_LABELS.rules}: ${MODEL_FALLBACK_LABELS[fallbackReason] ?? fallbackReason}`
+    : SCORE_METHOD_LABELS.rules;
+}
 
 export const SCORE_REASON_LABELS: Record<ScoreReason, string> = {
   scan: "Escaneo",
@@ -122,6 +140,7 @@ export const ASSET_TYPE_LABELS: Record<AssetType, string> = {
   service: "Servicio",
   certificate: "Certificado",
   email: "Correo",
+  api_doc: "Documentación de API",
 };
 
 export const EXPOSICION_LABELS: Record<Caracteristicas["exposicion"], string> = {
@@ -209,6 +228,8 @@ export const AUDIT_ACTION_LABELS: Record<string, string> = {
   "api_key.created": "Creó una llave de API",
   "api_key.revoked": "Revocó una llave de API",
   "chain.verified": "Verificó la integridad de la bitácora",
+  "scoring.weights_changed": "Cambió los pesos o los cortes del score",
+  "scoring.scores_recalculated": "Puso al día scores con la versión activa de los pesos",
   "platform.organization_switched": "Cambió de empresa activa (superadmin)",
   "platform.organization_entered": "El superadmin de LowTide entró a la empresa",
   "platform.organization_switch_failed": "Un cambio de empresa del superadmin no se aplicó",

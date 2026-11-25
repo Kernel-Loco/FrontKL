@@ -10,9 +10,11 @@ import type {
   DomainFindings,
   DomainScore,
   ListResponse,
+  OrganizationAssets,
   Scan,
   ScoreHistory,
   ScoringWeights,
+  SignatureRequestList,
   TxtVerification,
 } from "@/types";
 
@@ -28,13 +30,31 @@ export const getScoreHistory = (fqdn: string) => apiGet<ScoreHistory>(`/domains/
 
 export const getActionPlan = (fqdn: string) => apiGet<ActionPlan>(`/domains/${path(fqdn)}/action-plan`);
 
-/** Provisional: aún no está en el contrato #21. */
 export const getDomainAssets = (fqdn: string) => apiGet<ListResponse<Asset>>(`/domains/${path(fqdn)}/assets`);
+
+/**
+ * Inventario de toda la empresa (RC-231). `query` sale de consultaActivos() (src/lib/filtrosActivos.ts): domain, type,
+ * q, limit y offset. `total` cuenta todos los del filtro, no solo la página.
+ */
+export const getAssets = (query: string) => apiGet<OrganizationAssets>(query ? `/assets?${query}` : "/assets");
 
 /** Solo Admin. */
 export const getTxtVerifications = () => apiGet<ListResponse<TxtVerification>>("/domains/txt");
 
+/** Cartas mandadas a firmar con Mifiel y el modo de la API (RC-211, solo Admin). */
+export const getSignatureRequests = () => apiGet<SignatureRequestList>("/signature-requests");
+
 export const getScoringWeights = () => apiGet<ScoringWeights>("/scoring/weights");
 
-/** Provisional: aún no está en el contrato #21. */
-export const getScans = () => apiGet<ListResponse<Scan>>("/scans");
+/**
+ * Provisional: aún no está en el contrato #21. Del más nuevo al más viejo. Sin `domain`, los de toda la empresa.
+ * `limit` va de 1 a 100 (la API da 50 sin él) y `total` cuenta todos los del filtro, no solo la página (RC-318).
+ */
+export const getScans = ({ domain, limit, offset }: { domain?: string; limit?: number; offset?: number } = {}) => {
+  const query = new URLSearchParams();
+  if (domain !== undefined) query.set("domain", domain);
+  if (limit !== undefined) query.set("limit", String(limit));
+  if (offset !== undefined) query.set("offset", String(offset));
+  const qs = query.toString();
+  return apiGet<ListResponse<Scan>>(qs ? `/scans?${qs}` : "/scans");
+};

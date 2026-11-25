@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LogOut, X } from "lucide-react";
 import { canSwitchOrganization, getNavigation, isNavItemActive, ROLE_LABELS, type SectionId } from "@/config/permissions";
+import { announceEnded, sharedStore } from "@/lib/session/actividad";
 import { leaveSession } from "@/lib/session/logout";
 import { logout } from "@/services/authService";
 import type { User } from "@/types";
@@ -39,6 +40,8 @@ function SidebarContent({ user, badges, theme, onThemeToggle, onNavigate }: { us
   // cookie. Con user null también se muestra: es la única salida mientras la API no valide la sesión (RC-225).
   const handleLogout = async () => {
     setLoggingOut(true);
+    // Las demás pestañas salen también, sin esperar al 401 de su siguiente petición (RC-311).
+    announceEnded(sharedStore(), "logout", Date.now());
     await logout();
     leaveSession("logout");
   };

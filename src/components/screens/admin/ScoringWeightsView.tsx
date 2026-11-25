@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Card, TableWrap, TR } from "@/components/ui/Card";
 import { BAND_TONE } from "@/components/ui/tones";
 import { BAND_LABELS, CATEGORY_LABELS, SEVERITY_LABELS } from "@/config/labels";
+import { mismosCortes } from "@/lib/bandas";
 import { formatDateTime } from "@/lib/format";
 import type { Category, ScoringWeights } from "@/types";
 import { ScoringWeightsEditor } from "./ScoringWeightsEditor";
@@ -11,7 +12,7 @@ const TH = "px-3 py-3 text-left text-xs font-medium text-lt-muted first:pl-5 las
 const TD = "px-3 py-3 align-middle text-sm text-lt-text first:pl-5 last:pr-5";
 const PERCENT_FORMAT = new Intl.NumberFormat("es-MX", { maximumFractionDigits: 2 });
 
-/** Muestra el juego activo y permite crear una nueva versión de sus pesos (#32). */
+/** Muestra el juego activo y permite crear una nueva versión de sus pesos (#32) y de sus cortes de bandas (RC-237). */
 export function ScoringWeightsView({ weights }: { weights: ScoringWeights }) {
   const categories = Object.keys(CATEGORY_LABELS) as Category[];
 
@@ -43,10 +44,22 @@ export function ScoringWeightsView({ weights }: { weights: ScoringWeights }) {
               </li>
             ))}
           </ul>
-          <ScoringWeightsEditor initialWeights={weights.category_weights} />
+          <ScoringWeightsEditor
+            initialWeights={weights.category_weights}
+            initialCutoffs={weights.band_cutoffs}
+            templateCutoffs={weights.band_cutoffs_template}
+            initialVersion={weights.rule_set_version}
+          />
         </Card>
 
-        <Card title="Bandas de riesgo" description="El nivel que corresponde a cada rango del score.">
+        <Card
+          title="Bandas de riesgo"
+          description={
+            mismosCortes(weights.band_cutoffs, weights.band_cutoffs_template)
+              ? "El nivel que corresponde a cada rango del score. Tu empresa usa los cortes de la plantilla."
+              : `El nivel que corresponde a cada rango del score. Tu empresa usa sus propios cortes; los de la plantilla son ${weights.band_cutoffs_template.medium}, ${weights.band_cutoffs_template.high} y ${weights.band_cutoffs_template.critical}.`
+          }
+        >
           <ul className="divide-y divide-lt-border">
             {weights.bands.map((b) => (
               <li key={b.band} className="flex items-center justify-between py-2.5 text-sm">
@@ -63,6 +76,13 @@ export function ScoringWeightsView({ weights }: { weights: ScoringWeights }) {
             Piso: con 1 hallazgo crítico vigente el score no baja de {weights.floor.one_critical}; con 2 o más, de {weights.floor.two_or_more_critical}. Umbral de
             alerta por defecto: {weights.alert_threshold_default}.
           </p>
+          <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-lt-muted" aria-label="Letras del score">
+            {weights.grades.map((g) => (
+              <li key={g.grade} className="tabular-nums">
+                <span className="font-semibold text-lt-text">{g.grade}</span> {g.from} a {g.to}
+              </li>
+            ))}
+          </ul>
         </Card>
       </div>
 
@@ -81,7 +101,17 @@ export function ScoringWeightsView({ weights }: { weights: ScoringWeights }) {
             <tbody>
               {weights.rules.map((rule) => (
                 <tr key={rule.code} className={TR}>
-                  <td className={`${TD} font-mono text-[13px]`}>{rule.code}</td>
+                  <td className={`${TD} max-w-sm text-[13px]`}>
+                    {rule.title ? (
+                      <>
+                        <span className="text-lt-text">{rule.title}</span>
+                        <span className="block font-mono text-[11px] text-lt-faint">{rule.code}</span>
+                        {rule.meaning && <span className="block text-xs leading-relaxed text-lt-muted">{rule.meaning}</span>}
+                      </>
+                    ) : (
+                      <span className="font-mono">{rule.code}</span>
+                    )}
+                  </td>
                   <td className={`${TD} text-lt-muted`}>{CATEGORY_LABELS[rule.category]}</td>
                   <td className={TD}>{SEVERITY_LABELS[rule.base_severity]}</td>
                   <td className={`${TD} text-right tabular-nums`}>{rule.weight}</td>

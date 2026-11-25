@@ -12,7 +12,8 @@ const NOTICES: Record<string, string> = {
   max: "Tu sesión llegó a su duración máxima de 8 horas. Vuelve a iniciar sesión.",
   ended: "Tu sesión ya no es válida: venció por inactividad, llegó a su máximo de 8 horas o se cerró en otro lado. Vuelve a iniciar sesión.",
   registered: "Cuenta creada con rol Analista. Ya puedes iniciar sesión.",
-  reset: "Tu contraseña se actualizó. Inicia sesión con la nueva.",
+  reset: "Tu contraseña se actualizó y se cerraron todas tus sesiones. Inicia sesión con la nueva.",
+  reset_passkeys: "Tu contraseña se actualizó, se cerraron todas tus sesiones y se borraron tus passkeys. Inicia sesión con la nueva y vuelve a registrarlas desde tu perfil.",
   logout: "Cerraste sesión correctamente.",
 };
 

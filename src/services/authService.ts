@@ -5,10 +5,15 @@ import { apiClient, ApiError } from "@/lib/apiClient";
 import { toUser } from "@/lib/session/shared";
 import type {
   ApiUser,
+  LoginLinkRedeemRequest,
+  LoginLinkRequest,
+  LoginLinkRequestResponse,
   LoginRequest,
   LoginResponse,
   MfaEnableRequest,
   MfaEnableResponse,
+  MfaEnrollEnableRequest,
+  MfaEnrollSetupRequest,
   MfaSetupRequest,
   MfaSetupResponse,
   MfaVerifyRequest,
@@ -23,9 +28,9 @@ import type {
   PasswordChangeRequest,
   PasswordChangeResponse,
   PasswordResetConfirmRequest,
+  PasswordResetConfirmResponse,
   PasswordResetRequest,
-  PasswordResetVerifyRequest,
-  PasswordResetVerifyResponse,
+  PasswordResetRequestResponse,
   RegisterRequest,
   User,
 } from "@/types";
@@ -33,6 +38,16 @@ import { ServiceError } from "./errors";
 
 export async function login(payload: LoginRequest): Promise<LoginResponse> {
   return apiClient.post<LoginResponse>("/auth/login", payload);
+}
+
+/** Pide el enlace para entrar por correo (#28, RC-63). La API responde igual exista o no la cuenta. */
+export async function requestLoginLink(payload: LoginLinkRequest): Promise<LoginLinkRequestResponse> {
+  return apiClient.post<LoginLinkRequestResponse>("/auth/link/request", payload);
+}
+
+/** Canjea el token del enlace por la sesión; con MFA devuelve el mfa_token, como el login. */
+export async function redeemLoginLink(payload: LoginLinkRedeemRequest): Promise<LoginResponse> {
+  return apiClient.post<LoginResponse>("/auth/link/verify", payload);
 }
 
 export async function verifyMfa(payload: MfaVerifyRequest): Promise<MfaVerifyResponse> {
@@ -47,6 +62,16 @@ export async function startMfaSetup(payload: MfaSetupRequest): Promise<MfaSetupR
 /** Guarda el secreto del alta solo si el código de la app es válido. */
 export async function enableMfa(payload: MfaEnableRequest): Promise<MfaEnableResponse> {
   return apiClient.post<MfaEnableResponse>("/auth/mfa/enable", payload);
+}
+
+/** Alta de TOTP al entrar (RC-5): con el token del 403 de /auth/login, la API devuelve el QR. Sin sesión. */
+export async function startMfaEnroll(payload: MfaEnrollSetupRequest): Promise<MfaSetupResponse> {
+  return apiClient.post<MfaSetupResponse>("/auth/mfa/enroll/setup", payload);
+}
+
+/** Activa el TOTP del alta al entrar. Con el primer código válido la API guarda el secreto y crea la sesión. */
+export async function enableMfaEnroll(payload: MfaEnrollEnableRequest): Promise<MfaVerifyResponse> {
+  return apiClient.post<MfaVerifyResponse>("/auth/mfa/enroll/enable", payload);
 }
 
 // --- Passkeys (RC-331). Las opciones y las respuestas de WebAuthn viajan como JSON sin tocarlas.
@@ -84,10 +109,13 @@ export async function logout(): Promise<void> {
   }
 }
 
-/** Usuario de la sesión, o null si terminó. Renueva la inactividad en el servidor. */
-export async function getCurrentUser(): Promise<User | null> {
+/**
+ * Usuario de la sesión, o null si terminó. Renueva la inactividad en el servidor. Con `passive`, la consulta no cuenta
+ * como actividad del usuario en el portal (RC-311).
+ */
+export async function getCurrentUser({ passive = false }: { passive?: boolean } = {}): Promise<User | null> {
   try {
-    return toUser(await apiClient.get<ApiUser>("/auth/me"));
+    return toUser(await apiClient.get<ApiUser>("/auth/me", { passive }));
   } catch (error) {
     if (error instanceof ApiError && error.status === 401) return null;
     throw error;
@@ -99,10 +127,19 @@ export async function changePassword(payload: PasswordChangeRequest): Promise<Pa
   return apiClient.post<PasswordChangeResponse>("/auth/password", payload);
 }
 
-// --- Aún sin backend: las cuentas las crea un Administrador y la recuperación por correo llega después.
+/** Pide el enlace para recuperar la contraseña (RC-335). La respuesta es la misma exista o no la cuenta. */
+export async function requestPasswordReset(payload: PasswordResetRequest): Promise<PasswordResetRequestResponse> {
+  return apiClient.post<PasswordResetRequestResponse>("/auth/password-reset", payload);
+}
+
+/** Canjea el token del enlace por la contraseña nueva. La API gasta el token antes de revisar la contraseña. */
+export async function resetPassword(payload: PasswordResetConfirmRequest): Promise<PasswordResetConfirmResponse> {
+  return apiClient.post<PasswordResetConfirmResponse>("/auth/password-reset/confirm", payload);
+}
+
+// --- Aún sin backend: las cuentas las crea un Administrador.
 
 const NO_SIGNUP = "El registro abierto no está disponible: un Administrador te invita desde «Usuarios y roles».";
-const NO_RESET = "La recuperación por correo todavía no está disponible. Pide a un Administrador que restablezca tu contraseña.";
 
 export async function register(payload: RegisterRequest): Promise<User> {
   // TODO: invitaciones de usuarios (POST /users/invitations) en lugar de registro abierto.
@@ -110,18 +147,3 @@ export async function register(payload: RegisterRequest): Promise<User> {
   throw new ServiceError("signup_disabled", NO_SIGNUP);
 }
 
-export async function requestPasswordReset(payload: PasswordResetRequest): Promise<void> {
-  // TODO: conectar con backend → POST /auth/password-reset (responde igual exista o no el correo).
-  void payload;
-  throw new ServiceError("reset_disabled", NO_RESET);
-}
-
-export async function verifyResetCode(payload: PasswordResetVerifyRequest): Promise<PasswordResetVerifyResponse> {
-  void payload;
-  throw new ServiceError("reset_disabled", NO_RESET);
-}
-
-export async function resetPassword(payload: PasswordResetConfirmRequest): Promise<void> {
-  void payload;
-  throw new ServiceError("reset_disabled", NO_RESET);
-}

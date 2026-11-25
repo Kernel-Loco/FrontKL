@@ -15,9 +15,9 @@ interface CardProps {
 export function Card({ title, action, description, icon, padded = true, className = "", children }: CardProps) {
   const hasHeader = title || action;
   return (
-    <section className={`rounded-xl border border-lt-border bg-lt-surface ${className}`}>
+    <section className={`min-w-0 rounded-xl border border-lt-border bg-lt-surface ${className}`}>
       {hasHeader && (
-        <header className={`flex items-start justify-between gap-3 ${padded ? "px-5 pt-5" : "border-b border-lt-border px-5 py-4"}`}>
+        <header className={`flex flex-wrap items-start justify-between gap-3 ${padded ? "px-5 pt-5" : "border-b border-lt-border px-5 py-4"}`}>
           <div className="flex min-w-0 items-start gap-3">
             {icon && (
               <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-lt-indigo/15 text-lt-indigo-soft">
@@ -29,7 +29,7 @@ export function Card({ title, action, description, icon, padded = true, classNam
               {description && <p className="mt-0.5 text-xs text-lt-muted">{description}</p>}
             </div>
           </div>
-          {action && <div className="shrink-0 text-xs text-lt-muted">{action}</div>}
+          {action && <div className="max-w-full text-xs text-lt-muted">{action}</div>}
         </header>
       )}
       <div className={padded ? "p-5" : ""}>{children}</div>
@@ -39,7 +39,7 @@ export function Card({ title, action, description, icon, padded = true, classNam
 
 /** Contenedor de tabla con scroll horizontal en pantallas chicas. */
 export function TableWrap({ children }: { children: ReactNode }) {
-  return <div className="overflow-x-auto">{children}</div>;
+  return <div role="region" aria-label="Tabla desplazable horizontalmente" tabIndex={0} className="relative overflow-x-auto">{children}</div>;
 }
 
 export const TH = "px-5 py-3 text-left text-xs font-medium text-lt-muted";

@@ -23,7 +23,8 @@ export interface ApiErrorBody {
 // ---------------------------------------------------------------- score y criterio (#29)
 
 export type Band = "low" | "medium" | "high" | "critical";
-/** Letra del score final (#114): A 0–19, B 20–39, C 40–59, D 60–79, F 80–100. No hay E. La da la API. */
+/** Letra del score final (#114). Con la plantilla: A 0–19, B 20–39, C 40–59, D 60–79, F 80–100. No hay E. La da la API
+ * con los cortes de bandas del juego de cada score (RC-237). */
 export type Grade = "A" | "B" | "C" | "D" | "F";
 export type Category = "infrastructure" | "digital_identity" | "configuration" | "data_leaks";
 export type ScoreMethod = "rules" | "ml";
@@ -59,6 +60,9 @@ export interface Domain {
     valid_until: string | null;
     /** Propuesto: correo de quien firmó la autorización. */
     signer_email: string | null;
+    /** Versión de la plantilla y actividades del Anexo A de la carta (RC-59). Opcionales en los datos de ejemplo. */
+    template_version?: number | null;
+    activities?: number[] | null;
   };
   txt: { status: TxtStatus; checked_at: string | null };
   /** `can_scan` solo con autorización vigente, TXT verificado y dominio verificado. */
@@ -75,7 +79,8 @@ export interface Domain {
 
 export type FindingStatus = "open" | "resolved" | "accepted_risk" | "false_positive";
 export type Recurrence = "new" | "recurring";
-export type AssetType = "domain" | "subdomain" | "ip" | "service" | "certificate" | "email";
+/** Los de TIPOS_ACTIVO de BackKL cirdan/recolectores/contrato.py. api_doc es la URL de una documentación de API. */
+export type AssetType = "domain" | "subdomain" | "ip" | "service" | "certificate" | "email" | "api_doc";
 
 /** Las 4 características del reto, con las claves del contrato de plugin (#13). */
 export interface Caracteristicas {
@@ -101,8 +106,11 @@ export interface DomainFinding {
   cve_id: string | null;
   cvss: number | null;
   epss: number | null;
-  in_kev: boolean;
+  /** null con CVE que el cargador diario de inteligencia de BackKL todavía no revisó: no se sabe si está en KEV. */
+  in_kev: boolean | null;
   evidence: Record<string, unknown>;
+  /** Lo entrega el backend. El simulado no lo trae. */
+  frameworks?: Frameworks;
   caracteristicas: Caracteristicas;
   detected_at: string;
   last_scan_id: string | null;
@@ -173,6 +181,21 @@ export interface Kri {
   penalty: number | null;
 }
 
+/**
+ * Por qué el escaneo del score no revisó un código (RC-229). source_failed: la fuente no respondió. source_not_run: no
+ * corrió en ese escaneo (apagada o aún no existía). no_api_key: Shodan sin la API de host o HIBP sin la llave de la
+ * plataforma (RC-54). source_partial: la fuente respondió pero no pudo revisarlo. partially_checked: la fuente revisó
+ * solo una parte de lo suyo (sources_partial).
+ */
+export type CoverageGapReason = "source_failed" | "source_not_run" | "no_api_key" | "source_partial" | "partially_checked";
+
+/** Un código de regla que el escaneo del score no revisó, con su fuente (null si no se sabe) y su motivo. */
+export interface CoverageGap {
+  code: string;
+  source: string | null;
+  reason: CoverageGapReason;
+}
+
 /** `GET /api/v1/domains/{fqdn}/score` */
 export interface DomainScore extends ScoreBase {
   domain: string;
@@ -180,6 +203,8 @@ export interface DomainScore extends ScoreBase {
   subcategories: SubcategoryScore[];
   kris: Kri[];
   kri_map_version: number;
+  /** Códigos sin cobertura del escaneo del score, ordenados por código (RC-229). Vacía sin corridas. Falta con una API de antes. */
+  coverage_gaps?: CoverageGap[];
   /** El umbral compara el score de 0 a 100, nunca la letra. */
   alert: { threshold: number; triggered: boolean };
 }
@@ -195,7 +220,8 @@ export interface ScoreHistoryPoint extends ScoreBase {
 
 /**
  * `weekly_changes` de cirdan/score/cambios.py: activos y hallazgos nuevos del escaneo y crecimiento del inventario
- * frente al escaneo anterior de los últimos 7 días. `assets_growth_percent` es null sin un escaneo anterior en esos 7 días.
+ * en la semana: contra el escaneo más viejo de los 7 días anteriores o, si no hay, el anterior más reciente de hasta
+ * 14 días (RC-73). `assets_growth_percent` y `assets_before` son null sin ese escaneo de base.
  */
 export interface WeeklyChanges {
   previous_scan_id: string | null;
@@ -293,6 +319,22 @@ export interface ActionPlanSimulation {
   partial_coverage: boolean;
 }
 
+// ---------------------------------------------------------------- marcos de referencia (#83, RC-131)
+
+/** Técnica de MITRE ATT&CK, control de ISO 27001:2022 y salvaguarda de CIS v8.1 de la regla del hallazgo. */
+export interface Frameworks {
+  mitre_attack: {
+    version: string;
+    technique_id: string | null;
+    technique_name: string | null;
+    source_url: string | null;
+    /** Sin técnica: por qué la regla no mapea a ATT&CK. */
+    unmapped_reason: string | null;
+  };
+  iso_27001_2022: { version: string; control_id: string; control_name: string; source_url: string | null };
+  cis_controls_v8_1: { version: string; safeguard_id: string; safeguard_name: string; source_url: string | null };
+}
+
 // ---------------------------------------------------------------- explicación (explicacion.json)
 
 export interface ExplanationFactor {
@@ -315,9 +357,16 @@ export interface FindingExplanation {
   base_severity: Severity;
   category: Category;
   rule_code: string;
+  /** Nombre y significado de la regla (scoring_rule_texts). El simulado no los trae. */
+  rule_title?: string;
+  meaning?: string;
   score_id: string;
   computed_at: string;
   method: ScoreMethod;
+  /** Versión del modelo del score, solo con `method = "ml"`. */
+  model_version?: string | null;
+  /** Por qué el score más reciente usó reglas (MODEL_FALLBACK_LABELS); null con ML. La API lo da desde RC-229. */
+  model_fallback_reason?: string | null;
   penalty: number;
   max_penalty: number;
   factors: ExplanationFactor[];
@@ -331,6 +380,10 @@ export interface FindingExplanation {
   model_prediction?: Severity | null;
   /** Solo con `method = "ml"` (#35). */
   shap: ShapContribution[] | null;
+  /** Modelo que dio la confianza y el SHAP. Puede venir también con `method = "rules"`, si el modelo no se integró. */
+  explanation_model_version?: string | null;
+  /** Lo entrega el backend. El simulado no lo trae. */
+  frameworks?: Frameworks;
 }
 
 // ---------------------------------------------------------------- pesos (pesos.json)
@@ -341,6 +394,24 @@ export interface ScoringRule {
   base_severity: Severity;
   weight: number;
   max_penalty: number;
+  /** Nombre, significado y recomendación de la regla (scoring_rule_texts). El simulado no los trae. */
+  title?: string;
+  meaning?: string;
+  recommendation?: string;
+}
+
+/** Dónde empiezan las bandas medio, alto y crítico de un juego de reglas (RC-237). El bajo empieza en 0. */
+export interface BandCutoffs {
+  medium: number;
+  high: number;
+  critical: number;
+}
+
+/** Rango de una banda como lo manda la API. */
+export interface BandRange {
+  band: Band;
+  from: number;
+  to: number;
 }
 
 /** `GET /api/v1/scoring/weights` */
@@ -350,7 +421,11 @@ export interface ScoringWeights {
   activated_at: string;
   validated_by: string | null;
   category_weights: Record<Category, number>;
-  bands: { band: Band; from: number; to: number }[];
+  /** Los del juego activo de la organización (RC-237). `bands`, `grades` y `floor` salen de ellos. */
+  band_cutoffs: BandCutoffs;
+  /** Los de la plantilla global: 40, 60 y 80. */
+  band_cutoffs_template: BandCutoffs;
+  bands: BandRange[];
   grades: { grade: Grade; from: number; to: number }[];
   floor: { one_critical: number; two_or_more_critical: number; counts_statuses: FindingStatus[] };
   alert_threshold_default: number;
@@ -361,11 +436,14 @@ export interface ScoringWeights {
 export interface ScoringWeightsUpdateResult {
   rule_set_version: number;
   category_weights: Record<Category, number>;
+  band_cutoffs: BandCutoffs;
   recalculated_domains: number;
+  /** Dominios con score de ML sin severidades guardadas que un PUT con los mismos pesos no pudo poner al día (RC-310). */
+  skipped_domains?: number;
   unchanged: boolean;
 }
 
-// ---------------------------------------------------------------- Provisional: activos (tabla assets)
+// ---------------------------------------------------------------- Activos (tabla assets, RC-231)
 
 /** `GET /api/v1/domains/{fqdn}/assets` */
 export interface Asset {
@@ -377,6 +455,19 @@ export interface Asset {
   attributes: Record<string, unknown>;
   first_seen_at: string;
   last_seen_at: string;
+}
+
+/** `GET /api/v1/assets`: el inventario de toda la empresa, paginado (RC-231). */
+export interface OrganizationAsset extends Asset {
+  domain: string;
+  /** La IP del activo (la de un `ip` o la de un `service`); null en los demás. */
+  ip: string | null;
+  parent_type: AssetType | null;
+}
+
+export interface OrganizationAssets extends ListResponse<OrganizationAsset> {
+  limit: number;
+  offset: number;
 }
 
 // ---------------------------------------------------------------- Provisional: escaneos (scans, scan_source_runs)
@@ -425,41 +516,6 @@ export interface Report {
   status: ReportStatus;
   generated_at: string | null;
   download_url: string | null;
-}
-
-/** Un hallazgo del reporte ejecutivo: de los más severos, con la primera frase de qué hacer. */
-export interface ExecutiveReportFinding {
-  title: string;
-  severity: Severity;
-  category: Category;
-  asset: string;
-  source: FindingSource;
-  detected_at: string;
-  recurrence: Recurrence;
-  /** Primera frase de la recomendación de la regla, con tope; vacío si la regla no trae texto. */
-  action: string;
-}
-
-/**
- * `GET /api/v1/domains/{fqdn}/report` (#45, RC-70): el reporte ejecutivo del estado actual del dominio. El PDF del portal
- * se arma con esto y `?formato=html` da el mismo reporte en HTML. 403 sin autorización firmada vigente.
- */
-export interface ExecutiveReport {
-  domain: string;
-  organization: string;
-  generated_at: string;
-  authorization: { valid_from: string; valid_until: string };
-  score: { score: number; band: Band; grade: Grade; partial_coverage: boolean; computed_at: string } | null;
-  last_scan_at: string | null;
-  /** Todos los abiertos, por severidad y por categoría, aunque la lista traiga solo los más severos. */
-  open_findings: Record<Severity, number>;
-  by_category: Record<Category, number>;
-  total_open: number;
-  findings: ExecutiveReportFinding[];
-  /** Abiertos que no caben en la lista (van en la exportación de hallazgos). */
-  findings_omitted: number;
-  /** La de Have I Been Pwned va siempre (CC BY 4.0). */
-  attributions: { source: string; name: string; text: string; url: string; license_url: string }[];
 }
 
 /** `POST /api/v1/reports` */
@@ -524,20 +580,65 @@ export interface OrgSettings {
   api_keys: ApiKey[];
 }
 
-// ---------------------------------------------------------------- Provisional: alta de dominios y TXT (Admin)
+// ---------------------------------------------------------------- Alta de dominios y TXT (Admin)
 
 export type ScopeCategory = Category;
 
-/** `POST /api/v1/domains` (solo Admin). La carta firmada viaja como archivo aparte. */
+/** Estado de una carta mandada a firmar con Mifiel (RC-211, tabla signature_requests). */
+export type SignatureRequestStatus =
+  | "creating"
+  | "sent"
+  | "signed"
+  | "accepted"
+  | "rejected"
+  | "cancelled"
+  | "expired"
+  | "failed";
+
+/** `GET /api/v1/signature-requests` y la respuesta de enviar, consultar, cancelar y confirmar (solo Admin). */
+export interface SignatureRequest {
+  id: string;
+  fqdn: string;
+  provider: "mifiel";
+  environment: "sandbox" | "production";
+  status: SignatureRequestStatus;
+  /** Nombre, cargo y correo de quien firma: null fuera de creating, sent o signed o con la carta vencida (RC-274). */
+  signer_name: string | null;
+  signer_title: string | null;
+  signer_email: string | null;
+  valid_from: string;
+  valid_until: string;
+  template_version: number;
+  activities: number[];
+  signed_at: string | null;
+  last_checked_at: string | null;
+  last_error: string | null;
+  created_at: string;
+  updated_at: string;
+  decided_at: string | null;
+}
+
+export interface SignatureRequestList {
+  items: SignatureRequest[];
+  total: number;
+  /** Modo de la API: off (solo se puede subir lo firmado en la web de Mifiel), sandbox o production. */
+  mode: "off" | "sandbox" | "production";
+}
+
+/** `POST /api/v1/domains` (solo Admin). La carta se añade en el servicio. */
 export interface DomainRegistrationRequest {
   fqdn: string;
-  organization: string;
+  signer_name: string;
+  signer_title: string;
   signer_email: string;
   valid_from: string;
   valid_until: string;
-  scope: ScopeCategory[];
   /** Confirmación de que la organización autorizó el monitoreo pasivo. */
   passive_monitoring_confirmed: true;
+  /** Versión de la plantilla de la carta. Hoy solo existe la 1. */
+  template_version: 1;
+  /** Actividades del Anexo A que autoriza la carta (1 a 11). */
+  activities: number[];
 }
 
 /** `GET /api/v1/domains/txt` (solo Admin): el registro que cada dominio debe publicar. */

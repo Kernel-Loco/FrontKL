@@ -1,14 +1,17 @@
-// Estado temporal entre pasos de un flujo (login → MFA, recuperación de contraseña).
-// Vive solo en la memoria de la pestaña: mfa_token y reset_token no van a sessionStorage, donde
-// cualquier script de la página los leería en claro (alerta de CodeQL). Los pasos usan
-// router.push, así que el estado pasa de una página a otra. Si se recarga la pestaña, el flujo
-// pide empezar de nuevo.
-// TODO: conectar con backend — idealmente FastAPI mantiene el estado "MFA pendiente"
-// y "reset autorizado" en cookies httpOnly de vida corta, y esto deja de ser necesario.
+// Estado temporal entre pasos de un flujo (login → MFA, pedir el enlace de recuperación → «Revisa tu correo»).
+// Vive solo en la memoria de la pestaña: mfa_token no va a sessionStorage, donde cualquier script de la página lo
+// leería en claro (alerta de CodeQL). Los pasos usan router.push, así que el estado pasa de una página a otra. Si se
+// recarga la pestaña, el flujo pide empezar de nuevo. El token de recuperación (RC-335) no pasa por aquí: llega en el
+// enlace del correo y solo lo lee la página que lo canjea.
+// TODO: conectar con backend — idealmente FastAPI mantiene el estado "MFA pendiente" en una cookie httpOnly de vida
+// corta, y esto deja de ser necesario.
 
 export interface FlowData {
   mfa: { mfa_token: string };
-  reset: { email: string; reset_token?: string };
+  /** Alta de TOTP al entrar (RC-5): el token del 403 de /auth/login y su texto. */
+  mfaEnroll: { mfa_setup_token: string; detail: string };
+  /** El correo que se pidió y el texto de la API, el mismo exista o no la cuenta. */
+  reset: { email: string; detail: string };
 }
 
 export type FlowKey = keyof FlowData;

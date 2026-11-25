@@ -9,11 +9,14 @@ import { Card } from "@/components/ui/Card";
 import { CHECKBOX } from "@/components/ui/Field";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { InlineAlert } from "@/components/ui/InlineAlert";
+import { ProgressBar } from "@/components/ui/ProgressBar";
 import { CATEGORY_LABELS } from "@/config/labels";
 import { cantidad } from "@/lib/format";
 import { getErrorMessage } from "@/services/errors";
 import { downloadActionPlan, simulateActionPlan, type PlanExportFormat } from "@/services/planService";
-import type { ActionPlan, ActionPlanSimulation } from "@/types";
+import type { ActionPlan, ActionPlanSimulation, Category } from "@/types";
+
+const CATEGORIES = Object.keys(CATEGORY_LABELS) as Category[];
 
 function saveBlob(blob: Blob, domain: string, format: PlanExportFormat) {
   const url = URL.createObjectURL(blob);
@@ -24,8 +27,15 @@ function saveBlob(blob: Blob, domain: string, format: PlanExportFormat) {
   URL.revokeObjectURL(url);
 }
 
-/** canOpenFindings: el rol entra a Hallazgos. Si no, no se ofrece el enlace a una sección que le daría 403. */
-export function ActionPlanExplorer({ plan, canOpenFindings }: { plan: ActionPlan; canOpenFindings: boolean }) {
+export function ActionPlanExplorer({
+  plan,
+  canSeeFindings,
+  canExport,
+}: {
+  plan: ActionPlan;
+  canSeeFindings: boolean;
+  canExport: boolean;
+}) {
   const [selected, setSelected] = useState<string[]>([]);
   const [simulationState, setSimulationState] = useState<{
     selection: string;
@@ -54,12 +64,13 @@ export function ActionPlanExplorer({ plan, canOpenFindings }: { plan: ActionPlan
   };
 
   const exportPlan = async (format: PlanExportFormat) => {
+    if (!canExport || exporting) return;
     setExporting(format);
     setExportError(null);
     try {
       saveBlob(await downloadActionPlan(plan.domain, format), plan.domain, format);
     } catch (error) {
-      setExportError(getErrorMessage(error));
+      setExportError(getErrorMessage(error, { apiMessageOn403: true }));
     } finally {
       setExporting(null);
     }
@@ -69,26 +80,32 @@ export function ActionPlanExplorer({ plan, canOpenFindings }: { plan: ActionPlan
   const simulation = currentSimulation?.data;
   const simulationError = currentSimulation?.error;
   const simulating = selected.length > 0 && currentSimulation === null;
-  const reduction = simulation?.score_reduction ?? 0;
-  const scoreAfter = selected.length === 0 ? plan.score_before : simulation?.score_after;
-  const bandAfter = selected.length === 0 ? plan.band_before : simulation?.band_after;
+  const scoreBefore = simulation?.score_before ?? plan.score_before;
+  const bandBefore = simulation?.band_before ?? plan.band_before;
+  const scoreAfter = selected.length === 0 ? scoreBefore : simulation?.score_after;
+  const bandAfter = selected.length === 0 ? bandBefore : simulation?.band_after;
 
   return (
-    <div className="grid min-w-0 items-start gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.65fr)]">
+    <div className="grid min-w-0 grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.65fr)]">
       <Card
         title="Acciones recomendadas"
         description={`${cantidad(plan.total, "acción", "acciones")} para ${plan.domain}`}
         action={(
           <span className="flex gap-1">
-            <ActionButton variant="ghost" size="sm" loading={exporting === "csv"} onClick={() => exportPlan("csv")}>
+            <ActionButton variant="ghost" size="sm" disabled={!canExport || (exporting !== null && exporting !== "csv")} loading={exporting === "csv"} onClick={() => exportPlan("csv")}>
               <Download aria-hidden="true" className="h-4 w-4" /> CSV
             </ActionButton>
-            <ActionButton variant="ghost" size="sm" loading={exporting === "json"} onClick={() => exportPlan("json")}>
+            <ActionButton variant="ghost" size="sm" disabled={!canExport || (exporting !== null && exporting !== "json")} loading={exporting === "json"} onClick={() => exportPlan("json")}>
               <FileJson aria-hidden="true" className="h-4 w-4" /> JSON
             </ActionButton>
           </span>
         )}
       >
+        {!canExport && (
+          <InlineAlert tone="warning" className="mb-4">
+            Para exportar el plan, el dominio debe tener una autorización firmada vigente.
+          </InlineAlert>
+        )}
         {plan.partial_coverage && (
           <InlineAlert tone="warning" className="mb-4">
             Cobertura parcial: alguna fuente falló, revisó solo una parte de sus repos o IP, o hay reglas que las fuentes
@@ -124,7 +141,7 @@ export function ActionPlanExplorer({ plan, canOpenFindings }: { plan: ActionPlan
                       Score estimado: {action.score_after} ({action.score_reduction > 0 ? `−${action.score_reduction}` : "sin cambio"})
                     </span>
                     </label>
-                    {canOpenFindings && (
+                    {canSeeFindings && (
                       <Link
                         href={`/dashboard/hallazgos?dominio=${encodeURIComponent(plan.domain)}&regla=${encodeURIComponent(action.rule_code)}`}
                         aria-label={`Ver ${action.finding_count} ${action.finding_count === 1 ? "hallazgo" : "hallazgos"} de esta acción`}
@@ -141,13 +158,21 @@ export function ActionPlanExplorer({ plan, canOpenFindings }: { plan: ActionPlan
         )}
       </Card>
 
-      <Card title="Simulador de score" description="La selección no modifica hallazgos ni el score guardado.">
+      <Card
+        title="¿Qué pasa si lo arreglo?"
+        description="La selección no modifica hallazgos ni el score guardado."
+        action={(
+          <ActionButton variant="ghost" size="sm" disabled={selected.length === 0} onClick={() => setSelected([])}>
+            Limpiar selección
+          </ActionButton>
+        )}
+      >
         {simulationError && <InlineAlert tone="error" className="mb-4">{simulationError}</InlineAlert>}
         <div aria-busy={simulating} className="grid grid-cols-2 gap-3">
           <div className="min-w-0 rounded-lg bg-lt-raised p-3">
             <p className="text-xs text-lt-muted">Actual</p>
-            <p className="mt-1 text-3xl font-bold tabular-nums text-lt-text">{plan.score_before}</p>
-            <BandBadge band={plan.band_before} />
+            <p className="mt-1 text-3xl font-bold tabular-nums text-lt-text">{scoreBefore}</p>
+            <BandBadge band={bandBefore} />
           </div>
           <div className="min-w-0 rounded-lg bg-lt-raised p-3">
             <p className="text-xs text-lt-muted">Con selección</p>
@@ -159,11 +184,51 @@ export function ActionPlanExplorer({ plan, canOpenFindings }: { plan: ActionPlan
           {selected.length === 0 ? (
             <p className="text-sm text-lt-muted">Selecciona una o varias acciones para calcular el impacto conjunto.</p>
           ) : simulating ? (
-            <p className="text-sm text-lt-muted">Calculando combinación…</p>
+            <p role="status" className="text-sm text-lt-muted">Calculando combinación de {selected.length} {selected.length === 1 ? "acción" : "acciones"}…</p>
           ) : simulation ? (
-            <p className="text-sm font-semibold text-lt-teal">Reducción estimada: {reduction} puntos</p>
+            <p className="text-sm font-semibold text-lt-teal">
+              {simulation.score_reduction > 0
+                ? `Reducción estimada: ${simulation.score_reduction} puntos`
+                : simulation.score_reduction < 0
+                  ? `Aumento estimado: ${Math.abs(simulation.score_reduction)} puntos`
+                  : "La selección no cambia el score"}
+            </p>
           ) : null}
           {simulation?.floor_message_after && <p className="mt-2 text-xs text-lt-amber">{simulation.floor_message_after}</p>}
+        </div>
+        <div className="mt-4 border-t border-lt-border pt-4">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <h3 className="text-sm font-semibold text-lt-text">Impacto por categoría</h3>
+            <div className="flex shrink-0 items-center gap-3 text-[11px] text-lt-muted" aria-hidden="true">
+              <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-lt-faint" />Actual</span>
+              <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-lt-teal" />Estimado</span>
+            </div>
+          </div>
+          <ul className="space-y-4" aria-busy={simulating}>
+            {CATEGORIES.map((category) => {
+              const before = simulation?.category_scores_before[category] ?? plan.category_scores_before[category];
+              const after = simulation?.category_scores_after[category] ?? (selected.length === 0 ? before : null);
+              const change = after === null ? null : before - after;
+
+              return (
+                <li key={category}>
+                  <div className="mb-1.5 flex items-baseline justify-between gap-3 text-xs">
+                    <span className="text-lt-text">{CATEGORY_LABELS[category]}</span>
+                    <span className="shrink-0 tabular-nums text-lt-muted">
+                      {before} → {simulating ? "…" : after ?? "—"}
+                      {change !== null && change !== 0 && ` · ${change > 0 ? "−" : "+"}${Math.abs(change)}`}
+                    </span>
+                  </div>
+                  <div className="space-y-1.5">
+                    <ProgressBar value={before} tone="gray" label={`${CATEGORY_LABELS[category]} actual: ${before} de 100`} />
+                    {after !== null && (
+                      <ProgressBar value={after} tone="teal" label={`${CATEGORY_LABELS[category]} estimado: ${after} de 100`} />
+                    )}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
         </div>
       </Card>
     </div>

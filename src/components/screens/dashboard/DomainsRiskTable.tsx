@@ -64,7 +64,7 @@ export function DomainsRiskTable({
                       {d.band ? (
                         <BandBadge band={d.band} />
                       ) : state.label === "Autorizado" ? (
-                        <Badge tone="gray">Sin calcular</Badge>
+                        <Badge tone="gray">Sin escaneo completo</Badge>
                       ) : (
                         <Badge tone={state.tone}>{state.label}</Badge>
                       )}

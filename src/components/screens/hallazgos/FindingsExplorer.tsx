@@ -6,10 +6,13 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { INPUT, SELECT } from "@/components/ui/Field";
 import { TD, TH } from "@/components/ui/Card";
 import { ApiExport } from "@/components/screens/shared/ApiExport";
+import { SourceAttribution } from "@/components/screens/shared/SourceAttribution";
 import { CATEGORY_LABELS, SEVERITY_LABELS, SOURCE_LABELS } from "@/config/labels";
-import { cantidad } from "@/lib/format";
+import { atribucionesDe } from "@/lib/atribucion";
+import { findingsCountLabel, NO_FINDINGS_PARTIAL } from "@/lib/cobertura";
 import { downloadFindings } from "@/services/exportService";
 import type { Category, DomainFinding, Severity } from "@/types";
+import { AssistantPanel } from "./AssistantPanel";
 import { ExplanationPanel } from "./ExplanationPanel";
 
 export function FindingsExplorer({
@@ -18,6 +21,7 @@ export function FindingsExplorer({
   initialRule = "",
   partialCoverage = false,
   unscored = false,
+  canAsk = false,
 }: {
   domain: string;
   findings: DomainFinding[];
@@ -25,6 +29,8 @@ export function FindingsExplorer({
   partialCoverage?: boolean;
   /** Dominio sin score: ningún escaneo calculó su riesgo. */
   unscored?: boolean;
+  /** Analista y Admin ven el asistente de IA (RC-77), sobre los hallazgos de la lista filtrada. */
+  canAsk?: boolean;
 }) {
   const ids = { search: useId(), category: useId(), severity: useId(), rule: useId() };
   const [query, setQuery] = useState("");
@@ -102,7 +108,7 @@ export function FindingsExplorer({
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-xs text-lt-muted">
-          {visible.length} de {cantidad(findings.length, "hallazgo")}
+          {findingsCountLabel(visible.length, findings.length, partialCoverage || unscored)}
           {visible.length < findings.length && " · la exportación trae todos, sin los filtros"}
         </p>
         {/* La API arma el archivo (#24): todos los hallazgos abiertos del dominio, sin los filtros, y 403 sin autorización vigente. */}
@@ -110,10 +116,10 @@ export function FindingsExplorer({
           download={(format, signal) => downloadFindings(domain, format, signal)} />
       </div>
 
-      <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
         <div className="overflow-hidden rounded-xl border border-lt-border bg-lt-surface">
           {visible.length === 0 ? (
-            <EmptyState title={findings.length === 0 ? unscored ? "Riesgo sin calcular" : partialCoverage ? "Resultados incompletos" : "Sin hallazgos abiertos" : "Ningún hallazgo coincide"}>
+            <EmptyState title={findings.length === 0 ? unscored ? "Sin escaneo completo" : partialCoverage ? NO_FINDINGS_PARTIAL : "Sin hallazgos abiertos" : "Ningún hallazgo coincide"}>
               {findings.length === 0
                 ? unscored
                   ? "Ningún escaneo de este dominio ha calculado su riesgo todavía; no se puede concluir que no haya hallazgos."
@@ -123,7 +129,7 @@ export function FindingsExplorer({
                 : "Prueba con otra búsqueda o quita los filtros."}
             </EmptyState>
           ) : (
-            <div className="overflow-x-auto">
+            <div role="region" aria-label="Tabla desplazable horizontalmente" tabIndex={0} className="relative overflow-x-auto">
               <table className="w-full min-w-[560px]">
                 <caption className="sr-only">Hallazgos. Elige uno para ver por qué tiene su criticidad.</caption>
                 <thead>
@@ -163,11 +169,15 @@ export function FindingsExplorer({
                   })}
                 </tbody>
               </table>
+              {atribucionesDe(visible).map((a) => (
+                <SourceAttribution key={a.url} atribucion={a} className="border-t border-lt-border px-4 py-2" />
+              ))}
             </div>
           )}
         </div>
         {selected && <ExplanationPanel key={selected.id} finding={selected} />}
       </div>
+      {canAsk && findings.length > 0 && <AssistantPanel domain={domain} findings={visible} />}
     </div>
   );
 }

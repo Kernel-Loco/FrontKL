@@ -1,6 +1,11 @@
 import Link from "next/link";
 import { ShieldCheck } from "lucide-react";
 import { Logo } from "@/components/Logo";
+import { AvisoSimplificado } from "@/components/legal/AvisoSimplificado";
+
+// Login, MFA, alta y recuperación muestran el aviso simplificado de la sección 5.2 de la política y la frase de
+// los términos de la sección 11, con sus enlaces a /privacidad y /terminos (RC-271).
+const LINK = "rounded-sm font-semibold text-lt-primary hover:underline";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -27,7 +32,26 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           {children}
           <p className="mt-8 text-center text-xs text-slate-500">El acceso está restringido al personal autorizado.</p>
           <p className="mt-2 text-center text-xs text-slate-500">
-            <Link href="/seguridad" className="rounded-sm font-semibold text-lt-primary hover:underline">
+            Al iniciar sesión aceptas los{" "}
+            <Link href="/terminos" className={LINK}>
+              términos de uso
+            </Link>
+            .
+          </p>
+          <AvisoSimplificado
+            className="mt-4 text-[11px] leading-relaxed text-slate-500"
+            linkClassName={`${LINK} break-all`}
+          />
+          <p className="mt-4 text-center text-xs text-slate-500">
+            <Link href="/privacidad" className={LINK}>
+              Aviso de privacidad
+            </Link>
+            {" · "}
+            <Link href="/terminos" className={LINK}>
+              Términos de uso
+            </Link>
+            {" · "}
+            <Link href="/seguridad" className={LINK}>
               Cómo cuida LowTide tus datos
             </Link>
           </p>

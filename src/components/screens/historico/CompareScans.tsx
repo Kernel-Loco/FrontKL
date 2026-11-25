@@ -6,7 +6,9 @@ import { Card } from "@/components/ui/Card";
 import { SELECT } from "@/components/ui/Field";
 import { InlineAlert } from "@/components/ui/InlineAlert";
 import { ApiExport } from "@/components/screens/shared/ApiExport";
+import { SourceAttribution } from "@/components/screens/shared/SourceAttribution";
 import { CATEGORY_LABELS, SEVERITY_LABELS } from "@/config/labels";
+import { atribucionDeRegla } from "@/lib/atribucion";
 import { formatShortDate } from "@/lib/format";
 import { getErrorMessage } from "@/services/errors";
 import { compareScores, downloadComparison } from "@/services/historyService";
@@ -32,12 +34,14 @@ function severityText(item: ComparisonItem) {
 }
 
 function FindingRow({ item }: { item: ComparisonItem }) {
+  const atribucion = atribucionDeRegla(item.rule_code);
   return (
     <li className="py-2 text-sm">
       <span className="block font-medium text-lt-text">{item.title}</span>
       <span className="block text-xs text-lt-muted">
         {item.asset} · {CATEGORY_LABELS[item.category]} · {severityText(item)}
       </span>
+      {atribucion && <SourceAttribution atribucion={atribucion} className="mt-0.5" />}
     </li>
   );
 }
@@ -154,7 +158,7 @@ export function CompareScans({ domain, points }: { domain: string; points: Score
 
   return (
     <Card title="Comparar escaneos">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <label htmlFor={fromId} className="mb-1.5 block text-xs font-medium text-lt-muted">
             Desde
@@ -181,14 +185,14 @@ export function CompareScans({ domain, points }: { domain: string; points: Score
         </div>
       </div>
       <ul className="mt-4 divide-y divide-lt-border">
-        <li className="flex items-center justify-between py-3 text-sm">
+        <li className="flex flex-wrap items-center justify-between gap-2 py-3 text-sm">
           <span className="font-semibold text-lt-text">Riesgo global</span>
           <span className="flex items-center gap-2 tabular-nums text-lt-text">
             {a.score} → {b.score} {!withCorrection && <Delta value={b.score - a.score} />}
           </span>
         </li>
         {(Object.keys(CATEGORY_LABELS) as Category[]).map((c) => (
-          <li key={c} className="flex items-center justify-between py-3 text-sm">
+          <li key={c} className="flex flex-wrap items-center justify-between gap-2 py-3 text-sm">
             <span className="text-lt-text">{CATEGORY_LABELS[c]}</span>
             <span className="flex items-center gap-2 tabular-nums text-lt-text">
               {a.categories[c]} → {b.categories[c]}{" "}

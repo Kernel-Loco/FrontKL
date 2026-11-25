@@ -6,23 +6,31 @@ import { checkSectionAccess } from "@/components/dashboard/SectionAccess";
 import { AssetsCard } from "@/components/screens/detalle/AssetsCard";
 import { CategoryBars } from "@/components/screens/detalle/CategoryBars";
 import { DomainTabs, domainTabs } from "@/components/screens/detalle/DomainTabs";
+import { DnsProvidersCard } from "@/components/screens/detalle/DnsProvidersCard";
 import { KriPanel } from "@/components/screens/detalle/KriPanel";
 import { RiskGauge } from "@/components/screens/detalle/RiskGauge";
 import { ReportButton } from "@/components/screens/shared/ReportButton";
+import { SiemExportButton } from "@/components/screens/shared/SiemExportButton";
 import { ScanButton } from "@/components/screens/shared/ScanButton";
+import { CoverageGapsList } from "@/components/screens/shared/CoverageGapsList";
 import { exportBlockReasons, failedScanAt, unscoredLabel } from "@/components/screens/shared/domainState";
 import { TEXT_LINK } from "@/components/ui/ActionButton";
 import { SeverityBadge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { InlineAlert } from "@/components/ui/InlineAlert";
-import { CATEGORY_LABELS, SCAN_BLOCK_REASON_LABELS } from "@/config/labels";
+import { CATEGORY_LABELS, MODEL_FALLBACK_LABELS, SCAN_BLOCK_REASON_LABELS, SEVERITY_LABELS } from "@/config/labels";
 import { can, canAccessSection } from "@/config/permissions";
+import { scanBase } from "@/lib/activosNuevos";
+import { coverageIncomplete, noFindingsTitle } from "@/lib/cobertura";
 import { formatDate, formatDateTime } from "@/lib/format";
 import { ServiceError } from "@/services/errors";
 import { getDomainAssets, getDomainFindings, getDomains, getDomainScore, getScans, getScoreHistory } from "@/services/queries";
+import type { Severity } from "@/types";
 
 type Props = { params: Promise<{ fqdn: string }> };
+
+const SEVERITIES = Object.keys(SEVERITY_LABELS) as Severity[];
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return { title: decodeURIComponent((await params).fqdn) };
@@ -37,13 +45,15 @@ export default async function DomainDetailPage({ params }: Props) {
   const domain = domains.items.find((d) => d.fqdn === fqdn);
   if (!domain) notFound();
 
+  // Sin la sección Hallazgos (gerente) no se pide /findings, que le responde 403: ve los conteos por severidad de
+  // /domains (RC-280).
   const canSeeFindings = canAccessSection(user.role, "hallazgos");
   const [findings, history, assets, scans] = await Promise.all([
-    getDomainFindings(fqdn),
+    canSeeFindings ? getDomainFindings(fqdn) : Promise.resolve(null),
     getScoreHistory(fqdn),
     getDomainAssets(fqdn),
     // Si /scans falla, el detalle sigue con la fecha del dominio.
-    getScans().catch((error: unknown) => {
+    getScans({ domain: fqdn, limit: 5 }).catch((error: unknown) => {
       if (error instanceof ServiceError) return null;
       throw error;
     }),
@@ -51,19 +61,23 @@ export default async function DomainDetailPage({ params }: Props) {
   const score = domain.score !== null ? await getDomainScore(fqdn) : null;
   const points = history.items;
   const delta = points.length >= 2 ? points[points.length - 1]!.score - points[points.length - 2]!.score : null;
-  const top = findings.items.slice(0, 4);
+  const top = findings?.items.slice(0, 4) ?? [];
+  const openTotal = SEVERITIES.reduce((sum, severity) => sum + domain.open_findings[severity], 0);
+  const findingsTotal = findings?.total ?? openTotal;
+  const hasFindings = findings ? top.length > 0 : openTotal > 0;
   const reasons = domain.scan_eligibility.can_scan ? [] : domain.scan_eligibility.reasons;
   const blocked = reasons.length ? reasons.map((r) => SCAN_BLOCK_REASON_LABELS[r]).join(" · ") : undefined;
   // El reporte solo se frena sin carta vigente, como la API (403). Los demás motivos solo frenan el escaneo.
   const reportBlocked = exportBlockReasons(reasons).map((r) => SCAN_BLOCK_REASON_LABELS[r]).join(" · ") || undefined;
 
-  // /scans trae los últimos 50 de la empresa, del más nuevo al más viejo; un dominio tiene a lo más un escaneo activo.
+  // /scans?domain trae los 5 más nuevos del dominio (RC-318): un dominio tiene a lo más un escaneo activo, así que entre
+  // ellos está el último terminado. El filtro queda por si la API todavía no filtra y devuelve los de toda la empresa.
   const ownScans = scans?.items.filter((s) => s.domain === fqdn) ?? [];
   const running = ownScans[0]?.status === "queued" || ownScans[0]?.status === "running";
   const failedAt = failedScanAt(domain, ownScans.find((s) => s.finished_at));
   // Si el escaneo fallido también calculó el riesgo (misma fecha), no hay un riesgo anterior que nombrar.
   const riskAt = domain.last_scan_at && (!failedAt || Date.parse(domain.last_scan_at) < Date.parse(failedAt)) ? domain.last_scan_at : null;
-  // Sin score, el mismo estado que la tabla Dominios: «Sin autorización», «Vencido»... o «Sin calcular» si está autorizado.
+  // Sin score, el mismo estado que la tabla Dominios: «Sin autorización», «Vencido»... o «Sin escaneo completo» si está autorizado.
   const unscored = unscoredLabel(domain);
   const subtitle = [
     running ? "Escaneo en curso" : null,
@@ -73,7 +87,7 @@ export default async function DomainDetailPage({ params }: Props) {
       : failedAt
         ? null
         : domain.score === null
-          ? unscored === "Sin calcular" ? "Sin riesgo calculado todavía" : unscored
+          ? unscored
           : "Sin fecha de escaneo",
     domain.authorization.valid_until
       ? `${domain.authorization.status === "expired" ? "Venció el" : "Autorizado hasta"} ${formatDate(domain.authorization.valid_until)}`
@@ -87,13 +101,30 @@ export default async function DomainDetailPage({ params }: Props) {
       : failedAt
         ? "El último escaneo falló antes de calcular el riesgo."
         : "El riesgo se calcula al cerrar un escaneo; uno que se cae antes no lo calcula.",
-    top.length > 0 ? "Abajo están los hallazgos que alcanzaron a registrar las fuentes." : "",
+    hasFindings
+      ? `Abajo están ${findings ? "los hallazgos" : "los conteos de los hallazgos"} que alcanzaron a registrar las fuentes.`
+      : "",
     "Solo se puede escanear con autorización vigente y registro TXT verificado.",
   ]
     .filter(Boolean)
     .join(" ");
 
-  const topFindings = (
+  const topFindings = !findings ? (
+    <Card title="Hallazgos abiertos por severidad">
+      {openTotal === 0 ? (
+        <EmptyState title={noFindingsTitle(coverageIncomplete(score))} />
+      ) : (
+        <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {SEVERITIES.map((severity) => (
+            <li key={severity} className="flex items-center justify-between gap-2 rounded-md border border-lt-border px-3 py-2.5">
+              <SeverityBadge severity={severity} />
+              <span className="font-mono text-lg tabular-nums text-lt-text">{domain.open_findings[severity]}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Card>
+  ) : (
     <Card
       title="Hallazgos más críticos"
       padded={false}
@@ -106,7 +137,8 @@ export default async function DomainDetailPage({ params }: Props) {
       }
     >
       {top.length === 0 ? (
-        <EmptyState title="Sin hallazgos abiertos" />
+        // Con cobertura parcial nunca dice que no hay hallazgos: solo que no los hay en las fuentes que respondieron (RC-229).
+        <EmptyState title={noFindingsTitle(coverageIncomplete(score))} />
       ) : (
         <ul>
           {top.map((f) => (
@@ -130,13 +162,14 @@ export default async function DomainDetailPage({ params }: Props) {
         actions={
           <>
             {can(user.role, "request_report") && (
-              <ReportButton key={fqdn} domain={fqdn} disabledReason={reportBlocked} />
+              <ReportButton key={fqdn} domain={fqdn} disabledReason={reportBlocked} technical={canSeeFindings} />
             )}
+            {can(user.role, "request_report") && <SiemExportButton key={`siem-${fqdn}`} domain={fqdn} />}
             {can(user.role, "request_scan") && <ScanButton domains={domains.items} fixedDomain={fqdn} label="Escanear ahora" />}
           </>
         }
       />
-      <DomainTabs tabs={domainTabs(fqdn, findings.total, "resumen", canSeeFindings, domain.score !== null)} />
+      <DomainTabs tabs={domainTabs(fqdn, findingsTotal, "resumen", canSeeFindings, domain.score !== null, coverageIncomplete(score))} />
 
       {blocked && (
         <InlineAlert tone="warning">Este dominio no se puede escanear{reportBlocked ? " ni exportar" : ""}: {blocked}.</InlineAlert>
@@ -145,19 +178,26 @@ export default async function DomainDetailPage({ params }: Props) {
       {score ? (
         <>
           <KriPanel kris={score.kris} subcategories={score.subcategories} mapVersion={score.kri_map_version} />
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)]">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)]">
             <Card title="Riesgo global">
               <div className="py-2">
                 <RiskGauge
                   score={score.score}
                   band={score.band}
                   grade={score.grade}
-                  partial={score.partial_coverage}
+                  partial={coverageIncomplete(score)}
                   delta={delta}
                   reason={score.reason}
                   previousReason={points.length >= 2 ? points[points.length - 2]!.reason : null}
                 />
               </div>
+              <p className="mt-3 text-center text-xs text-lt-muted">
+                Calculado con {score.method === "ml" ? `el modelo de ML${score.model_version ? ` ${score.model_version}` : ""}` : "reglas"}
+                {score.method === "rules" && score.model_fallback_reason
+                  ? `: ${MODEL_FALLBACK_LABELS[score.model_fallback_reason] ?? score.model_fallback_reason}`
+                  : ""}
+                .
+              </p>
               {score.floor_applied && (
                 <InlineAlert tone="warning" className="mt-4">
                   Subido a {score.floor} por {score.critical_open} hallazgo{score.critical_open === 1 ? "" : "s"} crítico
@@ -167,10 +207,11 @@ export default async function DomainDetailPage({ params }: Props) {
             </Card>
             <Card title="Riesgo por categoría" action="Ponderación configurable">
               <CategoryBars categories={score.categories} subcategories={score.subcategories} kris={score.kris} />
-              {score.partial_coverage && (
+              {coverageIncomplete(score) && (
                 <InlineAlert tone="warning" className="mt-5">
-                  Cobertura parcial: alguna fuente falló, revisó solo una parte de sus repos o IP, o hay reglas que
-                  las fuentes actuales todavía no pueden revisar. El score y su letra pueden estar incompletos.
+                  Cobertura parcial: alguna fuente falló o no corrió, revisó solo una parte de sus repos o IP, o hay reglas
+                  que las fuentes actuales todavía no pueden revisar. El score y su letra pueden estar incompletos.
+                  <CoverageGapsList gaps={score.coverage_gaps} />
                 </InlineAlert>
               )}
             </Card>
@@ -180,13 +221,14 @@ export default async function DomainDetailPage({ params }: Props) {
       ) : (
         <>
           <Card>
-            <EmptyState title={unscored === "Sin calcular" ? "Riesgo sin calcular" : unscored}>{pendingNote}</EmptyState>
+            <EmptyState title={unscored}>{pendingNote}</EmptyState>
           </Card>
-          {top.length > 0 && topFindings}
+          {hasFindings && topFindings}
         </>
       )}
 
-      <AssetsCard assets={assets.items} />
+      <DnsProvidersCard assets={assets.items} dominio={fqdn} />
+      <AssetsCard assets={assets.items} base={scans ? scanBase(scans.items, fqdn, scans.total) : null} />
     </div>
   );
 }

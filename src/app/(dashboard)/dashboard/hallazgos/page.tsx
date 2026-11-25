@@ -3,12 +3,14 @@ import { PageHeader } from "@/components/dashboard/PageHeader";
 import { checkSectionAccess } from "@/components/dashboard/SectionAccess";
 import { DomainTabs, domainTabs } from "@/components/screens/detalle/DomainTabs";
 import { FindingsExplorer } from "@/components/screens/hallazgos/FindingsExplorer";
+import { CoverageGapsList } from "@/components/screens/shared/CoverageGapsList";
 import { DomainPicker } from "@/components/screens/shared/DomainPicker";
 import { InlineAlert } from "@/components/ui/InlineAlert";
 import { resultDomains } from "@/components/screens/shared/domainState";
+import { coverageIncomplete } from "@/lib/cobertura";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { canAccessSection, SECTIONS } from "@/config/permissions";
+import { can, canAccessSection, SECTIONS } from "@/config/permissions";
 import { getDomainFindings, getDomainScore, getDomains } from "@/services/queries";
 
 export const metadata: Metadata = { title: SECTIONS.hallazgos.label };
@@ -53,15 +55,16 @@ export default async function HallazgosPage({ searchParams }: Props) {
         title="Hallazgos"
         actions={<DomainPicker domains={options} value={fqdn} />}
       />
-      {canOpenDetail && <DomainTabs tabs={domainTabs(fqdn, findings.total, "hallazgos", true, hasScore)} />}
+      {canOpenDetail && <DomainTabs tabs={domainTabs(fqdn, findings.total, "hallazgos", true, hasScore, coverageIncomplete(score))} />}
       {!score && (
         <InlineAlert tone="warning">
-          <strong>Riesgo sin calcular.</strong> Ningún escaneo de este dominio ha calculado su riesgo todavía: sigue en curso o falló. La lista muestra lo que alcanzaron a registrar las fuentes, pero no permite concluir que los demás no existan.
+          <strong>Sin escaneo completo.</strong> Ningún escaneo de este dominio ha calculado su riesgo todavía: sigue en curso o falló. La lista muestra lo que alcanzaron a registrar las fuentes, pero no permite concluir que los demás no existan.
         </InlineAlert>
       )}
-      {score?.partial_coverage && (
+      {score && coverageIncomplete(score) && (
         <InlineAlert tone="warning">
-          <strong>Cobertura parcial.</strong> En el último escaneo alguna fuente falló, revisó solo una parte de sus repos o IP, o hay reglas que las fuentes actuales todavía no pueden revisar. La lista muestra los hallazgos detectados, pero no permite concluir que los demás no existan.
+          <strong>Cobertura parcial.</strong> En el último escaneo alguna fuente falló o no corrió, revisó solo una parte de sus repos o IP, o hay reglas que las fuentes actuales todavía no pueden revisar. La lista muestra los hallazgos detectados, pero no permite concluir que los demás no existan.
+          <CoverageGapsList gaps={score.coverage_gaps} />
         </InlineAlert>
       )}
       <FindingsExplorer
@@ -69,8 +72,9 @@ export default async function HallazgosPage({ searchParams }: Props) {
         domain={fqdn}
         findings={findings.items}
         initialRule={initialRule}
-        partialCoverage={score?.partial_coverage ?? false}
+        partialCoverage={coverageIncomplete(score)}
         unscored={!score}
+        canAsk={can(user.role, "ask_assistant")}
       />
     </div>
   );

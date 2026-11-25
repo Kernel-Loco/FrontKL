@@ -1,5 +1,3 @@
-import type { Band } from "@/types";
-
 const LOCALE = "es-MX";
 // Zona fija: el servidor y el navegador deben mostrar la misma hora (si no, hay errores de hidratación).
 const TIME_ZONE = "America/Monterrey";
@@ -31,22 +29,6 @@ export function cantidad(n: number, singular: string, plural = `${singular}s`): 
 
 export function formatPercent(ratio: number): string {
   return `${Math.round(ratio * 100)} %`;
-}
-
-/** Nivel cualitativo del score de riesgo (0–100). */
-export function riskLevel(score: number): string {
-  if (score >= 80) return "Crítico";
-  if (score >= 60) return "Alto";
-  if (score >= 40) return "Medio";
-  return "Bajo";
-}
-
-/** Banda del score de riesgo (0–100) según el criterio #29. Su nombre está en BAND_LABELS. */
-export function scoreBand(score: number): Band {
-  if (score >= 80) return "critical";
-  if (score >= 60) return "high";
-  if (score >= 40) return "medium";
-  return "low";
 }
 
 /** Fecha sin hora, para vigencias y periodos ("2026-12-31" → "31 dic 2026"). */

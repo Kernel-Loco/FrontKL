@@ -1,5 +1,8 @@
 import { Card } from "@/components/ui/Card";
+import { SourceAttribution } from "@/components/screens/shared/SourceAttribution";
 import { CATEGORY_LABELS } from "@/config/labels";
+import { newAssetsText, type NewAssetCounts } from "@/lib/activosNuevos";
+import { atribucionesDe } from "@/lib/atribucion";
 import { formatDateTime } from "@/lib/format";
 import type { DomainFinding, ScanStatus } from "@/types";
 
@@ -18,6 +21,10 @@ export interface ScanSummary {
   status: ScanStatus | null;
   newFindings: number | null;
   resolvedFindings: number | null;
+  /** Subdominios, IP, puertos y certificados nuevos del último escaneo (RC-219). `null` si no se pueden contar. */
+  newAssets: NewAssetCounts | null;
+  /** El último escaneo es el primero del dominio: no cuenta todo como nuevo. */
+  firstScan: boolean;
 }
 
 const count = (value: number | null, one: string, many: string) => `${value === null ? "—" : value} ${value === 1 ? one : many}`;
@@ -46,6 +53,16 @@ export function RecentChanges({ summaries, changes, more }: { summaries: ScanSum
                     <span className={s.status === "failed" ? "text-lt-red" : "text-lt-amber"}> · {STATUS_NOTE[s.status]}</span>
                   )}
                 </p>
+                {/* Los desaparecidos no se listan, igual que los resueltos. */}
+                <p className="mt-0.5 text-xs text-lt-muted">
+                  {s.firstScan ? (
+                    "Activos: primer escaneo"
+                  ) : (
+                    <>
+                      Activos nuevos: <span className="tabular-nums">{s.newAssets ? newAssetsText(s.newAssets) : "—"}</span>
+                    </>
+                  )}
+                </p>
               </li>
             ))}
           </ul>
@@ -65,6 +82,9 @@ export function RecentChanges({ summaries, changes, more }: { summaries: ScanSum
               ))}
               {more > 0 && <li className="pt-3 text-xs text-lt-muted">y {more} más</li>}
             </ul>
+            {atribucionesDe(changes.map((c) => c.finding)).map((a) => (
+              <SourceAttribution key={a.url} atribucion={a} className="pt-2" />
+            ))}
           </div>
         )}
       </div>

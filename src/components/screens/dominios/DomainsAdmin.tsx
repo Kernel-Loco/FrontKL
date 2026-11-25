@@ -4,33 +4,40 @@ import { useState } from "react";
 import { Globe, TriangleAlert } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { cantidad } from "@/lib/format";
-import type { Domain, TxtVerification } from "@/types";
+import type { Domain, SignatureRequest, SignatureRequestList, TxtVerification } from "@/types";
 import { HibpVerificationGuide } from "./HibpVerificationGuide";
 import { RegisterDomainForm } from "./RegisterDomainForm";
 import { RegisteredDomainsTable } from "./RegisteredDomainsTable";
+import { SignatureRequestsList } from "./SignatureRequestsList";
 import { TxtVerificationList } from "./TxtVerificationList";
 
 interface DomainsAdminProps {
   domains: Domain[];
   txt: TxtVerification[];
+  signatures: SignatureRequestList;
 }
 
 /** Vista del Admin: registro de dominios, inventario y verificación TXT. */
-export function DomainsAdmin({ domains: initialDomains, txt: initialTxt }: DomainsAdminProps) {
+export function DomainsAdmin({ domains: initialDomains, txt: initialTxt, signatures }: DomainsAdminProps) {
   const [domains, setDomains] = useState(initialDomains);
   const [txt, setTxt] = useState(initialTxt);
+  const [requests, setRequests] = useState(signatures.items);
+
+  // Una carta nueva de un dominio que ya estaba (renovación, RC-211) trae el mismo dominio: se reemplaza, no se repite.
+  const upsert = (domain: Domain, record: TxtVerification) => {
+    setDomains((current) => (current.some((d) => d.id === domain.id) ? current.map((d) => (d.id === domain.id ? domain : d)) : [...current, domain]));
+    setTxt((current) => (current.some((t) => t.fqdn === record.fqdn) ? current.map((t) => (t.fqdn === record.fqdn ? record : t)) : [...current, record]));
+  };
+  const putRequest = (item: SignatureRequest) =>
+    setRequests((current) => (current.some((r) => r.id === item.id) ? current.map((r) => (r.id === item.id ? item : r)) : [item, ...current]));
 
   return (
     // Una sola columna a todo ancho: en dos, desde 1536 px el inventario queda en unos 650 px y la tabla
     // (correo y 'Ver' sin cortes) pide unos 720, con scroll y 'Ver' fuera de vista.
-    <div className="grid gap-6">
+    <div className="space-y-6">
       <div className="space-y-6">
-        <RegisterDomainForm
-          onRegistered={(domain, record) => {
-            setDomains((current) => [...current, domain]);
-            setTxt((current) => [...current, record]);
-          }}
-        />
+        <RegisterDomainForm onRegistered={upsert} onSent={putRequest} apiMode={signatures.mode} />
+        <SignatureRequestsList items={requests} mode={signatures.mode} onChange={putRequest} onAccepted={upsert} />
         <HibpVerificationGuide />
       </div>
       <Card
@@ -48,7 +55,10 @@ export function DomainsAdmin({ domains: initialDomains, txt: initialTxt }: Domai
         <div className="mt-6">
           <TxtVerificationList
             items={txt}
-            onChange={(item) => setTxt((current) => current.map((t) => (t.fqdn === item.fqdn ? item : t)))}
+            onChange={(domain, item) => {
+              setDomains((current) => current.map((d) => (d.id === domain.id ? domain : d)));
+              setTxt((current) => current.map((t) => (t.fqdn === item.fqdn ? item : t)));
+            }}
           />
         </div>
       </Card>

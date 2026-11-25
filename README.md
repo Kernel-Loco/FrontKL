@@ -7,6 +7,8 @@ el párrafo «Datos reales» de [Inicio de sesión](#inicio-de-sesión-con-el-ba
 
 El backend (base de datos, API y recolectores OSINT) está en [BackKL](https://github.com/Kernel-Loco/BackKL).
 
+Cirdan es el nombre clave del proyecto y se queda a propósito en el código (RC-209): en las rutas `cirdan/` de BackKL que citan los comentarios, en el registro TXT `cirdan-verification=<token>` que publica el cliente y en el prefijo `CIRDAN_FAKE_` de los datos simulados. Lo demás que ve la persona usuaria dice LowTide. Por qué no se renombró, en el [README de BackKL](https://github.com/Kernel-Loco/BackKL#readme).
+
 ## Requisitos
 
 - Node.js 20 desde la 20.19, 22 desde la 22.13 o 24 en adelante. Las series 21 y 23 no sirven. El equipo usa Node 22, así que revisa que sea 22.13 o más reciente. Next 16 pide 20.9, pero `npm run lint` usa ESLint 10, que pide esas versiones. Con Node 18 no arranca.
@@ -38,9 +40,15 @@ Estas cuentas son solo para desarrollo y pruebas. Su contraseña y su MFA son p�
 
 Contraseña: `Lowtide-Demo-2026`. **Cómo pasar el MFA** (claves para la app autenticadora o el comando que da el código) y qué hacer si algo falla: [guía de cuentas de prueba en BackKL](https://github.com/Kernel-Loco/BackKL/blob/dev/docs/cuentas_de_prueba.md) (`docs/cuentas_de_prueba.md`).
 
-La sesión expira a los 15 min sin actividad (aviso un minuto antes) y a las 8 h como máximo. El registro abierto y la recuperación por correo todavía no tienen backend: esas pantallas lo dicen al enviarlas.
+La sesión expira a los 15 min sin actividad (aviso un minuto antes) y a las 8 h como máximo. El registro abierto todavía no tiene backend: esa pantalla lo dice al enviarla. «¿Olvidaste tu contraseña?» manda un enlace al correo que vence en 30 minutos y sirve una vez (RC-335): el token va después de `#` en `/forgot-password/reset`, la página lo quita de la barra al leerlo y solo lo gasta al guardar la contraseña nueva. Si la cuenta tiene TOTP, el siguiente inicio de sesión lo sigue pidiendo.
 
-**Datos reales (RC-17):** Dashboard, Dominios y autorización, Detalle de dominio, Hallazgos (con «¿Por qué es crítico?»), Histórico, Plan de acción y Pesos del score leen de la API v1; «Escanear» pide un escaneo real al orquestador (#22), y el simulador calcula el score con acciones seleccionadas sin guardarlas (#70). Cada usuario ve solo los dominios de su empresa: `admin@olmardo.com` ve olmardo.com, el único que se escanea en vivo. Siguen simulados el alta de dominios y la verificación TXT (#26), los reportes, usuarios, llaves de API, webhooks, alertas y bitácora. Esas pantallas muestran arriba el aviso «Simulado: esto no se guarda» y sus mensajes de éxito empiezan con «Simulado» (#190). La lista de funciones simuladas está en `src/config/simulado.ts`: al conectar una, bórrala de ahí y el aviso desaparece. `npm run revisar:simulado` revisa que la lista esté completa.
+**Datos reales (RC-17):** Dashboard, Dominios y autorización, Detalle de dominio, Hallazgos (con «¿Por qué es crítico?»), Histórico, Plan de acción y Pesos del score leen de la API v1; «Escanear» pide un escaneo real al orquestador (#22), y el simulador calcula el score con acciones seleccionadas sin guardarlas (#70). Cada usuario ve solo los dominios de su empresa: `admin@olmardo.com` ve olmardo.com, el único que se escanea en vivo. El alta de dominios y la verificación TXT requieren el backend de la tarjeta #44. El alta solo se habilita para pruebas locales con almacenamiento configurado; permanece deshabilitada en producción hasta contar con un respaldo del volumen de cartas. También siguen simulados los reportes, usuarios, llaves de API, webhooks, alertas y bitácora. Esas pantallas muestran arriba el aviso «Simulado: esto no se guarda» y sus mensajes de éxito empiezan con «Simulado» (#190). La lista de funciones simuladas está en `src/config/simulado.ts`: al conectar una, bórrala de ahí y el aviso desaparece. `npm run revisar:simulado` revisa que la lista esté completa.
+
+En Detalle de dominio, «Proveedores visibles desde el DNS» muestra los servidores MX y NS guardados en el activo raíz que devuelve `/domains/{fqdn}/assets`. Una lista vacía significa que no se registraron servidores; un tipo ausente significa que no está disponible. Los nombres observados no confirman quién presta el servicio y pueden estar desactualizados, especialmente si no se consultó DNS en el último escaneo.
+
+En Bitácora, los registros siguen siendo de ejemplo y «Verificar integridad» permanece deshabilitado: no se ha conectado una consulta ni una verificación real de la cadena. Los eventos de tipo `platform` representan acciones del superadmin de LowTide.
+
+El superadmin de la plataforma puede elegir la empresa activa desde el menú. El selector muestra la empresa propia y el estado de cada organización, e impide elegir una suspendida o cancelada. Al cambiar, el portal recarga el dashboard y avisa a las demás pestañas; si no se puede cargar la lista, ofrece reintentar. Los demás usuarios no pueden cambiar de empresa.
 
 ## Estructura
 

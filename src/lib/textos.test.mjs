@@ -49,8 +49,11 @@ test("la banda Bajo de Pesos usa el mismo color que el resto del portal", () => 
 });
 
 test("'Ver hallazgos' del plan solo sale a los roles que entran a Hallazgos", () => {
-  assert.match(leer("components/screens/plan/ActionPlanExplorer.tsx"), /\{canOpenFindings && \(\s*<Link/);
-  assert.match(leer("app/(dashboard)/dashboard/plan/page.tsx"), /canOpenFindings=\{canAccessSection\(user\.role, "hallazgos"\)\}/);
+  const explorer = leer("components/screens/plan/ActionPlanExplorer.tsx");
+  const page = leer("app/(dashboard)/dashboard/plan/page.tsx");
+  assert.match(explorer, /\{canSeeFindings && \(\s*<Link/);
+  assert.match(page, /const canSeeFindings = canAccessSection\(user\.role, "hallazgos"\);/);
+  assert.match(page, /<ActionPlanExplorer\b[^>]*canSeeFindings=\{canSeeFindings\}/);
 });
 
 test("el gráfico del Dashboard no dice 'riesgo sin calcular'", () => {
@@ -58,9 +61,9 @@ test("el gráfico del Dashboard no dice 'riesgo sin calcular'", () => {
   assert.doesNotMatch(leer("components/screens/dashboard/FindingsByTypeChart.tsx"), /[Rr]iesgo sin calcular/);
 });
 
-test("un dominio sin score dice su estado y solo autorizado dice 'Sin calcular'", () => {
+test("un dominio sin score dice su estado y solo autorizado dice 'Sin escaneo completo' (RC-229)", () => {
   const dominio = (status, auth, txt) => ({ status, authorization: { status: auth }, txt: { status: txt } });
-  assert.equal(unscoredLabel(dominio("verified", "valid", "verified")), "Sin calcular");
+  assert.equal(unscoredLabel(dominio("verified", "valid", "verified")), "Sin escaneo completo");
   assert.equal(unscoredLabel(dominio("pending_verification", "missing", "pending")), "Sin autorización");
   assert.equal(unscoredLabel(dominio("verified", "expired", "verified")), "Vencido");
   assert.equal(unscoredLabel(dominio("pending_verification", "valid", "pending")), "Pendiente TXT");
@@ -69,9 +72,11 @@ test("un dominio sin score dice su estado y solo autorizado dice 'Sin calcular'"
 test("el Detalle de un dominio sin score usa el estado de la tabla Dominios", () => {
   const detalle = leer("app/(dashboard)/dashboard/dominios/[fqdn]/page.tsx");
   assert.match(detalle, /const unscored = unscoredLabel\(domain\);/);
-  assert.match(detalle, /<EmptyState title=\{unscored === "Sin calcular" \? "Riesgo sin calcular" : unscored\}>/);
-  assert.match(detalle, /unscored === "Sin calcular" \? "Sin riesgo calculado todavía" : unscored/);
-  assert.doesNotMatch(detalle, /<EmptyState title="Riesgo sin calcular">/);
+  // Dice lo mismo que el tablero: «Sin escaneo completo», no «Riesgo sin calcular» (RC-229).
+  assert.match(detalle, /<EmptyState title=\{unscored\}>\{pendingNote\}<\/EmptyState>/);
+  assert.doesNotMatch(detalle, /Riesgo sin calcular|Sin riesgo calculado todavía/);
+  assert.doesNotMatch(leer("app/(dashboard)/dashboard/hallazgos/page.tsx"), /Riesgo sin calcular/);
+  assert.doesNotMatch(leer("components/screens/hallazgos/FindingsExplorer.tsx"), /Riesgo sin calcular/);
   // Como la columna Vigencia de la tabla: una autorización vencida no dice 'Autorizado hasta'.
   assert.match(detalle, /status === "expired" \? "Venció el" : "Autorizado hasta"/);
 });
@@ -121,4 +126,28 @@ test("un 401 sin causa conocida no dice 'inactividad': el aviso nombra las tres 
   const expired = buscar(/notice=expired|endSession\(.*"expired"|leaveSession\(.*"expired"/);
   assert.equal(expired.length, 1);
   assert.match(expired[0], /IdleTimeout\.tsx:\d+$/);
+});
+
+test("sin la sección Hallazgos (gerente) las pantallas no piden /findings, que le responde 403 (RC-280)", () => {
+  const paginas = [
+    "app/(dashboard)/dashboard/page.tsx",
+    "app/(dashboard)/dashboard/dominios/[fqdn]/page.tsx",
+    "app/(dashboard)/dashboard/historico/page.tsx",
+    "app/(dashboard)/dashboard/plan/page.tsx",
+  ];
+  for (const pagina of paginas) {
+    const texto = leer(pagina);
+    assert.match(texto, /const canSeeFindings = canAccessSection\(user\.role, "hallazgos"\);/, pagina);
+    const llamadas = texto.match(/[^\n]*getDomainFindings\(/g) ?? [];
+    assert.ok(llamadas.length > 0, pagina);
+    for (const linea of llamadas) assert.match(linea, /canSeeFindings \? /, `${pagina}: ${linea.trim()}`);
+  }
+  // El gráfico del gerente va por severidad con open_findings de /domains.
+  assert.match(leer(paginas[0]), /groupBy=\{findings \? "category" : "severity"\}/);
+  assert.match(leer(paginas[0]), /severityCounts: domain\.open_findings/);
+  // Comparar escaneos tampoco se monta: /score/compare también le responde 403.
+  const historico = leer(paginas[2]);
+  const montajes = historico.match(/[^\n]*\n[^\n]*<CompareScans /g) ?? [];
+  assert.equal(montajes.length, 1);
+  assert.match(montajes[0], /\{!canSeeFindings \? null : points\.length >= 2 \? \(/);
 });

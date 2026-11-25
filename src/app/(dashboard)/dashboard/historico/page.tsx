@@ -14,11 +14,12 @@ import { AvisoSimulado } from "@/components/ui/AvisoSimulado";
 import { Card, TableWrap, TD, TH, TR } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { InlineAlert } from "@/components/ui/InlineAlert";
-import { BAND_LABELS, SCORE_METHOD_LABELS, SCORE_REASON_LABELS } from "@/config/labels";
+import { BAND_LABELS, SCORE_METHOD_LABELS, SCORE_REASON_LABELS, scoreMethodText } from "@/config/labels";
 import { can, canAccessSection, SECTIONS } from "@/config/permissions";
 import { lastScanSummary, latestScan, weeklyChangeNotes } from "@/lib/cambiosSemanales";
 import { formatDate } from "@/lib/format";
-import { getDomainFindings, getDomains, getScoreHistory } from "@/services/queries";
+import { coverageIncomplete } from "@/lib/cobertura";
+import { getDomainFindings, getDomains, getDomainScore, getScoreHistory } from "@/services/queries";
 import { getReports } from "@/services/reportService";
 
 export const metadata: Metadata = { title: SECTIONS.historico.label };
@@ -47,7 +48,15 @@ export default async function HistoricoPage({ searchParams }: Props) {
     );
   }
 
-  const [history, findings] = await Promise.all([getScoreHistory(fqdn), getDomainFindings(fqdn)]);
+  // La pestaña Hallazgos usa la cobertura del último score, como el detalle: coverage_gaps cuenta aunque partial_coverage
+  // sea false (RC-229).
+  // Sin la sección Hallazgos (gerente) no se pide /findings, que le responde 403, y la pestaña no se muestra (RC-280).
+  const canSeeFindings = canAccessSection(user.role, "hallazgos");
+  const [history, findings, score] = await Promise.all([
+    getScoreHistory(fqdn),
+    canSeeFindings ? getDomainFindings(fqdn) : Promise.resolve(null),
+    getDomainScore(fqdn),
+  ]);
   const points = history.items;
   const scanCount = points.filter((point) => point.reason === "scan").length;
   const correctionCount = points.filter((point) => point.reason === "correction").length;
@@ -73,6 +82,8 @@ export default async function HistoricoPage({ searchParams }: Props) {
     floor_applied: point.floor_applied,
     critical_open: point.critical_open,
     method: SCORE_METHOD_LABELS[point.method],
+    model_version: point.model_version,
+    model_fallback_reason: point.model_fallback_reason,
     rule_set_version: point.rule_set_version,
     reason: point.reason,
     partial_coverage: point.partial_coverage,
@@ -92,13 +103,13 @@ export default async function HistoricoPage({ searchParams }: Props) {
         actions={(
           <>
             {/* key: al cambiar de dominio con el selector se monta otro botón, sin el mensaje ni la descarga del anterior. */}
-            {canReport && <ReportButton key={fqdn} domain={fqdn} />}
+            {canReport && <ReportButton key={fqdn} domain={fqdn} technical={canSeeFindings} />}
             <DomainPicker domains={options} value={fqdn} />
           </>
         )}
       />
       <AvisoSimulado datos={["getReports"]} datosDe="la tarjeta Reportes" />
-      {canOpenDetail && <DomainTabs tabs={domainTabs(fqdn, findings.total, "historico", canAccessSection(user.role, "hallazgos"))} />}
+      {canOpenDetail && <DomainTabs tabs={domainTabs(fqdn, findings?.total ?? 0, "historico", canSeeFindings, true, coverageIncomplete(score))} />}
 
       {hasPartialCoverage && (
         <InlineAlert tone="warning">
@@ -128,10 +139,10 @@ export default async function HistoricoPage({ searchParams }: Props) {
       )}
 
       {points.length > 0 && (
-        <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+        <div className={`grid grid-cols-1 items-start gap-6 ${canSeeFindings ? "xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]" : ""}`}>
           <Card title="Escaneos" padded={false}>
             <TableWrap>
-              <table className="w-full min-w-[560px]">
+              <table className="w-full min-w-[680px]">
                 <thead>
                   <tr>
                     <th scope="col" className={TH}>Fecha</th>
@@ -139,6 +150,7 @@ export default async function HistoricoPage({ searchParams }: Props) {
                     <th scope="col" className={TH}>Cambio</th>
                     <th scope="col" className={TH}>Nuevos</th>
                     <th scope="col" className={TH}>Resueltos</th>
+                    <th scope="col" className={TH}>Método</th>
                     <th scope="col" className={TH}>Cobertura</th>
                   </tr>
                 </thead>
@@ -158,6 +170,9 @@ export default async function HistoricoPage({ searchParams }: Props) {
                       <td className={TD}>{first || point.reason === "correction" ? <span className="text-lt-faint">—</span> : <Delta value={change} />}</td>
                       <td className={`${TD} tabular-nums`}>{point.reason !== "scan" ? "—" : (point.new_findings ?? "—")}</td>
                       <td className={`${TD} tabular-nums`}>{point.reason !== "scan" ? "—" : (point.resolved_findings ?? "—")}</td>
+                      <td className={`${TD} text-xs text-lt-muted`}>
+                        {scoreMethodText(point.method, point.model_version, point.model_fallback_reason)}
+                      </td>
                       <td className={TD}>
                         {point.partial_coverage ? (
                           <span className="rounded-sm border border-lt-amber/30 bg-lt-amber/10 px-2 py-1 text-xs text-lt-amber">Parcial</span>
@@ -171,7 +186,8 @@ export default async function HistoricoPage({ searchParams }: Props) {
               </table>
             </TableWrap>
           </Card>
-          {points.length >= 2 ? (
+          {/* La comparación lista los hallazgos uno por uno y /score/compare le responde 403 al gerente (RC-280). */}
+          {!canSeeFindings ? null : points.length >= 2 ? (
             <CompareScans key={fqdn} domain={fqdn} points={points} />
           ) : (
             <Card title="Comparar escaneos">

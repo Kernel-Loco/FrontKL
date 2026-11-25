@@ -27,6 +27,7 @@ export function ApiExport({
   disabled = false,
   label,
   variant = "secondary",
+  formats = ["csv", "json"],
 }: {
   /** Sin extensión: se le agrega .csv o .json. */
   filename: string;
@@ -35,6 +36,8 @@ export function ApiExport({
   /** Nombre accesible del grupo, p. ej. "Exportar hallazgos". */
   label: string;
   variant?: "secondary" | "ghost";
+  /** Qué botones muestra. El inventario de activos solo exporta CSV (RC-231). */
+  formats?: readonly ExportFormat[];
 }) {
   const [exporting, setExporting] = useState<ExportFormat | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -62,7 +65,7 @@ export function ApiExport({
   return (
     <div className="flex flex-col items-end gap-2">
       <div className="flex flex-wrap gap-2" role="group" aria-label={label}>
-        {(["csv", "json"] as const).map((format) => (
+        {formats.map((format) => (
           <ActionButton key={format} variant={variant} size="sm" disabled={disabled || exporting !== null}
             loading={exporting === format} onClick={() => run(format)} title={`Exportar ${format.toUpperCase()}`}
             aria-label={`${label} en ${format.toUpperCase()}`}>

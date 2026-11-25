@@ -1,35 +1,45 @@
 import { Card } from "@/components/ui/Card";
-import { CATEGORY_LABELS } from "@/config/labels";
-import type { Category, DomainFinding } from "@/types";
+import { CATEGORY_LABELS, SEVERITY_LABELS } from "@/config/labels";
+import type { Category, DomainFinding, SeverityCounts } from "@/types";
 
 interface DomainFindingSeries {
   domain: string;
-  findings: DomainFinding[];
+  /** Por categoría: la lista de /findings (analista y admin). */
+  findings?: DomainFinding[];
+  /** Por severidad: los conteos open_findings de /domains, sin pedir /findings (gerente, RC-280). */
+  severityCounts?: SeverityCounts;
   coverage: "complete" | "partial" | "unscanned";
-  /** Para un dominio sin score: lo mismo que dice la tabla Dominios (Sin autorización, Vencido, Sin calcular...). */
+  /** Para un dominio sin score: lo mismo que dice la tabla Dominios (Sin autorización, Vencido, Sin escaneo completo...). */
   stateLabel: string;
 }
 
 const CATEGORIES = Object.keys(CATEGORY_LABELS) as Category[];
+const SEVERITIES = Object.keys(SEVERITY_LABELS) as (keyof SeverityCounts)[];
 const BLUE_PALETTE = ["#7dd3fc", "#60a5fa", "#3b82f6", "#2563eb", "#93c5fd", "#38bdf8", "#818cf8", "#1d4ed8"];
 const HEIGHT = 270;
 const PADDING = { top: 18, right: 14, bottom: 58, left: 34 };
 
-export function FindingsByTypeChart({ series }: { series: DomainFindingSeries[] }) {
-  const counts = series.map(({ domain, findings, coverage, stateLabel }) => ({
+export function FindingsByTypeChart({ series, groupBy = "category" }: { series: DomainFindingSeries[]; groupBy?: "category" | "severity" }) {
+  const groups: { id: string; label: string }[] = groupBy === "severity"
+    ? SEVERITIES.map((id) => ({ id, label: SEVERITY_LABELS[id] }))
+    : CATEGORIES.map((id) => ({ id, label: CATEGORY_LABELS[id] }));
+  const groupWord = groupBy === "severity" ? "severidad" : "categoría";
+  const counts = series.map(({ domain, findings, severityCounts, coverage, stateLabel }) => ({
     domain,
     coverage,
     stateLabel,
     // Cuenta los hallazgos abiertos registrados con cualquier cobertura: un primer escaneo en curso o caído ya puede
     // tener hallazgos sin score, y hoy todo escaneo queda parcial. La leyenda, la descripción y el aviso dicen qué dominios
     // no tienen cobertura completa.
-    values: CATEGORIES.map((category) => findings.filter((finding) => finding.category === category).length),
+    values: groupBy === "severity"
+      ? SEVERITIES.map((severity) => severityCounts?.[severity] ?? 0)
+      : CATEGORIES.map((category) => (findings ?? []).filter((finding) => finding.category === category).length),
   }));
   const maxCount = Math.max(0, ...counts.flatMap(({ values }) => values));
   const scaleMax = Math.max(1, maxCount);
   const ticks = maxCount === 0 ? [] : [...new Set([0, Math.ceil(scaleMax / 2), scaleMax])];
   const groupWidth = Math.max(160, counts.length * 20 + 36);
-  const chartWidth = PADDING.left + CATEGORIES.length * groupWidth + PADDING.right;
+  const chartWidth = PADDING.left + groups.length * groupWidth + PADDING.right;
   const plotHeight = HEIGHT - PADDING.top - PADDING.bottom;
   const gap = series.length > 8 ? 1 : 3;
   const barWidth = Math.min(18, (groupWidth - 42 - gap * Math.max(0, series.length - 1)) / Math.max(1, series.length));
@@ -43,7 +53,7 @@ export function FindingsByTypeChart({ series }: { series: DomainFindingSeries[] 
   const description = `${total} ${total === 1 ? "hallazgo" : "hallazgos"} en ${counts.length} ${counts.length === 1 ? "dominio" : "dominios"}${incomplete ? `, ${gaps}` : ""}`;
 
   return (
-    <Card title="Hallazgos abiertos por categoría y dominio" description={description}>
+    <Card title={`Hallazgos abiertos por ${groupWord} y dominio`} description={description}>
       {counts.length === 0 ? (
         <p className="text-sm text-lt-muted">No hay dominios activos para mostrar.</p>
       ) : (
@@ -61,7 +71,7 @@ export function FindingsByTypeChart({ series }: { series: DomainFindingSeries[] 
               </li>
             ))}
           </ul>
-          <div className="overflow-x-auto">
+          <div role="region" aria-label="Gráfica desplazable horizontalmente" tabIndex={0} className="relative overflow-x-auto">
             <svg
               width={chartWidth}
               height={HEIGHT}
@@ -70,10 +80,10 @@ export function FindingsByTypeChart({ series }: { series: DomainFindingSeries[] 
               aria-labelledby="findings-chart-title findings-chart-description"
               className="block max-w-none"
             >
-              <title id="findings-chart-title">Hallazgos abiertos por categoría y dominio</title>
+              <title id="findings-chart-title">{`Hallazgos abiertos por ${groupWord} y dominio`}</title>
               <desc id="findings-chart-description">
                 {counts.map(({ domain, coverage, stateLabel, values }) =>
-                  `${domain}${coverage === "complete" ? "" : coverage === "partial" ? " (cobertura parcial)" : ` (${stateLabel.toLowerCase()})`}: ${CATEGORIES.map((category, index) => `${CATEGORY_LABELS[category]} ${values[index]}`).join(", ")}`,
+                  `${domain}${coverage === "complete" ? "" : coverage === "partial" ? " (cobertura parcial)" : ` (${stateLabel.toLowerCase()})`}: ${groups.map((group, index) => `${group.label} ${values[index]}`).join(", ")}`,
                 ).join(". ")}
               </desc>
               {ticks.map((tick) => {
@@ -87,17 +97,17 @@ export function FindingsByTypeChart({ series }: { series: DomainFindingSeries[] 
                   </g>
                 );
               })}
-              {CATEGORIES.map((category, categoryIndex) => {
-                const groupStart = PADDING.left + categoryIndex * groupWidth;
+              {groups.map((group, groupIndex) => {
+                const groupStart = PADDING.left + groupIndex * groupWidth;
                 const groupCenter = groupStart + groupWidth / 2;
                 const clusterWidth = counts.length * barWidth + Math.max(0, counts.length - 1) * gap;
                 const clusterStart = groupCenter - clusterWidth / 2;
-                const labelLines = CATEGORY_LABELS[category].split(" ");
+                const labelLines = group.label.split(" ");
 
                 return (
-                  <g key={category}>
+                  <g key={group.id}>
                     {counts.map(({ domain, values }, domainIndex) => {
-                      const value = values[categoryIndex];
+                      const value = values[groupIndex];
                       const barHeight = (value / scaleMax) * plotHeight;
                       const x = clusterStart + domainIndex * (barWidth + gap);
                       const y = PADDING.top + plotHeight - barHeight;
@@ -111,7 +121,7 @@ export function FindingsByTypeChart({ series }: { series: DomainFindingSeries[] 
                           rx={2}
                           fill={BLUE_PALETTE[domainIndex % BLUE_PALETTE.length]}
                         >
-                          <title>{`${domain} · ${CATEGORY_LABELS[category]}: ${value}`}</title>
+                          <title>{`${domain} · ${group.label}: ${value}`}</title>
                         </rect>
                       );
                     })}
