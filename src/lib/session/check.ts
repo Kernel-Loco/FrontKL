@@ -9,9 +9,14 @@ export type SessionCheck =
   /** La API no respondió bien: la sesión puede seguir viva y la cookie no se toca (#108, RC-225). */
   | { kind: "unavailable"; status: number };
 
-/** Solo 401 y 403 dicen que la sesión terminó. Un 5xx, un 429 o un fallo de red son del servicio. */
+/**
+ * Solo un 401 dice que la sesión terminó. Un 5xx, un 429 o un fallo de red son del servicio.
+ * Un 403 cuenta como un 5xx (decisión de Ernesto, RC-301): BackKL no da 403 en GET /auth/me (es ruta de operador,
+ * cirdan/auth/deps.py), así que un 403 vendría de un proxy o del WAF y no dice nada de la sesión. Borrar la cookie
+ * por él sacaría al usuario con la sesión viva en Valkey.
+ */
 export function isSessionRejected(status: number): boolean {
-  return status === 401 || status === 403;
+  return status === 401;
 }
 
 /**
