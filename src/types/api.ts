@@ -140,6 +140,8 @@ interface ScoreBase {
   rule_set_version: number;
   reason: ScoreReason;
   partial_coverage: boolean;
+  /** Fuentes que la empresa tenía apagadas en el escaneo de este score (RC-235). Explican partial_coverage. */
+  disabled_sources?: string[];
   computed_at: string;
 }
 
@@ -185,9 +187,15 @@ export interface Kri {
  * Por qué el escaneo del score no revisó un código (RC-229). source_failed: la fuente no respondió. source_not_run: no
  * corrió en ese escaneo (apagada o aún no existía). no_api_key: Shodan sin la API de host o HIBP sin la llave de la
  * plataforma (RC-54). source_partial: la fuente respondió pero no pudo revisarlo. partially_checked: la fuente revisó
- * solo una parte de lo suyo (sources_partial).
+ * solo una parte de lo suyo (sources_partial). source_disabled_by_org: la empresa apagó la fuente en Fuentes (RC-235).
  */
-export type CoverageGapReason = "source_failed" | "source_not_run" | "no_api_key" | "source_partial" | "partially_checked";
+export type CoverageGapReason =
+  | "source_failed"
+  | "source_not_run"
+  | "source_disabled_by_org"
+  | "no_api_key"
+  | "source_partial"
+  | "partially_checked";
 
 /** Un código de regla que el escaneo del score no revisó, con su fuente (null si no se sabe) y su motivo. */
 export interface CoverageGap {
@@ -727,4 +735,20 @@ export interface PasswordChangeRequest {
 export interface PasswordChangeResponse {
   /** Passkeys que la API borró al cambiar la contraseña (RC-331): se registraron con la anterior. */
   passkeys_removed: number;
+}
+
+// ---------------------------------------------------------------- fuentes por cliente (RC-235)
+
+/** Una fuente de `GET /api/v1/sources`. La empresa solo apaga: corre si está encendida en la plataforma y aquí. */
+export interface SourceSetting {
+  code: string;
+  kind: "osint" | "intel";
+  global_enabled: boolean;
+  /** false: la empresa la apagó. true: la volvió a encender. null: nunca la cambió y sigue lo de la plataforma. */
+  org_enabled: boolean | null;
+  effective_enabled: boolean;
+  can_change: boolean;
+  changed_at: string | null;
+  changed_by: string | null;
+  changed_by_platform: boolean;
 }

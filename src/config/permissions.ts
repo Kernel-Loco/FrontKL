@@ -10,6 +10,7 @@ import {
   LayoutDashboard,
   LayoutGrid,
   ListChecks,
+  Radar,
   Scale,
   ScanSearch,
   ScrollText,
@@ -33,6 +34,7 @@ export type SectionId =
   | "usuarios"
   | "api"
   | "pesos"
+  | "fuentes"
   | "webhooks"
   | "bitacora";
 
@@ -60,6 +62,7 @@ export const SECTIONS: Record<SectionId, SectionConfig> = {
   usuarios: section("usuarios", "Usuarios y roles", "/dashboard/admin/usuarios", Users),
   api: section("api", "Acceso API", "/dashboard/admin/api", KeyRound),
   pesos: section("pesos", "Pesos del score", "/dashboard/admin/pesos", Scale),
+  fuentes: section("fuentes", "Fuentes", "/dashboard/admin/fuentes", Radar),
   webhooks: section("webhooks", "Webhooks", "/dashboard/admin/webhooks", Webhook),
   bitacora: section("bitacora", "Bitácora", "/dashboard/admin/bitacora", ScrollText),
 };
@@ -74,7 +77,7 @@ export const ROLE_LABELS: Record<Role, string> = {
 export const ROLE_DESCRIPTIONS: Record<Role, string> = {
   analista: "Revisa dominios, hallazgos y su explicación, lanza escaneos y consulta el histórico.",
   gerente: "Consulta el riesgo de los dominios, el detalle y los reportes. Solo lectura.",
-  admin: "Todo lo anterior, además de registrar dominios, verificar el TXT, gestionar usuarios, llaves de API, webhooks y alertas.",
+  admin: "Todo lo anterior, además de registrar dominios, verificar el TXT, gestionar usuarios, fuentes, llaves de API, webhooks y alertas.",
 };
 
 /** Rol asignado a toda cuenta nueva; solo un Admin puede cambiarlo. */
@@ -94,7 +97,7 @@ export const ROLE_NAVIGATION: Record<Role, NavGroup[]> = {
   gerente: [{ title: "Monitoreo", items: ["dashboard", "dominios", "detalle", "activos", "historico", "plan"] }],
   admin: [
     { title: "Monitoreo", items: ["dashboard", "dominios", "activos", "hallazgos", "historico", "plan", "alertas"] },
-    { title: "Administración", items: ["admin", "usuarios", "pesos", "api", "webhooks", "bitacora"] },
+    { title: "Administración", items: ["admin", "usuarios", "pesos", "fuentes", "api", "webhooks", "bitacora"] },
   ],
 };
 
