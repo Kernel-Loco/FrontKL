@@ -36,9 +36,10 @@ test("/auth/expirada solo acepta avisos conocidos y sin aviso sigue en 'ended'",
     assert.equal(loginNoticeFrom(otro), "ended", String(otro));
   }
   const ruta = sinComentarios(leer("../../app/auth/expirada/route.ts"));
-  assert.match(ruta, /loginNoticeFrom\(new URL\(request\.url\)\.searchParams\.get\("notice"\)\)/);
-  assert.match(ruta, /Location: `\/login\?notice=\$\{notice\}`/);
-  assert.match(ruta, /response\.cookies\.delete\(SESSION_COOKIE\)/);
+  assert.match(ruta, /const requested = new URL\(request\.url\)\.searchParams\.get\("notice"\)/);
+  assert.match(ruta, /notice: loginNoticeFrom\(requested\)/);
+  // A dónde va y si borra la cookie lo decide decideExpirada (RC-301, expirada.test.mjs).
+  assert.match(sinComentarios(leer("./expirada.ts")), /const toLogin = `\/login\?notice=\$\{input\.notice\}`/);
 });
 
 test("cerrar sesión y el cierre por inactividad no vuelven a /login con el router", () => {

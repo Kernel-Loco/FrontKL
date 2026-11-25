@@ -13,10 +13,9 @@ const falla = (error) => () => Promise.reject(error);
 // Como statusFromFetchFailure de src/lib/http.ts.
 const failureStatus = (error) => (error instanceof DOMException && error.name === "TimeoutError" ? 504 : 0);
 
-test("solo 401 y 403 terminan la sesión", async () => {
+test("solo 401 termina la sesión; un 403 cuenta como un 5xx (RC-301)", async () => {
   assert.deepEqual(await checkSession(responde(401), failureStatus), { kind: "rejected" });
-  assert.deepEqual(await checkSession(responde(403), failureStatus), { kind: "rejected" });
-  for (const status of [400, 404, 429, 500, 502, 503, 504]) {
+  for (const status of [400, 403, 404, 429, 500, 502, 503, 504]) {
     assert.equal(isSessionRejected(status), false, `status ${status}`);
     assert.deepEqual(await checkSession(responde(status), failureStatus), { kind: "unavailable", status });
   }
