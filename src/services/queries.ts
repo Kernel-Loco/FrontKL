@@ -6,6 +6,7 @@ import { apiGet } from "@/lib/apiServer";
 import type {
   Asset,
   ActionPlan,
+  PlanGrouping,
   Domain,
   DomainFindings,
   DomainScore,
@@ -28,7 +29,8 @@ export const getDomainScore = (fqdn: string) => apiGet<DomainScore>(`/domains/${
 
 export const getScoreHistory = (fqdn: string) => apiGet<ScoreHistory>(`/domains/${path(fqdn)}/score/history`);
 
-export const getActionPlan = (fqdn: string) => apiGet<ActionPlan>(`/domains/${path(fqdn)}/action-plan`);
+export const getActionPlan = (fqdn: string, agrupar: PlanGrouping = "regla") =>
+  apiGet<ActionPlan>(`/domains/${path(fqdn)}/action-plan${agrupar === "activo" ? "?agrupar=activo" : ""}`);
 
 export const getDomainAssets = (fqdn: string) => apiGet<ListResponse<Asset>>(`/domains/${path(fqdn)}/assets`);
 
