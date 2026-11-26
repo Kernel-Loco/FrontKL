@@ -280,7 +280,8 @@ export interface ScoreComparison extends ListResponse<ComparisonItem> {
 
 // ---------------------------------------------------------------- plan de acción y simulador (#42, #70)
 
-/** Cómo agrupa el plan: por regla (lo de siempre) o por activo, una acción por host o IP (RC-263). */
+/** Cómo agrupa el plan: por regla (lo de siempre) o por activo, una acción por activo (dominio, subdominio, IP,
+ * servicio u otro, RC-263). Por activo es solo para analista y admin, como Hallazgos. */
 export type PlanGrouping = "regla" | "activo";
 
 interface PlanActionBase {

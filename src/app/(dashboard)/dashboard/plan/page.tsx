@@ -24,7 +24,6 @@ export default async function ActionPlanPage({ searchParams }: Props) {
   const domains = scoredDomains(domainResponse.items);
   const options = domains.map((domain) => domain.fqdn);
   const fqdn = typeof params.dominio === "string" && options.includes(params.dominio) ? params.dominio : options[0];
-  const agrupar = leerAgrupar(params.agrupar);
 
   if (!fqdn) {
     return (
@@ -39,6 +38,8 @@ export default async function ActionPlanPage({ searchParams }: Props) {
 
   // Sin la sección Hallazgos (gerente) no se pide /findings, que le responde 403, y la pestaña no se muestra (RC-280).
   const canSeeFindings = canAccessSection(user.role, "hallazgos");
+  // Por activo dice qué reglas tiene cada activo, como Hallazgos: el gerente se queda con el plan por regla (RC-263).
+  const agrupar = canSeeFindings ? leerAgrupar(params.agrupar) : "regla";
   const selectedDomain = domains.find((domain) => domain.fqdn === fqdn);
   const [plan, findings, score] = await Promise.all([
     getActionPlan(fqdn, agrupar),
@@ -57,7 +58,7 @@ export default async function ActionPlanPage({ searchParams }: Props) {
         actions={<DomainPicker domains={options} value={fqdn} />}
       />
       {canOpenDetail && <DomainTabs tabs={domainTabs(fqdn, findings?.total ?? 0, "plan", canSeeFindings, true, coverageIncomplete(score))} />}
-      <ActionPlanExplorer key={`${fqdn}-${agrupar}`} plan={plan} canSeeFindings={canSeeFindings} canExport={canExport} />
+      <ActionPlanExplorer key={`${fqdn}-${agrupar}`} plan={plan} canSeeFindings={canSeeFindings} canGroupByAsset={canSeeFindings} canExport={canExport} />
     </div>
   );
 }

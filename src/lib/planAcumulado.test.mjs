@@ -24,7 +24,9 @@ test("una reducción de 0 se lee 'sin cambio'", () => {
 
 test("la página pide el plan con la agrupación de la URL y el explorador muestra el selector y el acumulado", () => {
   const pagina = leer("../app/(dashboard)/dashboard/plan/page.tsx");
-  assert.match(pagina, /const agrupar = leerAgrupar\(params\.agrupar\)/);
+  // El gerente no ve Hallazgos: se queda con el plan por regla y sin selector (la API le da 403 por activo).
+  assert.match(pagina, /const agrupar = canSeeFindings \? leerAgrupar\(params\.agrupar\) : "regla"/);
+  assert.match(pagina, /canGroupByAsset=\{canSeeFindings\}/);
   assert.match(pagina, /getActionPlan\(fqdn, agrupar\)/);
   assert.match(pagina, /key=\{`\$\{fqdn\}-\$\{agrupar\}`\}/);   // cambiar de vista limpia la selección
 
@@ -34,7 +36,7 @@ test("la página pide el plan con la agrupación de la URL y el explorador muest
   assert.match(servicio, /if \(agrupar === "activo"\) query\.set\("agrupar", "activo"\)/);
 
   const explorador = leer("../components/screens/plan/ActionPlanExplorer.tsx");
-  assert.match(explorador, /aria-label="Agrupar el plan"/);
+  assert.match(explorador, /\{canGroupByAsset && \(\s*<nav aria-label="Agrupar el plan"/);
   assert.match(explorador, /aria-current=\{agrupar === opcion\.value \? "page" : undefined\}/);
   assert.match(explorador, /Acumulado: \{action\.score_after_acumulado\} \(\{reduccion\(action\.score_reduction_acumulado\)\}\)/);
   assert.match(explorador, /downloadActionPlan\(plan\.domain, format, agrupar\)/);

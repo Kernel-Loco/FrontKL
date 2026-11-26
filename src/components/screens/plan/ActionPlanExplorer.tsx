@@ -36,10 +36,12 @@ function saveBlob(blob: Blob, domain: string, format: PlanExportFormat, agrupar:
 export function ActionPlanExplorer({
   plan,
   canSeeFindings,
+  canGroupByAsset,
   canExport,
 }: {
   plan: ActionPlan;
   canSeeFindings: boolean;
+  canGroupByAsset: boolean;
   canExport: boolean;
 }) {
   const [selected, setSelected] = useState<string[]>([]);
@@ -110,6 +112,7 @@ export function ActionPlanExplorer({
           </span>
         )}
       >
+        {canGroupByAsset && (
         <nav aria-label="Agrupar el plan" className="mb-4 inline-flex rounded-lg border border-lt-border p-0.5">
           {AGRUPACIONES.map((opcion) => (
             <Link
@@ -122,10 +125,14 @@ export function ActionPlanExplorer({
             </Link>
           ))}
         </nav>
+        )}
         {plan.actions.length > 1 && (
           <p className="mb-4 text-xs leading-relaxed text-lt-muted">
-            En orden de lo que recupera cada una después de las de arriba (acumulado). Lo que recupera cada una sola no
-            se suma: los topes por categoría y el piso de un hallazgo crítico hacen que varias recuperen los mismos puntos.
+            {porActivo
+              ? "En orden de lo que recupera cada una después de las de arriba (acumulado)."
+              : "En orden de lo que recupera cada una sola. El acumulado dice lo que recupera después de las de arriba."}{" "}
+            Lo que recupera cada una sola no se suma: los topes por categoría y el piso de un hallazgo crítico cambian lo
+            que recupera cada una según las que ya se resolvieron.
           </p>
         )}
         {!canExport && (
