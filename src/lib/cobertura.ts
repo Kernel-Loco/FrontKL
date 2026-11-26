@@ -9,6 +9,7 @@ export const NO_FINDINGS_PARTIAL = "Sin hallazgos en las fuentes que respondiero
 export const COVERAGE_GAP_REASON_LABELS: Record<CoverageGapReason, string> = {
   source_failed: "No respondió la fuente",
   source_not_run: "No corrió en este escaneo (fuente apagada)",
+  source_disabled_by_org: "No corrió porque tu empresa la apagó en Fuentes",
   no_api_key: "Sin llave de la fuente",
   source_partial: "La fuente respondió pero no pudo revisarlas",
   partially_checked: "Revisadas solo en una parte de lo de la fuente",

@@ -16,6 +16,7 @@ import type {
   ScoreHistory,
   ScoringWeights,
   SignatureRequestList,
+  SourceSetting,
   TxtVerification,
 } from "@/types";
 
@@ -47,6 +48,9 @@ export const getTxtVerifications = () => apiGet<ListResponse<TxtVerification>>("
 export const getSignatureRequests = () => apiGet<SignatureRequestList>("/signature-requests");
 
 export const getScoringWeights = () => apiGet<ScoringWeights>("/scoring/weights");
+
+/** Fuentes con su estado global y el de la empresa (RC-235). Solo Admin. */
+export const getSources = () => apiGet<ListResponse<SourceSetting>>("/sources");
 
 /**
  * Provisional: aún no está en el contrato #21. Del más nuevo al más viejo. Sin `domain`, los de toda la empresa.
