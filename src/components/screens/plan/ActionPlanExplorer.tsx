@@ -155,7 +155,7 @@ export function ActionPlanExplorer({
               ? (plan.actions as PlanAssetAction[]).map((action) => (
                 <li key={action.id} className="min-w-0 py-4 first:pt-0 last:pb-0">
                   <span className="flex flex-wrap items-center gap-2">
-                    <Badge tone="indigo">{action.asset_type === "profile" ? "Perfil" : ASSET_TYPE_LABELS[action.asset_type]}</Badge>
+                    <Badge tone="indigo">{action.asset_type === "profile" ? "Perfil" : (ASSET_TYPE_LABELS[action.asset_type] ?? action.asset_type)}</Badge>
                     <span className="break-all font-mono text-[13px] text-lt-text">{action.asset_value}</span>
                     <span className="text-xs text-lt-faint">{cantidad(action.finding_count, "hallazgo")}</span>
                   </span>
