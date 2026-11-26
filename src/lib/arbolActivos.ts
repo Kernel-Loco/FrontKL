@@ -14,8 +14,8 @@ export const ABRE_ABIERTO_HASTA = 40;
 
 /**
  * El mismo orden de tipos que la API (ORDEN_TIPO de cirdan/api/v1.py). Dentro de un tipo los hijos van en el orden en
- * que llegaron: la API ordena por dominio, tipo, valor e id con la collation de la base (api, apib, api-v2), que un
- * '<' de JavaScript no repite.
+ * que llegaron: la API ordena por dominio, tipo, valor e id con la collation de la base (en_US.utf8, que en el primer
+ * nivel no cuenta la puntuación: apib, api, api-v2 y b.mx antes que b-uno.mx), que un '<' de JavaScript no repite.
  */
 const ORDEN_TIPO = ["domain", "subdomain", "certificate", "ip", "service", "api_doc", "email", "profile"];
 
@@ -110,6 +110,65 @@ export function paginasCuadran(totales: readonly number[], ids: readonly string[
   return totales.every((t) => t === totales[0]) && ids.length === esperado && new Set(ids).size === esperado;
 }
 
+/** Una página de GET /api/v1/assets, con lo que usa traerArbol. */
+export interface PaginaActivos<T extends ActivoArbol> {
+  items: T[];
+  total: number;
+}
+
+/** Lo que traerArbol junta: la primera página, los activos sin ids repetidos y si la lista llegó completa. */
+export interface TraidoArbol<T extends ActivoArbol, P extends PaginaActivos<T>> {
+  primera: P;
+  activos: T[];
+  cambio: boolean;
+  fallidas: number;
+  partes: number;
+}
+
+/** Los activos en el orden en que llegaron, cada id una vez (dos páginas que se enciman repiten uno). */
+export function unicosPorId<T extends ActivoArbol>(activos: readonly T[]): T[] {
+  const vistos = new Set<string>();
+  return activos.filter((a) => !vistos.has(a.id) && vistos.add(a.id));
+}
+
+/**
+ * Trae los activos del árbol hasta MAX_ARBOL, en peticiones de POR_PETICION_ARBOL. La primera da el total y las demás
+ * van juntas. Si entre una y otra cambió la lista (un escaneo que agrega o quita activos), se pide todo otra vez una
+ * sola vez y, si sigue sin cuadrar, sale con cambio. Si falla una petición que no es la primera, sale con lo que sí
+ * llegó y cuenta las fallidas. Si en el segundo intento falla la primera, sale con lo del primero y cambio. Un error
+ * que no es de la API (el redirect de Next a /auth/expirada cuando la sesión vence) lo vuelve a lanzar `relanzar`, así
+ * la pantalla va al login en vez de salir a medias.
+ */
+export async function traerArbol<T extends ActivoArbol, P extends PaginaActivos<T>>(
+  base: string,
+  pedir: (consulta: string) => Promise<P>,
+  relanzar: (error: unknown) => void,
+): Promise<TraidoArbol<T, P>> {
+  let anterior: TraidoArbol<T, P> | undefined;
+  for (let intento = 1; ; intento++) {
+    let primera: P;
+    try {
+      primera = await pedir(consultasArbol(base)[0]);
+    } catch (error) {
+      relanzar(error);
+      if (!anterior) throw error;
+      return anterior;
+    }
+    const resto = await Promise.allSettled(consultasArbol(base, primera.total).slice(1).map((q) => pedir(q)));
+    for (const r of resto) if (r.status === "rejected") relanzar(r.reason);
+    const llegaron = [primera, ...resto.flatMap((r) => (r.status === "fulfilled" ? [r.value] : []))];
+    const fallidas = resto.length + 1 - llegaron.length;
+    const items = llegaron.flatMap((r) => r.items);
+    const cambio = fallidas === 0 && !paginasCuadran(llegaron.map((r) => r.total), items.map((a) => a.id));
+    const traido = { primera, activos: unicosPorId(items), cambio, fallidas, partes: resto.length + 1 };
+    if (cambio && intento === 1) {
+      anterior = traido;
+      continue;
+    }
+    return traido;
+  }
+}
+
 /** Si el árbol abre con los dominios abiertos. Con muchos activos abre todo cerrado. */
 export function abreAbierto(activos: number): boolean {
   return activos <= ABRE_ABIERTO_HASTA;
@@ -129,13 +188,7 @@ const posicion = (tipo: string) => {
  * su primer activo. Un id repetido (dos páginas que se enciman) se toma una vez.
  */
 export function armarArbol<T extends ActivoArbol>(activos: readonly T[]): RamaDominio<T>[] {
-  const unicos: T[] = [];
-  const vistos = new Set<string>();
-  for (const a of activos) {
-    if (vistos.has(a.id)) continue;
-    vistos.add(a.id);
-    unicos.push(a);
-  }
+  const unicos = unicosPorId(activos);
   const llegada = new Map(unicos.map((a, i) => [a.id, i]));
   const comparar = (a: T, b: T) => posicion(a.type) - posicion(b.type) || (llegada.get(a.id) ?? 0) - (llegada.get(b.id) ?? 0);
 

@@ -15,6 +15,8 @@ import {
   POR_PETICION_ARBOL,
   soloArbol,
   textoSuelto,
+  traerArbol,
+  unicosPorId,
 } from "./arbolActivos.ts";
 
 const leer = (ruta) => readFileSync(new URL(ruta, import.meta.url), "utf8");
@@ -49,7 +51,8 @@ const ids = (ramas) => {
 };
 
 test("1. arma dominio, subdominio, IP y servicio en el orden de la API", () => {
-  // Por tipo como la API y, dentro de un tipo, en el orden en que llegaron: aquí el servicio :443 antes que el :80.
+  // Por tipo como la API y, dentro de un tipo, en el orden en que llegaron (:443 antes que :80, como los manda la API).
+  // Aquí ese orden coincide con un '<'. La 1b es la que distingue el orden de llegada del de JavaScript.
   const lista = [
     activo("acme-demo.mx", "service", "203.0.113.5:443", "203.0.113.5", "ip"),
     activo("acme-demo.mx", "ip", "203.0.113.5", "www.acme-demo.mx", "subdomain"),
@@ -156,16 +159,17 @@ test("7. la vista va en la URL junto a los mismos filtros", () => {
 });
 
 test("1b. dentro de un tipo y entre dominios se queda el orden de la API, con su collation", () => {
-  // La API ordena con la collation de la base: api, apib, api-v2 (el guion no cuenta en el primer nivel). Un '<'
-  // pondría api-v2 antes que apib. Los dominios también llegan ordenados por la API (b-uno.mx antes que b.mx).
+  // La API ordena con la collation de la base (en_US.utf8, que no cuenta la puntuación en el primer nivel): apib,
+  // api, api-v2, y b.mx antes que b-uno.mx (visto con ORDER BY en Postgres 16). Un '<' daría api-v2, api, apib y
+  // b-uno.mx antes que b.mx ('-' < '.' < 'b'), así que las dos mitades fallan si el árbol ordena por valor.
   const ramas = armarArbol([
-    activo("b-uno.mx", "domain", "b-uno.mx"),
     activo("b.mx", "domain", "b.mx"),
-    activo("b.mx", "subdomain", "api.b.mx", "b.mx", "domain"),
     activo("b.mx", "subdomain", "apib.b.mx", "b.mx", "domain"),
+    activo("b.mx", "subdomain", "api.b.mx", "b.mx", "domain"),
     activo("b.mx", "subdomain", "api-v2.b.mx", "b.mx", "domain"),
+    activo("b-uno.mx", "domain", "b-uno.mx"),
   ]);
-  assert.deepEqual(forma(ramas), ["b-uno.mx", "b.mx", "  api.b.mx", "  apib.b.mx", "  api-v2.b.mx"]);
+  assert.deepEqual(forma(ramas), ["b.mx", "  apib.b.mx", "  api.b.mx", "  api-v2.b.mx", "b-uno.mx"]);
 });
 
 test("5b. las páginas cuadran solo con el mismo total y sin repetidos ni faltantes", () => {
@@ -175,8 +179,82 @@ test("5b. las páginas cuadran solo con el mismo total y sin repetidos ni faltan
   assert.equal(paginasCuadran([250, 251], [...ids200, "id-199", ...ids200.slice(0, 50).map((x) => `${x}b`)]), false);
   // Mismo total, pero la página 2 repite uno y se salta otro.
   assert.equal(paginasCuadran([250, 250], [...ids200, "id-199", ...ids200.slice(0, 49).map((x) => `${x}b`)]), false);
+  // Solo el total no cuadra: 250 ids únicos, pero la página 2 dice 251.
+  assert.equal(paginasCuadran([250, 251], [...ids200, ...ids200.slice(0, 50).map((x) => `${x}b`)]), false);
+  // Mismo total y sin repetidos, pero falta uno.
+  assert.equal(paginasCuadran([250, 250], [...ids200, ...ids200.slice(0, 49).map((x) => `${x}b`)]), false);
   assert.equal(paginasCuadran([0], []), true);
   assert.equal(paginasCuadran([MAX_ARBOL + 5], Array.from({ length: MAX_ARBOL }, (_, i) => `x${i}`)), true);
+});
+
+/** Una API falsa con `total` activos: cada consulta da su página según offset. `cambiar(llamada)` puede tocar la lista. */
+const apiFalsa = (total, { falla = () => null, cambiar = () => {} } = {}) => {
+  const lista = Array.from({ length: total }, (_, i) => ({ ...activo("acme-demo.mx", "ip", `198.51.100.${i}`), id: `a${i}` }));
+  const llamadas = [];
+  const pedir = async (consulta) => {
+    llamadas.push(consulta);
+    cambiar(llamadas.length, lista);
+    const error = falla(llamadas.length);
+    if (error) throw error;
+    const q = new URLSearchParams(consulta);
+    const offset = Number(q.get("offset"));
+    return { items: lista.slice(offset, offset + Number(q.get("limit"))), total: lista.length };
+  };
+  return { pedir, llamadas, lista };
+};
+class Redirect extends Error {}
+const relanzar = (e) => {
+  if (e instanceof Redirect) throw e;
+};
+
+test("5d. traerArbol: repite una vez si la lista cambió, sale con lo que llegó y deja pasar el redirect", async () => {
+  // Todo cuadra: 3 peticiones, sin aviso.
+  let api = apiFalsa(450);
+  let t = await traerArbol("", api.pedir, relanzar);
+  assert.deepEqual([t.activos.length, t.cambio, t.fallidas, t.partes, api.llamadas.length], [450, false, 0, 3, 3]);
+
+  // Un activo nuevo al frente entre la página 1 y la 2 del primer intento: la 2 repite uno. Se pide todo otra vez.
+  api = apiFalsa(250, { cambiar: (n, lista) => n === 2 && lista.unshift({ ...lista[0], id: "nuevo" }) });
+  t = await traerArbol("", api.pedir, relanzar);
+  assert.deepEqual([t.activos.length, t.cambio, api.llamadas.length], [251, false, 4]);
+
+  // Sigue cambiando en el segundo intento: sale con cambio y sin ids repetidos (R3).
+  api = apiFalsa(250, { cambiar: (n, lista) => (n === 2 || n === 4) && lista.unshift({ ...lista[0], id: `nuevo${n}` }) });
+  t = await traerArbol("", api.pedir, relanzar);
+  assert.equal(t.cambio, true);
+  assert.equal(new Set(t.activos.map((a) => a.id)).size, t.activos.length);
+
+  // En el segundo intento falla la primera petición: sale lo del primero con cambio, no se cae la pantalla (R2).
+  api = apiFalsa(250, {
+    cambiar: (n, lista) => n === 2 && lista.unshift({ ...lista[0], id: "nuevo" }),
+    falla: (n) => (n === 3 ? new Error("503") : null),
+  });
+  t = await traerArbol("", api.pedir, relanzar);
+  assert.deepEqual([t.cambio, t.fallidas, api.llamadas.length], [true, 0, 3]);
+  assert.equal(new Set(t.activos.map((a) => a.id)).size, t.activos.length);
+
+  // Falla una página que no es la primera: sale con lo que llegó y la cuenta.
+  api = apiFalsa(450, { falla: (n) => (n === 2 ? new Error("503") : null) });
+  t = await traerArbol("", api.pedir, relanzar);
+  assert.deepEqual([t.activos.length, t.cambio, t.fallidas, t.partes], [250, false, 1, 3]);
+
+  // La primera petición del primer intento falla: el error sube como antes.
+  api = apiFalsa(10, { falla: (n) => (n === 1 ? new Error("503") : null) });
+  await assert.rejects(traerArbol("", api.pedir, relanzar), /503/);
+
+  // La sesión vence en una página que no es la primera, o en la primera del reintento: el redirect sube (R1).
+  api = apiFalsa(450, { falla: (n) => (n === 3 ? new Redirect("NEXT_REDIRECT") : null) });
+  await assert.rejects(traerArbol("", api.pedir, relanzar), Redirect);
+  api = apiFalsa(250, {
+    cambiar: (n, lista) => n === 2 && lista.unshift({ ...lista[0], id: "nuevo" }),
+    falla: (n) => (n === 3 ? new Redirect("NEXT_REDIRECT") : null),
+  });
+  await assert.rejects(traerArbol("", api.pedir, relanzar), Redirect);
+});
+
+test("5e. unicosPorId deja la primera aparición de cada id en el orden de llegada", () => {
+  const [a, b] = [activo("x.mx", "ip", "1"), activo("x.mx", "ip", "2")];
+  assert.deepEqual(unicosPorId([a, b, { ...a, value: "otra" }, b]), [a, b]);
 });
 
 test("5c. al navegador solo van los campos del árbol", () => {
@@ -197,10 +275,10 @@ test("8. la pantalla monta los hijos de un nodo solo al abrirlo y conserva los f
   assert.match(pagina, /<SelectorVista vista=\{vista\} href=\{hrefVista\} \/>/);
   const selector = leer("../components/screens/activos/SelectorVista.tsx");
   assert.match(selector, /aria-current=\{vista === value \? "page" : undefined\}/);
-  // Una petición que falla no tumba la pantalla, una lista que cambió se pide otra vez y solo van los campos del árbol.
-  assert.match(pagina, /Promise\.allSettled\(/);
-  assert.match(pagina, /if \(cambio && intento === 1\) continue;/);
-  assert.match(pagina, /activos: items\.map\(soloArbol\)/);
+  // La página trae el árbol con traerArbol (probado en la 5d), deja pasar el redirect y solo manda los campos del árbol.
+  assert.match(pagina, /import \{ unstable_rethrow \} from "next\/navigation";/);
+  assert.match(pagina, /traerArbol\(consultaActivos\(filtros, false\), getAssets, unstable_rethrow\)/);
+  assert.match(pagina, /activos: t\.activos\.map\(soloArbol\)/);
   const inventario = leer("../components/screens/activos/AssetsInventory.tsx");
   assert.match(inventario, /conVista\(urlFiltros\(\{ dominio, tipo, texto: texto\.trim\(\)\.slice\(0, 200\), pagina: 1 \}\), vista\)/);
   // Lo abierto del árbol vuelve al inicio al cambiar los filtros.

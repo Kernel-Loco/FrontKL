@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
+import { unstable_rethrow } from "next/navigation";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { checkSectionAccess } from "@/components/dashboard/SectionAccess";
 import { AssetsInventory } from "@/components/screens/activos/AssetsInventory";
 import { SelectorVista } from "@/components/screens/activos/SelectorVista";
 import { canAccessSection, SECTIONS } from "@/config/permissions";
-import { consultasArbol, conVista, leerVista, MAX_ARBOL, paginasCuadran, soloArbol, type Vista } from "@/lib/arbolActivos";
+import { conVista, leerVista, MAX_ARBOL, soloArbol, traerArbol, type Vista } from "@/lib/arbolActivos";
 import { consultaActivos, leerFiltros, urlFiltros, type FiltrosActivos } from "@/lib/filtrosActivos";
 import { getAssets, getDomains } from "@/services/queries";
 
@@ -14,27 +15,16 @@ type Param = string | string[] | undefined;
 type Props = { searchParams: Promise<{ dominio?: Param; tipo?: Param; q?: Param; pagina?: Param; vista?: Param }> };
 
 /**
- * Para el árbol (RC-248): todos los activos del filtro hasta MAX_ARBOL, en peticiones de 200. La primera da el total y
- * las demás van juntas. Si entre una y otra cambió la lista (un escaneo que agrega o quita activos), se pide todo otra
- * vez una sola vez y, si sigue sin cuadrar, el árbol sale con un aviso (armarArbol no repite un id). Si falla una
- * petición que no es la primera, el árbol sale con lo que sí llegó y otro aviso. Al navegador solo van los campos del
- * árbol (soloArbol), no los atributos ni las fechas.
+ * Para el árbol (RC-248): todos los activos del filtro hasta MAX_ARBOL (traerArbol pide las páginas, repite una vez si
+ * la lista cambió y cuenta las que fallan). unstable_rethrow deja pasar el redirect a /auth/expirada de apiServer.ts.
+ * Al navegador solo van los campos del árbol (soloArbol), sin ids repetidos, no los atributos ni las fechas.
  */
 async function activosDelArbol(filtros: FiltrosActivos) {
-  const base = consultaActivos(filtros, false);
-  for (let intento = 1; ; intento++) {
-    const primera = await getAssets(consultasArbol(base)[0]);
-    const resto = await Promise.allSettled(consultasArbol(base, primera.total).slice(1).map((q) => getAssets(q)));
-    const llegaron = [primera, ...resto.flatMap((r) => (r.status === "fulfilled" ? [r.value] : []))];
-    const fallidas = resto.length + 1 - llegaron.length;
-    const items = llegaron.flatMap((r) => r.items);
-    const cambio = fallidas === 0 && !paginasCuadran(llegaron.map((r) => r.total), items.map((a) => a.id));
-    if (cambio && intento === 1) continue;
-    return {
-      respuesta: { ...primera, items: [], limit: MAX_ARBOL, offset: 0 },
-      arbol: { activos: items.map(soloArbol), total: primera.total, cambio, fallidas, partes: resto.length + 1 },
-    };
-  }
+  const t = await traerArbol(consultaActivos(filtros, false), getAssets, unstable_rethrow);
+  return {
+    respuesta: { ...t.primera, items: [], limit: MAX_ARBOL, offset: 0 },
+    arbol: { activos: t.activos.map(soloArbol), total: t.primera.total, cambio: t.cambio, fallidas: t.fallidas, partes: t.partes },
+  };
 }
 
 /**
