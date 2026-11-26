@@ -1,7 +1,9 @@
 // Plan de acción por regla o por activo y en orden acumulado (RC-263). Sin imports, para que node --test lo cargue
-// sin alias. La API ordena las acciones de forma voraz y cada una trae dos impactos: el de resolverla sola
-// (score_reduction) y el de resolverla después de todas las de arriba (score_reduction_acumulado). Los sueltos no se
-// suman, porque los topes por categoría y el piso de un crítico hacen que varias acciones recuperen los mismos puntos.
+// sin alias. Por regla la API deja el orden de siempre (lo que baja cada una sola) y por activo ordena de forma voraz
+// (primero la que más baja el score después de las de arriba). En las dos, cada acción trae dos impactos: el de
+// resolverla sola (score_reduction) y el de resolverla después de todas las de arriba (score_reduction_acumulado). Los
+// sueltos no se suman, porque los topes por categoría y el piso de un crítico hacen que varias acciones recuperen los
+// mismos puntos.
 
 export type Agrupar = "regla" | "activo";
 

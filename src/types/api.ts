@@ -311,7 +311,8 @@ export interface PlanAssetRecommendation {
 /** Con `agrupar=activo`: `id` es el del activo y junta los hallazgos de todas sus reglas. */
 export interface PlanAssetAction extends PlanActionBase {
   asset_id: string;
-  asset_type: AssetType;
+  /** El backend también tiene perfiles (cirdan/recolectores/contrato.py), que el inventario de activos no lista. */
+  asset_type: AssetType | "profile";
   asset_value: string;
   recommendations: PlanAssetRecommendation[];
   rule_codes: string[];
