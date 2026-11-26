@@ -152,6 +152,7 @@ export default async function HistoricoPage({ searchParams }: Props) {
                     <th scope="col" className={TH}>Resueltos</th>
                     <th scope="col" className={TH}>Método</th>
                     <th scope="col" className={TH}>Cobertura</th>
+                    <th scope="col" className={TH}>Versión de pesos</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -180,6 +181,8 @@ export default async function HistoricoPage({ searchParams }: Props) {
                           <span className="text-xs text-lt-muted">Completa</span>
                         )}
                       </td>
+                      {/* Con qué juego de pesos se calculó cada punto, no solo en el CSV (RC-62) */}
+                      <td className={`${TD} tabular-nums`}>{point.rule_set_version}</td>
                     </tr>
                   ))}
                 </tbody>
