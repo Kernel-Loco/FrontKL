@@ -9,7 +9,9 @@ import type {
   PlanGrouping,
   Domain,
   DomainFindings,
+  DomainRemediation,
   DomainScore,
+  FindingStatusFilter,
   ListResponse,
   OrganizationAssets,
   Scan,
@@ -24,7 +26,12 @@ const path = (fqdn: string) => encodeURIComponent(fqdn);
 
 export const getDomains = () => apiGet<ListResponse<Domain>>("/domains");
 
-export const getDomainFindings = (fqdn: string) => apiGet<DomainFindings>(`/domains/${path(fqdn)}/findings`);
+/** Hallazgos abiertos por omisión. Con `estado`, los de ese estado de triage o todos (RC-133). */
+export const getDomainFindings = (fqdn: string, estado: FindingStatusFilter = "open") =>
+  apiGet<DomainFindings>(`/domains/${path(fqdn)}/findings${estado === "open" ? "" : `?estado=${estado}`}`);
+
+/** Tiempo medio de remediación y porcentaje de cerrados del dominio (RC-133). */
+export const getDomainRemediation = (fqdn: string) => apiGet<DomainRemediation>(`/domains/${path(fqdn)}/remediation`);
 
 export const getDomainScore = (fqdn: string) => apiGet<DomainScore>(`/domains/${path(fqdn)}/score`);
 
