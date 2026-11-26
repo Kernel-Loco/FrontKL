@@ -11,7 +11,9 @@ import {
   conVista,
   leerVista,
   MAX_ARBOL,
+  paginasCuadran,
   POR_PETICION_ARBOL,
+  soloArbol,
   textoSuelto,
 } from "./arbolActivos.ts";
 
@@ -47,11 +49,12 @@ const ids = (ramas) => {
 };
 
 test("1. arma dominio, subdominio, IP y servicio en el orden de la API", () => {
+  // Por tipo como la API y, dentro de un tipo, en el orden en que llegaron: aquí el servicio :443 antes que el :80.
   const lista = [
     activo("acme-demo.mx", "service", "203.0.113.5:443", "203.0.113.5", "ip"),
     activo("acme-demo.mx", "ip", "203.0.113.5", "www.acme-demo.mx", "subdomain"),
-    activo("acme-demo.mx", "subdomain", "www.acme-demo.mx", "acme-demo.mx", "domain"),
     activo("acme-demo.mx", "subdomain", "api.acme-demo.mx", "acme-demo.mx", "domain"),
+    activo("acme-demo.mx", "subdomain", "www.acme-demo.mx", "acme-demo.mx", "domain"),
     activo("acme-demo.mx", "domain", "acme-demo.mx"),
     activo("acme-demo.mx", "service", "203.0.113.5:80", "203.0.113.5", "ip"),
   ];
@@ -152,13 +155,56 @@ test("7. la vista va en la URL junto a los mismos filtros", () => {
   assert.equal(conVista("", "lista"), "");
 });
 
+test("1b. dentro de un tipo y entre dominios se queda el orden de la API, con su collation", () => {
+  // La API ordena con la collation de la base: api, apib, api-v2 (el guion no cuenta en el primer nivel). Un '<'
+  // pondría api-v2 antes que apib. Los dominios también llegan ordenados por la API (b-uno.mx antes que b.mx).
+  const ramas = armarArbol([
+    activo("b-uno.mx", "domain", "b-uno.mx"),
+    activo("b.mx", "domain", "b.mx"),
+    activo("b.mx", "subdomain", "api.b.mx", "b.mx", "domain"),
+    activo("b.mx", "subdomain", "apib.b.mx", "b.mx", "domain"),
+    activo("b.mx", "subdomain", "api-v2.b.mx", "b.mx", "domain"),
+  ]);
+  assert.deepEqual(forma(ramas), ["b-uno.mx", "b.mx", "  api.b.mx", "  apib.b.mx", "  api-v2.b.mx"]);
+});
+
+test("5b. las páginas cuadran solo con el mismo total y sin repetidos ni faltantes", () => {
+  const ids200 = Array.from({ length: 200 }, (_, i) => `id-${i}`);
+  assert.equal(paginasCuadran([250, 250], [...ids200, ...ids200.slice(0, 50).map((x) => `${x}b`)]), true);
+  // Un activo nuevo entre la página 1 y la 2: la 2 repite el último de la 1 y el total sube.
+  assert.equal(paginasCuadran([250, 251], [...ids200, "id-199", ...ids200.slice(0, 50).map((x) => `${x}b`)]), false);
+  // Mismo total, pero la página 2 repite uno y se salta otro.
+  assert.equal(paginasCuadran([250, 250], [...ids200, "id-199", ...ids200.slice(0, 49).map((x) => `${x}b`)]), false);
+  assert.equal(paginasCuadran([0], []), true);
+  assert.equal(paginasCuadran([MAX_ARBOL + 5], Array.from({ length: MAX_ARBOL }, (_, i) => `x${i}`)), true);
+});
+
+test("5c. al navegador solo van los campos del árbol", () => {
+  const completo = { ...activo("acme-demo.mx", "ip", "192.0.2.9"), attributes: { asn: 1 }, first_seen_at: "x", ip: "192.0.2.9" };
+  assert.deepEqual(Object.keys(soloArbol(completo)).sort(), ["domain", "id", "parent", "parent_type", "type", "value"]);
+});
+
 test("8. la pantalla monta los hijos de un nodo solo al abrirlo y conserva los filtros al cambiar de vista", () => {
   const arbol = leer("../components/screens/activos/AssetsTree.tsx");
   assert.match(arbol, /aria-expanded=\{abierto\}/);
   assert.match(arbol, /\{abierto && hijos\.length > 0 && \(/);
+  // El botón no cambia de nombre al abrir: el estado lo dice aria-expanded. El motivo del suelto se ve en la fila.
+  assert.match(arbol, /aria-label=\{`Activos debajo de \$\{nombre\}`\}/);
+  assert.doesNotMatch(arbol, /title=\{textoSuelto/);
+  assert.match(arbol, /<span className="text-xs text-lt-amber">\{textoSuelto\(suelto, activo\.parent\)\}<\/span>/);
   const pagina = leer("../app/(dashboard)/dashboard/activos/page.tsx");
-  assert.match(pagina, /conVista\(urlFiltros\(\{ \.\.\.filtros, pagina: 1 \}\), "arbol"\)/);
-  assert.match(pagina, /conVista\(urlFiltros\(\{ \.\.\.filtros, pagina: 1 \}\), "lista"\)/);
+  assert.match(pagina, /const hrefVista = \(v: Vista\) => `\/dashboard\/activos\$\{conVista\(urlFiltros\(\{ \.\.\.filtros, pagina: 1 \}\), v\)\}`/);
+  assert.match(pagina, /<SelectorVista vista=\{vista\} href=\{hrefVista\} \/>/);
+  const selector = leer("../components/screens/activos/SelectorVista.tsx");
+  assert.match(selector, /aria-current=\{vista === value \? "page" : undefined\}/);
+  // Una petición que falla no tumba la pantalla, una lista que cambió se pide otra vez y solo van los campos del árbol.
+  assert.match(pagina, /Promise\.allSettled\(/);
+  assert.match(pagina, /if \(cambio && intento === 1\) continue;/);
+  assert.match(pagina, /activos: items\.map\(soloArbol\)/);
   const inventario = leer("../components/screens/activos/AssetsInventory.tsx");
   assert.match(inventario, /conVista\(urlFiltros\(\{ dominio, tipo, texto: texto\.trim\(\)\.slice\(0, 200\), pagina: 1 \}\), vista\)/);
+  // Lo abierto del árbol vuelve al inicio al cambiar los filtros.
+  assert.match(inventario, /<AssetsTree key=\{clave\} activos=\{arbol\.activos\}/);
+  assert.match(inventario, /\{arbol\.cambio && \(/);
+  assert.match(inventario, /\{arbol\.fallidas > 0 \? \(/);
 });

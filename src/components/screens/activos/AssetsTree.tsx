@@ -6,8 +6,7 @@ import { ChevronRight } from "lucide-react";
 import { TEXT_LINK } from "@/components/ui/ActionButton";
 import { Badge } from "@/components/ui/Badge";
 import { ASSET_TYPE_LABELS } from "@/config/labels";
-import { abreAbierto, armarArbol, textoSuelto, type NodoActivo, type RamaDominio } from "@/lib/arbolActivos";
-import type { OrganizationAsset } from "@/types";
+import { abreAbierto, armarArbol, textoSuelto, type ActivoArbol, type NodoActivo, type RamaDominio } from "@/lib/arbolActivos";
 
 const etiqueta = (tipo: string) => ASSET_TYPE_LABELS[tipo as keyof typeof ASSET_TYPE_LABELS] ?? tipo;
 const cuantos = (n: number) => `${n} ${n === 1 ? "activo" : "activos"} debajo`;
@@ -16,9 +15,10 @@ const cuantos = (n: number) => `${n} ${n === 1 ? "activo" : "activos"} debajo`;
  * Vista en árbol de 'Activos' (RC-248): cada dominio con sus subdominios, IP y servicios debajo, armado en
  * src/lib/arbolActivos.ts con los mismos filtros de la lista. Cada nodo es un botón de abrir y cerrar (patrón
  * disclosure, aria-expanded y aria-controls) y sus hijos se montan solo al abrirlo: con muchos activos el árbol abre
- * cerrado y no pinta miles de filas de golpe. Con pocos abre todo abierto.
+ * cerrado y no pinta miles de filas de golpe. Con pocos abre todo abierto. Lo abierto vuelve a ese inicio al cambiar
+ * los filtros, porque AssetsInventory le pone los filtros como key.
  */
-export function AssetsTree({ activos, canOpenDetail }: { activos: OrganizationAsset[]; canOpenDetail: boolean }) {
+export function AssetsTree({ activos, canOpenDetail }: { activos: ActivoArbol[]; canOpenDetail: boolean }) {
   const ramas = useMemo(() => armarArbol(activos), [activos]);
   const abierto = abreAbierto(activos.length);
   return (
@@ -29,7 +29,7 @@ export function AssetsTree({ activos, canOpenDetail }: { activos: OrganizationAs
 }
 
 function Dominio({ rama, abiertoInicial, canOpenDetail }: {
-  rama: RamaDominio<OrganizationAsset>;
+  rama: RamaDominio<ActivoArbol>;
   abiertoInicial: boolean;
   canOpenDetail: boolean;
 }) {
@@ -45,7 +45,7 @@ function Dominio({ rama, abiertoInicial, canOpenDetail }: {
   );
 }
 
-function Nodo({ nodo, abiertoInicial }: { nodo: NodoActivo<OrganizationAsset>; abiertoInicial: boolean }) {
+function Nodo({ nodo, abiertoInicial }: { nodo: NodoActivo<ActivoArbol>; abiertoInicial: boolean }) {
   const { activo, suelto } = nodo;
   return (
     <Fila hijos={nodo.hijos} descendientes={nodo.descendientes} abiertoInicial={abiertoInicial} nombre={activo.value}
@@ -53,17 +53,18 @@ function Nodo({ nodo, abiertoInicial }: { nodo: NodoActivo<OrganizationAsset>; a
         <span className="break-all font-mono text-[13px] text-lt-text">{activo.value}</span>
         <Badge tone="gray">{etiqueta(activo.type)}</Badge>
         {suelto && (
-          <span title={textoSuelto(suelto, activo.parent)}>
-            <Badge tone="amber">Suelto</Badge>
-            <span className="sr-only">{textoSuelto(suelto, activo.parent)}</span>
-          </span>
+          <>
+            {/* El motivo va a la vista, para teclado y pantallas táctiles. El lector lo lee una vez, del texto. */}
+            <span aria-hidden="true"><Badge tone="amber">Suelto</Badge></span>
+            <span className="text-xs text-lt-amber">{textoSuelto(suelto, activo.parent)}</span>
+          </>
         )}
       </>} />
   );
 }
 
 function Fila({ hijos, descendientes, abiertoInicial, nombre, contenido }: {
-  hijos: NodoActivo<OrganizationAsset>[];
+  hijos: NodoActivo<ActivoArbol>[];
   descendientes: number;
   abiertoInicial: boolean;
   /** Para el nombre accesible del botón. */
@@ -76,8 +77,8 @@ function Fila({ hijos, descendientes, abiertoInicial, nombre, contenido }: {
     <li>
       <div className="flex min-h-9 flex-wrap items-center gap-2 rounded-md px-2 py-1 hover:bg-lt-raised">
         {hijos.length > 0 ? (
-          <button type="button" aria-expanded={abierto} aria-controls={abierto ? id : undefined}onClick={() => setAbierto(!abierto)}
-            aria-label={`${abierto ? "Cerrar" : "Abrir"} ${nombre}`}
+          <button type="button" aria-expanded={abierto} aria-controls={abierto ? id : undefined} onClick={() => setAbierto(!abierto)}
+            aria-label={`Activos debajo de ${nombre}`}
             className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-lt-muted hover:bg-lt-border hover:text-lt-text">
             <ChevronRight aria-hidden="true" className={`h-4 w-4 transition-transform ${abierto ? "rotate-90" : ""}`} />
           </button>

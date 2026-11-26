@@ -12,7 +12,11 @@ export const MAX_ARBOL = 2000;
 /** Hasta este número de activos el árbol abre con los dominios abiertos. Con más abre todo cerrado. */
 export const ABRE_ABIERTO_HASTA = 40;
 
-/** El mismo orden de tipos que la API (ORDEN_TIPO de cirdan/api/v1.py). */
+/**
+ * El mismo orden de tipos que la API (ORDEN_TIPO de cirdan/api/v1.py). Dentro de un tipo los hijos van en el orden en
+ * que llegaron: la API ordena por dominio, tipo, valor e id con la collation de la base (api, apib, api-v2), que un
+ * '<' de JavaScript no repite.
+ */
 const ORDEN_TIPO = ["domain", "subdomain", "certificate", "ip", "service", "api_doc", "email", "profile"];
 
 export type Vista = "lista" | "arbol";
@@ -26,6 +30,23 @@ export interface ActivoArbol {
   value: string;
   parent: string | null;
   parent_type: string | null;
+}
+
+/** Solo los campos que usa el árbol: la página no manda al navegador los atributos y las fechas de 2000 activos. */
+export function soloArbol(a: ActivoArbol): ActivoArbol {
+  return { id: a.id, domain: a.domain, type: a.type, value: a.value, parent: a.parent, parent_type: a.parent_type };
+}
+
+/** Lo que la página arma para el árbol: los activos y si la lista llegó completa. */
+export interface DatosArbol {
+  activos: ActivoArbol[];
+  /** El total de la primera petición: con más de MAX_ARBOL el árbol muestra solo los primeros. */
+  total: number;
+  /** La lista cambió entre una petición y otra aunque se pidió dos veces: puede faltar o sobrar un activo. */
+  cambio: boolean;
+  /** Peticiones que fallaron, de `partes`: el árbol sale con lo que sí llegó. */
+  fallidas: number;
+  partes: number;
 }
 
 export interface NodoActivo<T extends ActivoArbol> {
@@ -79,6 +100,16 @@ export function consultasArbol(base: string, total = POR_PETICION_ARBOL): string
   return consultas;
 }
 
+/**
+ * Si las páginas del árbol cuadran: todas con el total de la primera y, sin repetidos, tantos activos como pedían (el
+ * total hasta MAX_ARBOL). Si un escaneo agrega o quita un activo entre una petición y otra, la API corre el offset y
+ * una página repite un activo o se salta otro, y esto da false.
+ */
+export function paginasCuadran(totales: readonly number[], ids: readonly string[]): boolean {
+  const esperado = Math.min(totales[0] ?? 0, MAX_ARBOL);
+  return totales.every((t) => t === totales[0]) && ids.length === esperado && new Set(ids).size === esperado;
+}
+
 /** Si el árbol abre con los dominios abiertos. Con muchos activos abre todo cerrado. */
 export function abreAbierto(activos: number): boolean {
   return activos <= ABRE_ABIERTO_HASTA;
@@ -89,15 +120,13 @@ const posicion = (tipo: string) => {
   const i = ORDEN_TIPO.indexOf(tipo);
   return i === -1 ? ORDEN_TIPO.length : i;
 };
-const comparar = (a: ActivoArbol, b: ActivoArbol) =>
-  posicion(a.type) - posicion(b.type) || (a.value < b.value ? -1 : a.value > b.value ? 1 : 0) ||
-  (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
 
 /**
  * Arma el árbol. Cada dominio es una raíz con sus activos debajo. Un activo sin padre, o cuyo padre es el activo del
  * propio dominio, cuelga del dominio. Un ciclo (A hijo de B y B hijo de A, o un activo padre de sí mismo), un padre que
  * solo existe en otro dominio o un padre que no vino en la lista dejan al activo suelto debajo de su dominio. Los hijos
- * van en el orden de la API: tipo y luego valor. Un id repetido (dos páginas que se enciman) se toma una vez.
+ * van por tipo, como la API, y dentro de un tipo en el orden en que llegaron. Los dominios, en el orden en que llegó
+ * su primer activo. Un id repetido (dos páginas que se enciman) se toma una vez.
  */
 export function armarArbol<T extends ActivoArbol>(activos: readonly T[]): RamaDominio<T>[] {
   const unicos: T[] = [];
@@ -107,6 +136,8 @@ export function armarArbol<T extends ActivoArbol>(activos: readonly T[]): RamaDo
     vistos.add(a.id);
     unicos.push(a);
   }
+  const llegada = new Map(unicos.map((a, i) => [a.id, i]));
+  const comparar = (a: T, b: T) => posicion(a.type) - posicion(b.type) || (llegada.get(a.id) ?? 0) - (llegada.get(b.id) ?? 0);
 
   const porClave = new Map<string, T>();
   const porValor = new Map<string, T>();
@@ -208,7 +239,7 @@ export function armarArbol<T extends ActivoArbol>(activos: readonly T[]): RamaDo
     }
     return total;
   };
-  const salida = [...ramas.values()].sort((x, y) => (x.dominio < y.dominio ? -1 : x.dominio > y.dominio ? 1 : 0));
+  const salida = [...ramas.values()];   // en el orden en que llegó el primer activo de cada dominio
   for (const r of salida) r.descendientes = ordenar(r.hijos);
   return salida;
 }

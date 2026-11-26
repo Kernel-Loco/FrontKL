@@ -22,7 +22,7 @@ import {
   type TipoActivoFiltro,
 } from "@/lib/filtrosActivos";
 import { cantidad, formatDateTime } from "@/lib/format";
-import { conVista, type Vista } from "@/lib/arbolActivos";
+import { conVista, type DatosArbol, type Vista } from "@/lib/arbolActivos";
 import { AssetsTree } from "./AssetsTree";
 import { downloadAssets } from "@/services/exportService";
 import type { OrganizationAssets } from "@/types";
@@ -43,6 +43,7 @@ export function AssetsInventory({
   activos,
   canOpenDetail,
   vista = "lista",
+  arbol,
 }: {
   filtros: FiltrosActivos;
   dominios: string[];
@@ -50,8 +51,9 @@ export function AssetsInventory({
   conCarta: string[];
   activos: OrganizationAssets;
   canOpenDetail: boolean;
-  /** En el árbol (RC-248) `activos` trae todos los del filtro hasta MAX_ARBOL, sin paginar. */
   vista?: Vista;
+  /** En el árbol (RC-248): todos los activos del filtro hasta MAX_ARBOL, sin paginar. `activos` trae solo el total. */
+  arbol?: DatosArbol;
 }) {
   const ids = { dominio: useId(), tipo: useId(), texto: useId() };
   const router = useRouter();
@@ -75,6 +77,7 @@ export function AssetsInventory({
   };
 
   const total = activos.total;
+  const enVista = arbol ? arbol.activos.length : activos.items.length;
   const ultima = paginas(total);
   const enlacePagina = (pagina: number) => `${pathname}${urlFiltros({ ...filtros, pagina })}`;
   const fueraDeRango = activos.items.length === 0 && total > 0;
@@ -113,7 +116,7 @@ export function AssetsInventory({
 
       <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3">
         <p className="text-xs text-lt-muted" aria-live="polite">
-          {conteo(total, activos.offset, activos.items.length)}
+          {conteo(total, activos.offset, enVista)}
           {hayFiltros(filtros) && " con estos filtros"}
         </p>
         <div className="flex flex-col items-end gap-1">
@@ -130,8 +133,8 @@ export function AssetsInventory({
         </div>
       </div>
 
-      {activos.items.length === 0 ? (
-        fueraDeRango ? (
+      {enVista === 0 ? (
+        fueraDeRango && !arbol ? (
           <EmptyState title="Esta página no existe">
             Los filtros dan {ultima} {ultima === 1 ? "página" : "páginas"}.{" "}
             <Link href={enlacePagina(1)} className={TEXT_LINK}>Ir a la primera</Link>
@@ -141,14 +144,22 @@ export function AssetsInventory({
         ) : (
           <EmptyState title="Sin activos todavía">Aparecen después del primer escaneo de un dominio autorizado.</EmptyState>
         )
-      ) : vista === "arbol" ? (
+      ) : arbol ? (
         <>
-          {total > activos.items.length && (
-            <p className="px-5 pb-3 text-xs text-lt-amber" role="status">
-              El árbol muestra {activos.items.length} de {cantidad(total, "activo")}. Filtra por dominio o tipo para ver el resto.
-            </p>
-          )}
-          <AssetsTree activos={activos.items} canOpenDetail={canOpenDetail} />
+          <div role="status" className="space-y-1 px-5 pb-3 text-xs text-lt-amber empty:hidden">
+            {arbol.fallidas > 0 ? (
+              <p>
+                No se pudieron traer {arbol.fallidas} de {arbol.partes} partes de la lista: el árbol muestra {enVista} de{" "}
+                {cantidad(total, "activo")} y algunos pueden salir sueltos. Vuelve a cargar la página.
+              </p>
+            ) : total > enVista && (
+              <p>El árbol muestra {enVista} de {cantidad(total, "activo")}. Filtra por dominio o tipo para ver el resto.</p>
+            )}
+            {arbol.cambio && (
+              <p>La lista cambió mientras se armaba el árbol (un escaneo en curso): puede faltar o sobrar un activo. Vuelve a cargar la página.</p>
+            )}
+          </div>
+          <AssetsTree key={clave} activos={arbol.activos} canOpenDetail={canOpenDetail} />
         </>
       ) : (
         <TableWrap>
