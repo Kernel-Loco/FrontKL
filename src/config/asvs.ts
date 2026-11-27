@@ -1,7 +1,7 @@
 // Único archivo con los textos de la página Revisión OWASP ASVS (#75, RC-136). Son los de la revisión de LowTide con
-// ASVS 5.0 nivel 1 del 23 de noviembre de 2026: el requisito, el estado y el texto público de cada fila. No se editan
-// aquí a mano: si la revisión cambia, se copian de nuevo y se actualiza la huella de asvs.test.mjs, que es la misma
-// que revisa la prueba de la revisión en el backend.
+// ASVS 5.0 nivel 1 del 23 de noviembre de 2026, actualizada el 27: el requisito, el estado y el texto público de
+// cada fila. No se editan aquí a mano: si la revisión cambia, se copian de nuevo y se actualiza la huella de
+// asvs.test.mjs, que es la misma que revisa la prueba de la revisión en el backend.
 
 /** Estado de la revisión. «No cumple» se muestra como «En corrección», con el plan en su texto. */
 export type EstadoAsvs = "Cumple" | "No cumple" | "No aplica";
@@ -23,7 +23,7 @@ export interface CapituloAsvs {
 
 export const ASVS = {
   titulo: "LowTide revisado con OWASP ASVS 5.0, nivel 1",
-  fecha: "23 de noviembre de 2026",
+  fecha: "27 de noviembre de 2026",
   intro:
     "OWASP ASVS es el estándar abierto con el que se verifica la seguridad de una aplicación web. Revisamos LowTide contra los 70 requisitos de su nivel 1, uno por uno, con pruebas automáticas, un escaneo activo con ZAP y la revisión del código y de la configuración. Un requisito en corrección ya tiene su plan; aquí se cuenta qué se hará, sin detalles que sirvan para atacarlo.",
   atribucion:
@@ -90,9 +90,9 @@ export const ASVS = {
     { id: "V7.2.1", titulo: "La sesión se verifica en un servicio confiable del servidor", estado: "Cumple", texto: "Cada sesión se revisa en el servidor en cada petición." },
     { id: "V7.2.2", titulo: "Tokens de sesión dinámicos, no secretos fijos", estado: "Cumple", texto: "Cada inicio de sesión crea un token nuevo." },
     { id: "V7.2.3", titulo: "Tokens de referencia únicos, de un CSPRNG y con 128 bits o más", estado: "Cumple", texto: "El token de sesión tiene 256 bits al azar y no se guarda en claro." },
-    { id: "V7.2.4", titulo: "Token nuevo al autenticarse, y se termina el anterior", estado: "No cumple", texto: "En corrección: cada inicio de sesión ya crea un token nuevo; falta cerrar del todo la sesión anterior del mismo navegador." },
+    { id: "V7.2.4", titulo: "Token nuevo al autenticarse, y se termina el anterior", estado: "Cumple", texto: "Cada inicio de sesión crea un token nuevo y cierra en el servidor la sesión anterior del mismo navegador." },
     { id: "V7.4.1", titulo: "Al cerrar sesión o vencer, la sesión ya no sirve", estado: "Cumple", texto: "Al cerrar sesión, o a los 15 minutos sin uso, la sesión deja de servir en el servidor." },
-    { id: "V7.4.2", titulo: "Al desactivar o borrar una cuenta, se cierran todas sus sesiones", estado: "No cumple", texto: "En corrección: al dar de baja una cuenta, el portal la saca de inmediato; falta que la API también la corte en todas sus sesiones abiertas." },
+    { id: "V7.4.2", titulo: "Al desactivar o borrar una cuenta, se cierran todas sus sesiones", estado: "Cumple", texto: "Al dar de baja una cuenta o cambiarle el rol, todas sus sesiones abiertas se cierran de inmediato." },
     { id: "V8.1.1", titulo: "Documentar las reglas de acceso por función y por dato", estado: "Cumple", texto: "Está documentado qué puede hacer cada rol y qué datos ve cada empresa." },
     { id: "V8.2.1", titulo: "Acceso a funciones solo con permiso explícito", estado: "Cumple", texto: "Cada función revisa el rol antes de responder." },
     { id: "V8.2.2", titulo: "Acceso a datos solo con permiso sobre cada dato (IDOR, BOLA)", estado: "Cumple", texto: "La base de datos aísla a cada empresa: nadie ve datos de otra." },

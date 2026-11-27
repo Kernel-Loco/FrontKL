@@ -9,7 +9,7 @@ import { ASVS } from "./asvs.ts";
 
 // Huella del requisito, el estado y el texto público de cada fila de la revisión del 23 de noviembre de 2026. Es la
 // misma que revisa la prueba de la revisión en el backend: si cambia allá, se copian de nuevo los textos y cambia aquí.
-const HUELLA_DE_LA_REVISION = "d54126d8ce1cdd735302ebdb1c281312f54d0607eafd062b8f8fbc9daf7be77a";
+const HUELLA_DE_LA_REVISION = "a433b1acf2973733e20e79f6174648b1d885ccc0921a434d6d82d5ac323f3c72";
 
 const ESTADOS = ["Cumple", "No cumple", "No aplica"];
 
