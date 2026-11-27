@@ -15,10 +15,15 @@ interface DomainFindingSeries {
 
 const CATEGORIES = Object.keys(CATEGORY_LABELS) as Category[];
 const SEVERITIES = Object.keys(SEVERITY_LABELS) as (keyof SeverityCounts)[];
-const BLUE_PALETTE = ["#7dd3fc", "#60a5fa", "#3b82f6", "#2563eb", "#93c5fd", "#38bdf8", "#818cf8", "#1d4ed8"];
-const HEIGHT = 270;
-const PADDING = { top: 18, right: 14, bottom: 58, left: 34 };
+/** Tonos por dominio en orden fijo (globals.css, --lt-series-*). Del noveno en adelante van juntos en gris como «Otros». */
+const SERIES = 8;
+const seriesColor = (index: number) => (index < SERIES ? `var(--lt-series-${index + 1})` : "var(--color-lt-faint)");
 
+/**
+ * Hallazgos abiertos por categoría (o severidad, para el gerente) y dominio (RC-375). Una barra horizontal por grupo,
+ * partida por dominio con un tono propio, y el total al final. Así se compara de un vistazo qué categoría pesa más y
+ * qué dominio la carga, sin el bosque de columnas vacías del gráfico anterior.
+ */
 export function FindingsByTypeChart({ series, groupBy = "category" }: { series: DomainFindingSeries[]; groupBy?: "category" | "severity" }) {
   const groups: { id: string; label: string }[] = groupBy === "severity"
     ? SEVERITIES.map((id) => ({ id, label: SEVERITY_LABELS[id] }))
@@ -35,114 +40,83 @@ export function FindingsByTypeChart({ series, groupBy = "category" }: { series: 
       ? SEVERITIES.map((severity) => severityCounts?.[severity] ?? 0)
       : CATEGORIES.map((category) => (findings ?? []).filter((finding) => finding.category === category).length),
   }));
-  const maxCount = Math.max(0, ...counts.flatMap(({ values }) => values));
-  const scaleMax = Math.max(1, maxCount);
-  const ticks = maxCount === 0 ? [] : [...new Set([0, Math.ceil(scaleMax / 2), scaleMax])];
-  const groupWidth = Math.max(160, counts.length * 20 + 36);
-  const chartWidth = PADDING.left + groups.length * groupWidth + PADDING.right;
-  const plotHeight = HEIGHT - PADDING.top - PADDING.bottom;
-  const gap = series.length > 8 ? 1 : 3;
-  const barWidth = Math.min(18, (groupWidth - 42 - gap * Math.max(0, series.length - 1)) / Math.max(1, series.length));
+  const rows = groups.map((group, groupIndex) => {
+    const parts = counts
+      .map(({ domain }, domainIndex) => ({ domain, domainIndex, value: counts[domainIndex].values[groupIndex] }))
+      .filter((part) => part.value > 0);
+    return { ...group, parts, total: parts.reduce((sum, part) => sum + part.value, 0) };
+  });
+  const maxTotal = Math.max(1, ...rows.map((row) => row.total));
   const partial = counts.filter((item) => item.coverage === "partial").length;
   const unscored = counts.filter((item) => item.coverage === "unscanned").length;
   const incomplete = partial + unscored > 0;
-  const total = counts.reduce((sum, item) => sum + item.values.reduce((categoryTotal, value) => categoryTotal + value, 0), 0);
+  const total = rows.reduce((sum, row) => sum + row.total, 0);
   const gaps = [partial > 0 ? `${partial} con cobertura parcial` : "", unscored > 0 ? `${unscored} sin score` : ""]
     .filter(Boolean)
     .join(" y ");
   const description = `${total} ${total === 1 ? "hallazgo" : "hallazgos"} en ${counts.length} ${counts.length === 1 ? "dominio" : "dominios"}${incomplete ? `, ${gaps}` : ""}`;
+  const others = Math.max(0, counts.length - SERIES);
 
   return (
     <Card title={`Hallazgos abiertos por ${groupWord} y dominio`} description={description}>
       {counts.length === 0 ? (
         <p className="text-sm text-lt-muted">No hay dominios activos para mostrar.</p>
       ) : (
-        <>
-          <ul aria-label="Dominios" className="mb-4 flex flex-wrap gap-x-4 gap-y-2">
-            {counts.map(({ domain, coverage, stateLabel }, index) => (
-              <li key={domain} className="flex min-w-0 items-center gap-2 text-xs text-lt-muted">
-                <span aria-hidden="true" className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ backgroundColor: BLUE_PALETTE[index % BLUE_PALETTE.length] }} />
-                <span className="max-w-56 truncate">{domain}</span>
-                {coverage !== "complete" && (
-                  <span className="shrink-0 rounded-sm border border-lt-border px-1.5 py-0.5 text-[10px]">
-                    {coverage === "partial" ? "Parcial" : stateLabel}
-                  </span>
-                )}
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_16rem]">
+          <ul aria-label={`Hallazgos abiertos por ${groupWord}`} className="space-y-5">
+            {rows.map((row) => (
+              <li key={row.id}>
+                <div className="mb-2 flex items-baseline justify-between gap-3">
+                  <span className="text-sm text-lt-text">{row.label}</span>
+                  <span className={`text-sm font-semibold tabular-nums ${row.total ? "text-lt-text" : "text-lt-faint"}`}>{row.total}</span>
+                </div>
+                <div className="h-2.5 w-full rounded-full bg-lt-raised/60">
+                  {row.total > 0 && (
+                    <div className="flex h-full gap-0.5" style={{ width: `${(row.total / maxTotal) * 100}%` }}>
+                      {row.parts.map((part) => (
+                        <span
+                          key={part.domain}
+                          title={`${part.domain} · ${row.label}: ${part.value}`}
+                          className="h-full first:rounded-l-full last:rounded-r-full"
+                          style={{ flexGrow: part.value, flexBasis: 0, backgroundColor: seriesColor(part.domainIndex) }}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <p className="sr-only">
+                  {row.total === 0
+                    ? "Sin hallazgos abiertos."
+                    : row.parts.map((part) => `${part.domain}: ${part.value}`).join(", ")}
+                </p>
               </li>
             ))}
           </ul>
-          <div role="region" aria-label="Gráfica desplazable horizontalmente" tabIndex={0} className="relative overflow-x-auto">
-            <svg
-              width={chartWidth}
-              height={HEIGHT}
-              viewBox={`0 0 ${chartWidth} ${HEIGHT}`}
-              role="img"
-              aria-labelledby="findings-chart-title findings-chart-description"
-              className="block max-w-none"
-            >
-              <title id="findings-chart-title">{`Hallazgos abiertos por ${groupWord} y dominio`}</title>
-              <desc id="findings-chart-description">
-                {counts.map(({ domain, coverage, stateLabel, values }) =>
-                  `${domain}${coverage === "complete" ? "" : coverage === "partial" ? " (cobertura parcial)" : ` (${stateLabel.toLowerCase()})`}: ${groups.map((group, index) => `${group.label} ${values[index]}`).join(", ")}`,
-                ).join(". ")}
-              </desc>
-              {ticks.map((tick) => {
-                const y = PADDING.top + plotHeight - (tick / scaleMax) * plotHeight;
-                return (
-                  <g key={tick}>
-                    <line x1={PADDING.left} x2={chartWidth - PADDING.right} y1={y} y2={y} className="stroke-lt-border" />
-                    <text x={PADDING.left - 8} y={y} dy="0.35em" textAnchor="end" className="fill-lt-muted font-mono text-[11px]">
-                      {tick}
-                    </text>
-                  </g>
-                );
-              })}
-              {groups.map((group, groupIndex) => {
-                const groupStart = PADDING.left + groupIndex * groupWidth;
-                const groupCenter = groupStart + groupWidth / 2;
-                const clusterWidth = counts.length * barWidth + Math.max(0, counts.length - 1) * gap;
-                const clusterStart = groupCenter - clusterWidth / 2;
-                const labelLines = group.label.split(" ");
-
-                return (
-                  <g key={group.id}>
-                    {counts.map(({ domain, values }, domainIndex) => {
-                      const value = values[groupIndex];
-                      const barHeight = (value / scaleMax) * plotHeight;
-                      const x = clusterStart + domainIndex * (barWidth + gap);
-                      const y = PADDING.top + plotHeight - barHeight;
-                      return (
-                        <rect
-                          key={domain}
-                          x={x}
-                          y={y}
-                          width={barWidth}
-                          height={barHeight}
-                          rx={2}
-                          fill={BLUE_PALETTE[domainIndex % BLUE_PALETTE.length]}
-                        >
-                          <title>{`${domain} · ${group.label}: ${value}`}</title>
-                        </rect>
-                      );
-                    })}
-                    <text x={groupCenter} y={HEIGHT - 32} textAnchor="middle" className="fill-lt-muted text-[11px]">
-                      {labelLines.map((line, index) => (
-                        <tspan key={line} x={groupCenter} dy={index === 0 ? 0 : 13}>{line}</tspan>
-                      ))}
-                    </text>
-                  </g>
-                );
-              })}
-            </svg>
-          </div>
+          <ul aria-label="Dominios" className="space-y-2.5 border-lt-border lg:border-l lg:pl-6">
+            {counts.slice(0, SERIES).map(({ domain, coverage, stateLabel }, index) => (
+              <li key={domain} className="flex min-w-0 items-center gap-2.5 text-sm">
+                <span aria-hidden="true" className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: seriesColor(index) }} />
+                <span className="min-w-0 truncate text-lt-text" title={domain}>{domain}</span>
+                {coverage !== "complete" && (
+                  <span className="ml-auto shrink-0 text-xs text-lt-muted">{coverage === "partial" ? "Parcial" : stateLabel}</span>
+                )}
+              </li>
+            ))}
+            {others > 0 && (
+              <li className="flex items-center gap-2.5 text-sm">
+                <span aria-hidden="true" className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: seriesColor(SERIES) }} />
+                <span className="text-lt-muted">Otros {others} dominios</span>
+              </li>
+            )}
+          </ul>
           {total === 0 && (
-            <p className="mt-3 text-sm text-lt-muted">
+            <p className="text-sm text-lt-muted lg:col-span-2">
               {incomplete
                 ? "No hay hallazgos abiertos registrados, pero con cobertura parcial o dominios sin score eso no confirma que no existan."
                 : "No se encontraron hallazgos abiertos."}
             </p>
           )}
-        </>
+        </div>
       )}
     </Card>
   );

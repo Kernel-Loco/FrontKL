@@ -48,7 +48,7 @@ export function DomainsRiskTable({
                 const finishedAt = lastScanAt(d, lastScans.get(d.fqdn));
                 return (
                   <tr key={d.id} className={TR}>
-                    <td className={`${TD} font-mono text-[13px]`}>{d.fqdn}</td>
+                    <td className={`${TD} tabular-nums text-[13px]`}>{d.fqdn}</td>
                     <td className={TD}>
                       {d.score !== null && d.band ? (
                         <div className="flex items-center gap-3">

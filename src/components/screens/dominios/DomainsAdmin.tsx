@@ -48,7 +48,7 @@ export function DomainsAdmin({ domains: initialDomains, txt: initialTxt, signatu
         <div className="-mx-5">
           <RegisteredDomainsTable domains={domains} canOpenDetail />
         </div>
-        <p className="mt-4 flex items-start gap-2 rounded-lg border border-lt-border bg-lt-raised/50 px-3 py-2.5 text-xs text-lt-muted">
+        <p className="mt-4 flex items-start gap-2 rounded-lg bg-lt-raised/50 px-3 py-2.5 text-xs text-lt-muted">
           <TriangleAlert aria-hidden="true" className="mt-px h-3.5 w-3.5 shrink-0" />
           Un dominio vencido o por validar no se puede escanear ni exportar. Se necesita la verificación TXT para activar el monitoreo.
         </p>

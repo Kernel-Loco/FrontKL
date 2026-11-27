@@ -25,9 +25,9 @@ export function AvisoSimulado({ acciones = [], datos = [], solo, datosDe, classN
   return (
     <div
       role="note"
-      className={`flex items-start gap-2.5 rounded-lg border border-lt-amber/40 bg-lt-amber/10 px-4 py-3 text-sm text-lt-amber ${className}`}
+      className={`flex items-start gap-2.5 rounded-lg bg-lt-raised px-4 py-3 text-sm text-lt-text ${className}`}
     >
-      <TriangleAlert aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0" />
+      <TriangleAlert aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-lt-amber" />
       <p className="min-w-0">
         {simulado && <strong className="font-semibold">{AVISO_SIMULADO}.</strong>}
         {simulado && solo && ` Aplica solo a ${solo}.`}

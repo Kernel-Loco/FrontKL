@@ -69,8 +69,8 @@ export function ExplanationPanel({ finding }: { finding: DomainFinding }) {
   const c = finding.caracteristicas;
 
   return (
-    <aside aria-labelledby="explicacion-titulo" aria-busy={loading} className="rounded-xl border border-lt-border bg-lt-surface p-5">
-      <p className="font-mono text-[11px] uppercase tracking-[0.15em] text-lt-muted">
+    <aside aria-labelledby="explicacion-titulo" aria-busy={loading} className="rounded-xl bg-lt-surface p-5">
+      <p className="text-xs font-medium text-lt-muted">
         ¿Por qué tiene severidad {SEVERITY_LABELS[finding.severity].toLowerCase()}?
       </p>
       <h2 id="explicacion-titulo" className="mt-1.5 text-lg font-semibold leading-snug text-lt-text">
@@ -192,7 +192,7 @@ export function ExplanationPanel({ finding }: { finding: DomainFinding }) {
       {finding.cve_id ? (
         // Con CVE: CVSS, EPSS y la marca KEV, aunque falte alguno (RC-229). EPSS es la probabilidad de explotación en 30 días.
         <div className="mt-5 border-t border-lt-border pt-4 text-xs">
-          <p className="font-mono text-lt-text">{finding.cve_id}</p>
+          <p className="tabular-nums text-lt-text">{finding.cve_id}</p>
           <dl className="mt-2 grid grid-cols-3 gap-3">
             <div>
               <dt className="text-lt-faint">CVSS</dt>
@@ -236,7 +236,7 @@ export function ExplanationPanel({ finding }: { finding: DomainFinding }) {
       {Object.keys(finding.evidence).length > 0 && (
         <details className="mt-4 text-xs">
           <summary className="cursor-pointer text-lt-muted hover:text-lt-text">Evidencia</summary>
-          <dl className="mt-2 space-y-1.5 rounded-lg bg-lt-bg p-3 font-mono text-[11px]">
+          <dl className="mt-2 space-y-1.5 rounded-lg bg-lt-bg p-3 tabular-nums text-[11px]">
             {Object.entries(finding.evidence).map(([key, value]) => (
               <div key={key} className="flex gap-2">
                 <dt className="shrink-0 text-lt-faint">{key}:</dt>

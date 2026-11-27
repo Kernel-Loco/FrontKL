@@ -118,7 +118,7 @@ export default async function DomainDetailPage({ params }: Props) {
           {SEVERITIES.map((severity) => (
             <li key={severity} className="flex items-center justify-between gap-2 rounded-md border border-lt-border px-3 py-2.5">
               <SeverityBadge severity={severity} />
-              <span className="font-mono text-lg tabular-nums text-lt-text">{domain.open_findings[severity]}</span>
+              <span className="tabular-nums text-lg text-lt-text">{domain.open_findings[severity]}</span>
             </li>
           ))}
         </ul>
@@ -157,7 +157,7 @@ export default async function DomainDetailPage({ params }: Props) {
     <div className="space-y-6">
       <PageHeader
         breadcrumb={[{ label: "Dashboard", href: "/dashboard" }, { label: fqdn }]}
-        title={<span className="font-mono">{fqdn}</span>}
+        title={<span className="tabular-nums">{fqdn}</span>}
         description={subtitle}
         actions={
           <>

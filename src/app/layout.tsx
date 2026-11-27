@@ -1,15 +1,10 @@
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { Inter } from "next/font/google";
 import { connection } from "next/server";
 import "./globals.css";
 
 const inter = Inter({
   variable: "--font-inter",
-  subsets: ["latin"],
-});
-
-const mono = JetBrains_Mono({
-  variable: "--font-mono-lt",
   subsets: ["latin"],
 });
 
@@ -23,7 +18,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   // estática se arma al compilar, sin nonce, y el navegador no correría sus scripts.
   await connection();
   return (
-    <html lang="es" className={`${inter.variable} ${mono.variable} h-full antialiased`}>
+    <html lang="es" className={`${inter.variable} h-full antialiased`}>
       <body className="min-h-full font-sans">{children}</body>
     </html>
   );

@@ -44,7 +44,7 @@ export function RecentChanges({ summaries, changes, more }: { summaries: ScanSum
           <ul className="space-y-2">
             {summaries.map((s) => (
               <li key={s.domain} className="text-sm">
-                <span className="font-mono text-lt-text">{s.domain}</span>
+                <span className="tabular-nums text-lt-text">{s.domain}</span>
                 <span className="text-lt-muted"> · {s.finishedAt ? formatDateTime(s.finishedAt) : "sin fecha de escaneo"}</span>
                 <p className="mt-0.5 text-xs text-lt-muted">
                   <span className="tabular-nums">{count(s.newFindings, "nuevo", "nuevos")}</span> ·{" "}
@@ -70,13 +70,13 @@ export function RecentChanges({ summaries, changes, more }: { summaries: ScanSum
         {changes.length > 0 && (
           <div className="border-t border-lt-border pt-3">
             {/* Abiertos que su último escaneo vio por primera vez: no siempre cuadran con los conteos de arriba. */}
-            <p className="text-xs font-medium uppercase tracking-wide text-lt-muted">Nuevos abiertos</p>
+            <p className="text-xs font-medium text-lt-muted">Nuevos abiertos</p>
             <ul className="divide-y divide-lt-border">
               {changes.map(({ domain, finding }) => (
                 <li key={finding.id} className="py-3">
                   <p className="text-sm font-medium text-lt-text">{finding.title}</p>
                   <p className="mt-0.5 text-xs text-lt-muted">
-                    <span className="font-mono">{finding.asset === domain ? domain : `${finding.asset} (${domain})`}</span> · {CATEGORY_LABELS[finding.category]}
+                    <span className="tabular-nums">{finding.asset === domain ? domain : `${finding.asset} (${domain})`}</span> · {CATEGORY_LABELS[finding.category]}
                   </p>
                 </li>
               ))}

@@ -102,7 +102,7 @@ export function SignatureRequestsList({ items, mode, onChange, onAccepted }: Sig
               <li key={item.id} className="py-3">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="break-all font-mono text-xs text-lt-text">{item.fqdn}</p>
+                    <p className="break-all tabular-nums text-xs text-lt-text">{item.fqdn}</p>
                     <p className="mt-0.5 text-[11px] text-lt-faint">
                       {item.signer_name ? `${item.signer_name} · ` : ""}
                       {formatDate(item.valid_from)} a {formatDate(item.valid_until)}
@@ -146,14 +146,14 @@ export function SignatureRequestsList({ items, mode, onChange, onAccepted }: Sig
                 )}
                 {canAccept && confirming === item.id && (
                   <form
-                    className="mt-2.5 space-y-2 rounded-lg border border-lt-border bg-lt-raised/60 p-3"
+                    className="mt-2.5 space-y-2 rounded-lg bg-lt-raised/60 p-3"
                     onSubmit={(e) => {
                       e.preventDefault();
                       if (typed.trim().toLowerCase() === item.fqdn) accept(item);
                     }}
                   >
                     <label htmlFor={`confirm-${item.id}`} className="block text-xs text-lt-muted">
-                      Revisa el PDF firmado y escribe <span className="font-mono text-lt-text">{item.fqdn}</span> para confirmar que la carta
+                      Revisa el PDF firmado y escribe <span className="tabular-nums text-lt-text">{item.fqdn}</span> para confirmar que la carta
                       autoriza ese dominio.
                     </label>
                     <input
@@ -161,7 +161,7 @@ export function SignatureRequestsList({ items, mode, onChange, onAccepted }: Sig
                       value={typed}
                       onChange={(e) => setTyped(e.target.value)}
                       autoComplete="off"
-                      className={`${INPUT} font-mono`}
+                      className={`${INPUT} tabular-nums`}
                     />
                     <div className="flex justify-end gap-2">
                       <ActionButton variant="ghost" size="sm" type="button" onClick={() => setConfirming(null)}>

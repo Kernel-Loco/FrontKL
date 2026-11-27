@@ -53,7 +53,7 @@ export function TxtVerificationList({ items, onChange }: { items: TxtVerificatio
         {items.map((item) => (
           <li key={item.fqdn} className="py-2.5">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <span className="flex min-w-0 items-center gap-2.5 font-mono text-xs text-lt-muted">
+              <span className="flex min-w-0 items-center gap-2.5 tabular-nums text-xs text-lt-muted">
                 <span aria-hidden="true" className={`h-1.5 w-1.5 shrink-0 rounded-full ${item.status === "verified" ? "bg-lt-teal" : "bg-lt-amber"}`} />
                 <span className="break-all">{item.fqdn}</span>
               </span>
@@ -69,8 +69,8 @@ export function TxtVerificationList({ items, onChange }: { items: TxtVerificatio
             </div>
             {item.status !== "verified" && (
               <div className="mt-2.5 space-y-2">
-                <div className="flex items-center justify-between gap-2 rounded-lg border border-lt-border bg-lt-bg px-3 py-2">
-                  <code className="min-w-0 break-all font-mono text-xs text-lt-text">{item.expected_value}</code>
+                <div className="flex items-center justify-between gap-2 rounded-lg bg-lt-bg px-3 py-2">
+                  <code className="min-w-0 break-all tabular-nums text-xs text-lt-text">{item.expected_value}</code>
                   <ActionButton variant="secondary" size="sm" disabled={item.expected_value.includes(PREFIJO_FALSO)} onClick={() => copy(item.expected_value)} className="!border-lt-indigo/50 !text-lt-indigo-soft">
                     {copied === item.expected_value ? "Copiado" : "Copiar"}
                   </ActionButton>
@@ -94,7 +94,7 @@ export function TxtVerificationList({ items, onChange }: { items: TxtVerificatio
       <p aria-live="polite" className="mt-2 text-xs text-lt-muted">
         {message}
       </p>
-      {latest && <p className="mt-1 font-mono text-[11px] text-lt-faint">Actualizado {formatRelative(latest)}</p>}
+      {latest && <p className="mt-1 tabular-nums text-[11px] text-lt-faint">Actualizado {formatRelative(latest)}</p>}
     </div>
   );
 }

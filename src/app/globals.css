@@ -4,23 +4,24 @@
    (bg-lt-bg, text-lt-muted, border-lt-border, ...).
    El acceso (login y MFA) es claro; el portal es oscuro. */
 @theme {
-  /* Portal oscuro */
-  --color-lt-bg: #0a0b0f; /* fondo de página */
-  --color-lt-sidebar: #0a0b0f;
-  --color-lt-surface: #0f172a; /* tablas y tarjetas */
+  /* Portal oscuro (RC-373): carbón neutro del logo (#171618) en vez de azul pizarra, que se veía morado, y los azules
+     de la marca (#5170ff, #38b6ff, #5ce1e6) como acentos. Textos con 4.5:1 o más sobre tarjeta y página. */
+  --color-lt-bg: #0e0e10; /* fondo de página */
+  --color-lt-sidebar: #0e0e10;
+  --color-lt-surface: #171618; /* tablas y tarjetas */
   /* buscador, inputs, paneles, hover y pistas dentro de las tarjetas. El Figma pone #111827, que casi no se
      distingue de surface (1.01:1), y aquí raised va encima de surface */
-  --color-lt-raised: #1e293b;
-  --color-lt-border: #252838;
-  --color-lt-text: #e8eaf2;
-  --color-lt-muted: #9196ab;
-  --color-lt-faint: #5f6378;
-  --color-lt-nav: color-mix(in srgb, #4b6fe8 18%, #0f172a); /* fila elegida; el activo del menú va en .lt-side */
+  --color-lt-raised: #222124;
+  --color-lt-border: #2c2b2f;
+  --color-lt-text: #ececee;
+  --color-lt-muted: #a3a2a8;
+  --color-lt-faint: #85848b;
+  --color-lt-nav: color-mix(in srgb, #38b6ff 14%, #171618); /* fila elegida; el activo del menú va en .lt-side */
 
   /* Marca */
-  --color-lt-indigo: #4b6fe8; /* botones */
-  --color-lt-indigo-soft: #8f9bff;
-  --color-lt-teal: #5ec8d0;
+  --color-lt-indigo: #3f63f2; /* botones */
+  --color-lt-indigo-soft: #5cc4ff;
+  --color-lt-teal: #5ce1e6;
   --color-lt-primary: #3b82f6; /* botón principal del acceso */
 
   /* Severidades y bandas del score */
@@ -49,7 +50,8 @@
 
 @theme inline {
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-mono-lt), ui-monospace, "SFMono-Regular", Menlo, monospace;
+  /* Sin fuente monoespaciada: dominios, IP, hashes y llaves van en Inter con cifras alineadas (RC-373). */
+  --font-mono: var(--font-sans);
 }
 
 /* Foco visible por defecto; cada zona puede redefinir --focus-ring. */
@@ -89,26 +91,51 @@
 /* Menú lateral en los dos modos: activo del Figma, hover a medio camino entre el fondo y el activo, y títulos de
    grupo con 4.5:1 o más sobre el fondo del menú. */
 .lt-side {
-  --color-lt-nav: #12182a;
+  --color-lt-nav: color-mix(in srgb, #38b6ff 12%, #0e0e10);
   --color-lt-raised: color-mix(in srgb, var(--color-lt-nav) 50%, var(--color-lt-sidebar));
-  --color-lt-faint: color-mix(in srgb, #9196ab 60%, #5f6378);
+  --color-lt-faint: #85848b;
 }
 
 /* En modo claro el menú lateral sigue oscuro: recupera el texto del portal oscuro. */
 .lt-light .lt-side {
   color-scheme: dark;
-  --color-lt-nav: #1d2230;
-  --color-lt-border: #252838;
-  --color-lt-text: #e8eaf2;
-  --color-lt-muted: #9196ab;
-  --color-lt-indigo: #4b6fe8;
-  --color-lt-indigo-soft: #8f9bff;
+  --color-lt-nav: color-mix(in srgb, #38b6ff 12%, #111111);
+  --color-lt-border: #2c2b2f;
+  --color-lt-text: #ececee;
+  --color-lt-muted: #a3a2a8;
+  --color-lt-indigo: #3f63f2;
+  --color-lt-indigo-soft: #5cc4ff;
   --color-lt-amber: #e8c35a;
-  --color-lt-bg: #0a0b0f;
+  --color-lt-bg: #0e0e10;
 }
 
 /* Fondo del diálogo nativo. */
 dialog::backdrop {
   background: rgb(5 6 10 / 0.7);
   backdrop-filter: blur(2px);
+}
+
+/* Colores por serie de las gráficas (RC-375): 8 tonos en orden fijo, validados para daltonismo contra la superficie de
+   cada tema. El color sigue al dominio, no a su lugar en la lista. */
+:root,
+.lt-dark {
+  --lt-series-1: #338ced;
+  --lt-series-2: #e76624;
+  --lt-series-3: #00a888;
+  --lt-series-4: #d28e05;
+  --lt-series-5: #e24d8b;
+  --lt-series-6: #0aac23;
+  --lt-series-7: #9887ef;
+  --lt-series-8: #eb6263;
+}
+
+.lt-light {
+  --lt-series-1: #257de0;
+  --lt-series-2: #f47230;
+  --lt-series-3: #00b894;
+  --lt-series-4: #f2a600;
+  --lt-series-5: #ee7fac;
+  --lt-series-6: #008a17;
+  --lt-series-7: #6a4ce2;
+  --lt-series-8: #ec4647;
 }

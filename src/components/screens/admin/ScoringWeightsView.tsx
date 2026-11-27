@@ -105,11 +105,11 @@ export function ScoringWeightsView({ weights }: { weights: ScoringWeights }) {
                     {rule.title ? (
                       <>
                         <span className="text-lt-text">{rule.title}</span>
-                        <span className="block font-mono text-[11px] text-lt-faint">{rule.code}</span>
+                        <span className="block tabular-nums text-[11px] text-lt-faint">{rule.code}</span>
                         {rule.meaning && <span className="block text-xs leading-relaxed text-lt-muted">{rule.meaning}</span>}
                       </>
                     ) : (
-                      <span className="font-mono">{rule.code}</span>
+                      <span className="tabular-nums">{rule.code}</span>
                     )}
                   </td>
                   <td className={`${TD} text-lt-muted`}>{CATEGORY_LABELS[rule.category]}</td>

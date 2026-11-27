@@ -49,7 +49,7 @@ export function RiskGauge({ score, band, grade, partial, delta, reason, previous
       </div>
       <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
         <GradeBadge grade={grade} band={band} partial={partial} />
-        <Badge tone={tone} className="px-3 py-1 uppercase tracking-wider">
+        <Badge tone={tone} className="px-3 py-1">
           Riesgo {BAND_LABELS[band]}
         </Badge>
       </div>

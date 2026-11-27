@@ -34,17 +34,15 @@ export function SectionError({ error, retry, section, message }: SectionErrorPro
   }, [error]);
 
   return (
-    <div role="alert" className="mx-auto mt-8 max-w-lg rounded-xl border border-lt-border bg-lt-surface p-8 text-center">
-      <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-lt-amber/10">
-        <TriangleAlert aria-hidden="true" className="h-7 w-7 text-lt-amber" />
-      </div>
+    <div role="alert" className="mx-auto mt-8 max-w-lg rounded-xl bg-lt-surface p-8 text-center">
+      <TriangleAlert aria-hidden="true" className="mx-auto mb-4 h-7 w-7 text-lt-amber" />
       <h1 className="text-xl font-bold text-lt-text">{section ? `No pudimos cargar ${section}` : "Algo salió mal"}</h1>
       <p className="mt-2 text-sm text-lt-muted">{message ?? messageFor(error)}</p>
       <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
         <button
           type="button"
           onClick={() => retry()}
-          className="inline-flex items-center rounded-lg bg-gradient-to-r from-lt-indigo to-lt-teal px-4 py-2 text-sm font-semibold text-white hover:brightness-110"
+          className="inline-flex items-center rounded-lg bg-lt-indigo px-4 py-2 text-sm font-semibold text-white hover:bg-lt-indigo/90"
         >
           Reintentar
         </button>

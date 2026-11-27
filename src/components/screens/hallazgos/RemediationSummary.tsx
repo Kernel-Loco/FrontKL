@@ -27,7 +27,7 @@ export function RemediationSummary({
     <div className="space-y-4">
       {texts && metrics && (
         <div className="grid gap-3 sm:grid-cols-2">
-          <div className="flex items-start gap-3 rounded-xl border border-lt-border bg-lt-surface p-4">
+          <div className="flex items-start gap-3 rounded-xl bg-lt-surface p-4">
             <Timer aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-lt-teal" />
             <div>
               <p className="text-xs text-lt-muted">Tiempo medio de remediación</p>
@@ -35,7 +35,7 @@ export function RemediationSummary({
               <p className="text-xs text-lt-faint">{texts.mttrHint}</p>
             </div>
           </div>
-          <div className="flex items-start gap-3 rounded-xl border border-lt-border bg-lt-surface p-4">
+          <div className="flex items-start gap-3 rounded-xl bg-lt-surface p-4">
             <CheckCircle2 aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-lt-green" />
             <div>
               <p className="text-xs text-lt-muted">Hallazgos cerrados</p>
@@ -59,7 +59,7 @@ export function RemediationSummary({
               }`}
             >
               {f.label}
-              {count !== null && <span className="rounded bg-lt-surface px-1.5 font-mono text-[11px]">{count}</span>}
+              {count !== null && <span className="rounded bg-lt-surface px-1.5 tabular-nums text-[11px]">{count}</span>}
             </Link>
           );
         })}

@@ -39,7 +39,7 @@ function Dominio({ rama, abiertoInicial, canOpenDetail }: {
   return (
     <Fila hijos={rama.hijos} descendientes={rama.descendientes} abiertoInicial={abiertoInicial} nombre={rama.dominio}
       contenido={<>
-        <span className="break-all font-mono text-[13px] font-semibold text-lt-text">{nombre}</span>
+        <span className="break-all tabular-nums text-[13px] font-semibold text-lt-text">{nombre}</span>
         <Badge tone="indigo">Dominio</Badge>
       </>} />
   );
@@ -50,7 +50,7 @@ function Nodo({ nodo, abiertoInicial }: { nodo: NodoActivo<ActivoArbol>; abierto
   return (
     <Fila hijos={nodo.hijos} descendientes={nodo.descendientes} abiertoInicial={abiertoInicial} nombre={activo.value}
       contenido={<>
-        <span className="break-all font-mono text-[13px] text-lt-text">{activo.value}</span>
+        <span className="break-all tabular-nums text-[13px] text-lt-text">{activo.value}</span>
         <Badge tone="gray">{etiqueta(activo.type)}</Badge>
         {suelto && (
           <>

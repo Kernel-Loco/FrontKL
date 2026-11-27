@@ -43,7 +43,7 @@ export function AssetsCard({ assets, base }: { assets: Asset[]; base: ScanBase |
             <tbody>
               {inventario.visibles.map((a) => (
                 <tr key={a.id} className={TR}>
-                  <td className={`${TD} max-w-xs break-all font-mono text-[13px]`}>
+                  <td className={`${TD} max-w-xs break-all tabular-nums text-[13px]`}>
                     {a.value}
                     {marks && (isNewAsset(a, marks) || hasNewCertificate(a, marks)) && (
                       <span className="ml-2 inline-flex flex-wrap gap-1 align-middle font-sans">
@@ -55,7 +55,7 @@ export function AssetsCard({ assets, base }: { assets: Asset[]; base: ScanBase |
                   <td className={TD}>
                     <Badge tone="indigo">{ASSET_TYPE_LABELS[a.type]}</Badge>
                   </td>
-                  <td className={`${TD} break-all font-mono text-xs text-lt-muted`}>{a.parent ?? "—"}</td>
+                  <td className={`${TD} break-all tabular-nums text-xs text-lt-muted`}>{a.parent ?? "—"}</td>
                   <td className={`${TD} max-w-xs text-xs`}>
                     {detallesDelActivo(a).length === 0 ? (
                       <span className="text-lt-faint">—</span>

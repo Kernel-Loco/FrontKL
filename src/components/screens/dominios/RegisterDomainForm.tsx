@@ -182,7 +182,7 @@ export function RegisterDomainForm({ onRegistered, onSent, apiMode }: RegisterDo
       <form ref={formRef} onSubmit={onSubmit} noValidate className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Dominio" htmlFor="fqdn" error={errors.fqdn}>
-            <input id="fqdn" name="fqdn" placeholder="ejemplo.com" autoComplete="off" className={`${INPUT} font-mono`} {...err("fqdn")} />
+            <input id="fqdn" name="fqdn" placeholder="ejemplo.com" autoComplete="off" className={`${INPUT} tabular-nums`} {...err("fqdn")} />
           </Field>
           <Field label="Nombre de quien firma" htmlFor="signer_name" error={errors.signer_name}>
             <input id="signer_name" name="signer_name" maxLength={200} className={INPUT} {...err("signer_name")} />
@@ -275,7 +275,7 @@ export function RegisterDomainForm({ onRegistered, onSent, apiMode }: RegisterDo
             </p>
           )}
         </fieldset>
-        <div className="rounded-lg border border-lt-border bg-lt-raised/60 p-3.5">
+        <div className="rounded-lg bg-lt-raised/60 p-3.5">
           <label className="flex items-start gap-2.5 text-[13px] text-lt-muted">
             <input type="checkbox" name="confirm" className={`${CHECKBOX} mt-0.5`} {...err("confirm")} />
             {current === "mifiel_api"

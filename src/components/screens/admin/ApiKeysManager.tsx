@@ -102,7 +102,7 @@ export function ApiKeysManager({ initial }: { initial: ApiKey[] }) {
                     checked={scopes.includes(s)}
                     onChange={(e) => setScopes((c) => (e.target.checked ? [...c, s] : c.filter((x) => x !== s)))}
                   />
-                  {API_SCOPE_LABELS[s]} <code className="font-mono text-[11px] text-lt-faint">{s}</code>
+                  {API_SCOPE_LABELS[s]} <code className="tabular-nums text-[11px] text-lt-faint">{s}</code>
                 </label>
               ))}
             </div>
@@ -110,7 +110,7 @@ export function ApiKeysManager({ initial }: { initial: ApiKey[] }) {
           <Field label="Vigencia (días)" htmlFor="key-days">
             <input id="key-days" name="days" type="number" min={1} max={API_KEY_MAX_DAYS} defaultValue={90} className={`${INPUT} w-28`} />
           </Field>
-          <div className="rounded-lg border border-lt-border bg-lt-raised/60 p-3.5">
+          <div className="rounded-lg bg-lt-raised/60 p-3.5">
             <label className="flex items-start gap-2.5 text-[13px] text-lt-muted">
               <input
                 type="checkbox"
@@ -133,10 +133,10 @@ export function ApiKeysManager({ initial }: { initial: ApiKey[] }) {
           </ActionButton>
         </form>
         {secret && (
-          <div className="mt-5 space-y-2 rounded-lg border border-lt-amber/30 bg-lt-amber/5 p-3.5">
-            <p className="text-xs font-semibold text-lt-amber">{mensajeDeExito("createApiKey", `Copia la llave «${secret.name}» ahora: no se volverá a mostrar.`)}</p>
+          <div className="mt-5 space-y-2 rounded-lg bg-lt-raised p-3.5">
+            <p className="text-xs font-semibold text-lt-text">{mensajeDeExito("createApiKey", `Copia la llave «${secret.name}» ahora: no se volverá a mostrar.`)}</p>
             <div className="flex items-center gap-2 rounded-md bg-lt-bg px-3 py-2">
-              <code className="min-w-0 flex-1 break-all font-mono text-[11px] text-lt-text">{secret.value}</code>
+              <code className="min-w-0 flex-1 break-all tabular-nums text-[11px] text-lt-text">{secret.value}</code>
               <ActionButton variant="secondary" size="sm" onClick={copy}>{copied ? "Copiada" : "Copiar"}</ActionButton>
             </div>
           </div>
@@ -163,7 +163,7 @@ export function ApiKeysManager({ initial }: { initial: ApiKey[] }) {
                   <tr key={k.id} className={TR}>
                     <td className={TD}>
                       <span className="block font-medium">{k.name}</span>
-                      <code className="font-mono text-[11px] text-lt-faint">{k.key_prefix}…</code>
+                      <code className="tabular-nums text-[11px] text-lt-faint">{k.key_prefix}…</code>
                     </td>
                     <td className={`${TD} max-w-48`}>
                       <div className="flex flex-wrap gap-1">

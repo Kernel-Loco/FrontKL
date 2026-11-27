@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LogOut, X } from "lucide-react";
+import { LogOut, Menu, X } from "lucide-react";
 import { canSwitchOrganization, getNavigation, isNavItemActive, ROLE_LABELS, type SectionId } from "@/config/permissions";
 import { announceEnded, sharedStore } from "@/lib/session/actividad";
 import { leaveSession } from "@/lib/session/logout";
@@ -15,6 +15,7 @@ import { OrganizationSwitcher } from "./OrganizationSwitcher";
 import { Spinner } from "./Spinner";
 
 export const MOBILE_NAV_ID = "mobile-navigation";
+export const DESKTOP_NAV_ID = "desktop-navigation";
 
 /** Números junto a una sección, como los dominios que necesitan atención. */
 export type NavBadges = Partial<Record<SectionId, number>>;
@@ -31,7 +32,7 @@ function initials(name: string) {
 /** Sin `user` la API no respondió al validar la sesión: menú de analista (el de menos permisos), sin perfil, con salida. */
 const OFFLINE_ROLE = "analista";
 
-function SidebarContent({ user, badges, theme, onThemeToggle, onNavigate }: { user: User | null; badges: NavBadges; theme: ThemeMode; onThemeToggle: () => void; onNavigate?: () => void }) {
+function SidebarContent({ user, badges, theme, onThemeToggle, onNavigate, onCollapse }: { user: User | null; badges: NavBadges; theme: ThemeMode; onThemeToggle: () => void; onNavigate?: () => void; onCollapse?: () => void }) {
   const pathname = usePathname();
   const role = user?.role ?? OFFLINE_ROLE;
   const [loggingOut, setLoggingOut] = useState(false);
@@ -48,17 +49,28 @@ function SidebarContent({ user, badges, theme, onThemeToggle, onNavigate }: { us
 
   return (
     <>
-      <div className="flex h-20 shrink-0 items-center px-6">
+      <div className="flex h-20 shrink-0 items-center justify-between gap-2 pl-6 pr-3">
         <Link href="/dashboard" onClick={onNavigate} className="rounded-md" aria-label="LowTide, ir al dashboard">
           <Logo />
         </Link>
+        {onCollapse && (
+          <button
+            type="button"
+            onClick={onCollapse}
+            aria-label="Ocultar menú"
+            title="Ocultar menú"
+            className="rounded-md p-1.5 text-lt-faint hover:text-lt-text"
+          >
+            <Menu aria-hidden="true" className="h-[18px] w-[18px]" strokeWidth={1.5} />
+          </button>
+        )}
       </div>
       <div className="mx-6 mb-2 border-b border-lt-border px-1 pb-4">
         {user && canSwitchOrganization(user) ? (
           <OrganizationSwitcher user={user} />
         ) : (
           <>
-            <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-lt-faint">Empresa activa</p>
+            <p className="text-xs font-medium text-lt-faint">Empresa activa</p>
             {user ? (
               <p title={user.organization_name} className="mt-1 truncate text-sm font-semibold text-lt-text">
                 {user.organization_name}
@@ -72,7 +84,7 @@ function SidebarContent({ user, badges, theme, onThemeToggle, onNavigate }: { us
       <nav aria-label="Navegación principal" className="flex-1 space-y-7 overflow-y-auto px-3 py-2">
         {getNavigation(role).map((group) => (
           <div key={group.title}>
-            <p className="px-3 pb-2 font-mono text-[10px] font-medium uppercase tracking-[0.2em] text-lt-faint">{group.title}</p>
+            <p className="px-3 pb-2 text-xs font-medium text-lt-faint">{group.title}</p>
             <ul className="space-y-0.5">
               {group.items.map((item) => {
                 const active = isNavItemActive(item, pathname, role);
@@ -146,9 +158,12 @@ interface SidebarProps {
   onThemeToggle: () => void;
   mobileOpen: boolean;
   onMobileClose: () => void;
+  /** En escritorio el menú se puede ocultar para dar todo el ancho al contenido (RC-369). */
+  collapsed: boolean;
+  onCollapse: () => void;
 }
 
-export function Sidebar({ user, badges, theme, onThemeToggle, mobileOpen, onMobileClose }: SidebarProps) {
+export function Sidebar({ user, badges, theme, onThemeToggle, mobileOpen, onMobileClose, collapsed, onCollapse }: SidebarProps) {
   useEffect(() => {
     if (!mobileOpen) return;
     const onKeyDown = (event: KeyboardEvent) => {
@@ -160,9 +175,11 @@ export function Sidebar({ user, badges, theme, onThemeToggle, mobileOpen, onMobi
 
   return (
     <>
-      <aside className="lt-side sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r border-lt-border bg-lt-sidebar md:flex">
-        <SidebarContent user={user} badges={badges} theme={theme} onThemeToggle={onThemeToggle} />
-      </aside>
+      {!collapsed && (
+        <aside id={DESKTOP_NAV_ID} className="lt-side sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r border-lt-border bg-lt-sidebar md:flex">
+          <SidebarContent user={user} badges={badges} theme={theme} onThemeToggle={onThemeToggle} onCollapse={onCollapse} />
+        </aside>
+      )}
 
       {mobileOpen && (
         <div className="fixed inset-0 z-40 md:hidden">
@@ -170,7 +187,7 @@ export function Sidebar({ user, badges, theme, onThemeToggle, mobileOpen, onMobi
           <aside
             id={MOBILE_NAV_ID}
             aria-label="Menú"
-            className="lt-side absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col border-r border-lt-border bg-lt-sidebar shadow-xl"
+            className="lt-side absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col border-r border-lt-border bg-lt-sidebar shadow-lg"
           >
             <button
               type="button"

@@ -72,7 +72,7 @@ export default function SeguridadPage() {
           <ul className="mt-4 divide-y divide-lt-border rounded-xl border border-lt-border bg-lt-surface">
             {SEGURIDAD.fronteras.map((frontera) => (
               <li key={frontera.id} className="flex gap-4 px-5 py-4">
-                <span className="mt-0.5 h-fit shrink-0 rounded-md bg-lt-red/15 px-2 py-0.5 font-mono text-xs font-semibold text-lt-red">
+                <span className="mt-0.5 h-fit shrink-0 rounded-md bg-lt-red/15 px-2 py-0.5 tabular-nums text-xs font-semibold text-lt-red">
                   {frontera.id}
                 </span>
                 <div className="min-w-0">
@@ -110,7 +110,7 @@ export default function SeguridadPage() {
             {TRAFICO.titulo}
           </h2>
           <p className="mt-3 text-sm">
-            <code className="break-all rounded-sm bg-lt-surface px-1.5 py-0.5 font-mono text-xs text-lt-text">
+            <code className="break-all rounded-sm bg-lt-surface px-1.5 py-0.5 tabular-nums text-xs text-lt-text">
               {TRAFICO.agente}
             </code>
           </p>

@@ -106,7 +106,7 @@ export function MfaSetup({ onDone }: { onDone?: () => void }) {
         />
         <div>
           <p className="text-xs text-lt-muted">¿No puedes escanearlo? Escribe esta clave en la app:</p>
-          <p className="mt-1 break-all font-mono text-sm text-lt-text" data-testid="mfa-secret">
+          <p className="mt-1 break-all tabular-nums text-sm text-lt-text" data-testid="mfa-secret">
             {groupSecret(setup.secret)}
           </p>
         </div>

@@ -18,7 +18,7 @@ export function KriPanel({ kris, subcategories, mapVersion }: { kris: Kri[]; sub
           const view = kriView(kri, sourceName);
           const tone = kriTone(view.tone);
           return (
-            <li key={kri.kri} className="overflow-hidden rounded-lg border border-lt-border bg-lt-raised/40">
+            <li key={kri.kri} className="overflow-hidden rounded-lg bg-lt-raised/40">
               <div aria-hidden="true" className={`h-1 ${SOLID_TONES[tone].bg}`} />
               <div className="space-y-2 p-4">
                 <p className="text-sm font-medium text-lt-text">{kri.name}</p>
@@ -26,7 +26,7 @@ export function KriPanel({ kris, subcategories, mapVersion }: { kris: Kri[]; sub
                 {kri.max_severity && <p className="text-xs text-lt-muted">Severidad más alta: {SEVERITY_LABELS[kri.max_severity]}</p>}
                 {view.status && <Badge tone={kri.status === "partial" ? "amber" : "gray"}>{view.status}</Badge>}
                 {view.warning && <p className="text-xs leading-relaxed text-lt-muted">{view.warning}</p>}
-                {view.detail && <p className="break-words font-mono text-[11px] text-lt-faint">{view.detail}</p>}
+                {view.detail && <p className="break-words tabular-nums text-[11px] text-lt-faint">{view.detail}</p>}
               </div>
             </li>
           );

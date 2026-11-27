@@ -119,7 +119,7 @@ function FindingComparison({
           </p>
           {groups.map(({ change, items }) => items.length > 0 && (
             <div key={change} className="mt-3">
-              <h4 className="text-xs font-medium uppercase tracking-wide text-lt-muted">
+              <h4 className="text-xs font-medium text-lt-muted">
                 {change === "kept" ? "Siguen con otra criticidad" : CHANGE_LABELS[change]} ({items.length})
               </h4>
               <ul className="divide-y divide-lt-border">

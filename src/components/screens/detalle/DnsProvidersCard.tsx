@@ -13,7 +13,7 @@ function ListaRegistros({ titulo, registros }: { titulo: string; registros: Regi
           {registros.servidores.length > 0 ? (
             <ul className="mt-2 space-y-2">
               {registros.servidores.map((servidor, index) => (
-                <li key={`${servidor.host}-${servidor.prioridad ?? ""}-${index}`} className="break-all font-mono text-sm text-lt-text">
+                <li key={`${servidor.host}-${servidor.prioridad ?? ""}-${index}`} className="break-all tabular-nums text-sm text-lt-text">
                   {servidor.host === "." && servidor.prioridad !== undefined ? "MX nulo (.)" : servidor.host}
                   {servidor.prioridad !== undefined && <span className="ml-2 font-sans text-xs text-lt-muted">Prioridad {servidor.prioridad}</span>}
                 </li>

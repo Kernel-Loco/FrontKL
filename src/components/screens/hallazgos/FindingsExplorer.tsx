@@ -124,7 +124,7 @@ export function FindingsExplorer({
       </div>
 
       <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
-        <div className="overflow-hidden rounded-xl border border-lt-border bg-lt-surface">
+        <div className="overflow-hidden rounded-xl bg-lt-surface">
           {visible.length === 0 && findings.length === 0 && status !== "open" ? (
             <EmptyState title="Ningún hallazgo en este estado">
               Cuando un Analista o Administrador marque un hallazgo con este estado, aparecerá aquí con quién y cuándo.
@@ -172,7 +172,7 @@ export function FindingsExplorer({
                           </button>
                         </td>
                         <td className={`${TD} text-lt-muted`}>{CATEGORY_LABELS[f.category]}</td>
-                        <td className={`${TD} whitespace-nowrap font-mono text-xs text-lt-muted`}>{SOURCE_LABELS[f.source]}</td>
+                        <td className={`${TD} whitespace-nowrap tabular-nums text-xs text-lt-muted`}>{SOURCE_LABELS[f.source]}</td>
                         <td className={TD}>
                           <SeverityBadge severity={f.severity} />
                         </td>
