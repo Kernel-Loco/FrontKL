@@ -3,6 +3,7 @@ import { PageHeader } from "@/components/dashboard/PageHeader";
 import { checkSectionAccess } from "@/components/dashboard/SectionAccess";
 import { DomainTabs, domainTabs } from "@/components/screens/detalle/DomainTabs";
 import { FindingsExplorer } from "@/components/screens/hallazgos/FindingsExplorer";
+import { RemediationSummary } from "@/components/screens/hallazgos/RemediationSummary";
 import { CoverageGapsList } from "@/components/screens/shared/CoverageGapsList";
 import { DomainPicker } from "@/components/screens/shared/DomainPicker";
 import { InlineAlert } from "@/components/ui/InlineAlert";
@@ -11,11 +12,15 @@ import { coverageIncomplete } from "@/lib/cobertura";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { can, canAccessSection, SECTIONS } from "@/config/permissions";
-import { getDomainFindings, getDomainScore, getDomains } from "@/services/queries";
+import { statusFilterFromParam } from "@/lib/triage";
+import { ServiceError } from "@/services/errors";
+import { getDomainFindings, getDomainRemediation, getDomainScore, getDomains } from "@/services/queries";
 
 export const metadata: Metadata = { title: SECTIONS.hallazgos.label };
 
-type Props = { searchParams: Promise<{ dominio?: string | string[]; regla?: string | string[] }> };
+type Props = {
+  searchParams: Promise<{ dominio?: string | string[]; regla?: string | string[]; estado?: string | string[] }>;
+};
 
 export default async function HallazgosPage({ searchParams }: Props) {
   const { user, forbidden } = await checkSectionAccess("hallazgos");
@@ -23,7 +28,8 @@ export default async function HallazgosPage({ searchParams }: Props) {
 
   const domains = resultDomains((await getDomains()).items);
   const options = domains.map((d) => d.fqdn);
-  const { dominio, regla } = await searchParams;
+  const { dominio, regla, estado } = await searchParams;
+  const status = statusFilterFromParam(estado);
   const fqdn = typeof dominio === "string" && options.includes(dominio) ? dominio : options[0];
 
   if (!fqdn) {
@@ -39,9 +45,14 @@ export default async function HallazgosPage({ searchParams }: Props) {
 
   // Un dominio sin score solo entra con hallazgos de un primer escaneo en curso o caído: no hay score que pedir.
   const hasScore = domains.some((d) => d.fqdn === fqdn && d.score !== null);
-  const [findings, score] = await Promise.all([
-    getDomainFindings(fqdn),
+  const [findings, score, remediation] = await Promise.all([
+    getDomainFindings(fqdn, status),
     hasScore ? getDomainScore(fqdn) : null,
+    // Las métricas de remediación (RC-133) son un extra: si la API no las da, Hallazgos sigue sin ellas.
+    getDomainRemediation(fqdn).catch((error: unknown) => {
+      if (error instanceof ServiceError) return null;
+      throw error;
+    }),
   ]);
   const initialRule = typeof regla === "string" && findings.items.some((finding) => finding.rule_code === regla)
     ? regla
@@ -67,14 +78,17 @@ export default async function HallazgosPage({ searchParams }: Props) {
           <CoverageGapsList gaps={score.coverage_gaps} />
         </InlineAlert>
       )}
+      <RemediationSummary domain={fqdn} metrics={remediation} status={status} />
       <FindingsExplorer
-        key={`${fqdn}-${initialRule}`}
+        key={`${fqdn}-${status}-${initialRule}`}
         domain={fqdn}
         findings={findings.items}
         initialRule={initialRule}
         partialCoverage={coverageIncomplete(score)}
         unscored={!score}
         canAsk={can(user.role, "ask_assistant")}
+        canTriage={can(user.role, "triage_findings")}
+        status={status}
       />
     </div>
   );

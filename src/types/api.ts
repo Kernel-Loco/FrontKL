@@ -114,10 +114,60 @@ export interface DomainFinding {
   caracteristicas: Caracteristicas;
   detected_at: string;
   last_scan_id: string | null;
+  /** Último cambio de estado (triage, RC-133). null si nadie lo ha marcado. Una API anterior no lo trae. */
+  triage?: FindingTriage | null;
 }
 
 export interface DomainFindings extends ListResponse<DomainFinding> {
   domain: string;
+}
+
+// ---------------------------------------------------------------- triage y remediación (#80, RC-133 y RC-172)
+
+export type TriageAction = "finding.resolved" | "finding.false_positive" | "finding.accepted_risk" | "finding.reopened";
+export type ResolvedReason = "fixed" | "secret_rotated";
+
+export interface FindingTriage {
+  action: TriageAction;
+  at: string;
+  /** Correo de quien lo marcó. null si fue el sistema o personal de la plataforma. */
+  by: string | null;
+  reason: ResolvedReason | null;
+  /** AAAA-MM-DD, solo con riesgo aceptado: ese día vuelve al plan de acción. */
+  review_date: string | null;
+  note: string | null;
+}
+
+/** Filtro `?estado=` de GET /domains/{fqdn}/findings. */
+export type FindingStatusFilter = FindingStatus | "all";
+
+export interface TriageRequest {
+  status: FindingStatus;
+  reason?: ResolvedReason;
+  review_date?: string;
+  note?: string;
+}
+
+export interface TriageResult {
+  id: string;
+  status: FindingStatus;
+  previous_status: FindingStatus;
+  reason: ResolvedReason | null;
+  review_date: string | null;
+  score_recalculated: boolean;
+}
+
+/** GET /domains/{fqdn}/remediation. */
+export interface DomainRemediation {
+  domain: string;
+  total: number;
+  by_status: Record<FindingStatus, number>;
+  closed: number;
+  /** Resueltos entre los que no son falso positivo, en %. null sin hallazgos. */
+  closed_pct: number | null;
+  /** Promedio de días de la detección a la resolución. null sin resueltos. */
+  mean_time_to_remediate_days: number | null;
+  remediated_count: number;
 }
 
 // ---------------------------------------------------------------- score (score.json, historico.json)

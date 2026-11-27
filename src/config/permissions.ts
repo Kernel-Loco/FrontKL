@@ -112,13 +112,23 @@ export const ROLE_PERMISSIONS: Record<Role, readonly SectionId[]> = {
 };
 
 /** Acciones que no son de una sección completa. */
-export type Capability = "register_domain" | "verify_txt" | "request_scan" | "request_report" | "ask_assistant";
+export type Capability =
+  | "register_domain"
+  | "verify_txt"
+  | "request_scan"
+  | "request_report"
+  | "ask_assistant"
+  | "triage_findings";
 
-/** `ask_assistant` (RC-77): el asistente de IA de Hallazgos. La API lo da solo a Analista y Admin. */
+/**
+ * `ask_assistant` (RC-77): el asistente de IA de Hallazgos. La API lo da solo a Analista y Admin.
+ * `triage_findings` (RC-172): marcar un hallazgo como falso positivo, riesgo aceptado o resuelto, o reabrirlo. La API
+ * (POST /findings/{id}/triage, RC-133) lo da solo a Analista y Admin.
+ */
 const CAPABILITIES: Record<Role, readonly Capability[]> = {
-  analista: ["request_scan", "request_report", "ask_assistant"],
+  analista: ["request_scan", "request_report", "ask_assistant", "triage_findings"],
   gerente: ["request_report"],
-  admin: ["register_domain", "verify_txt", "request_scan", "request_report", "ask_assistant"],
+  admin: ["register_domain", "verify_txt", "request_scan", "request_report", "ask_assistant", "triage_findings"],
 };
 
 export function canAccessSection(role: Role, id: SectionId): boolean {

@@ -200,9 +200,10 @@ test("8b. el panel avisa sin repetir, guarda el borrador y ofrece salida según 
 
 test("9. solo Analista y Admin ven el asistente, sobre la lista filtrada de Hallazgos", () => {
   const permisos = leer("../config/permissions.ts");
-  assert.match(permisos, /analista: \["request_scan", "request_report", "ask_assistant"\]/);
+  // triage_findings (RC-172) va después: el asistente sigue solo para Analista y Admin.
+  assert.match(permisos, /analista: \["request_scan", "request_report", "ask_assistant"(, "triage_findings")?\]/);
   assert.match(permisos, /gerente: \["request_report"\]/);
-  assert.match(permisos, /admin: \["register_domain", "verify_txt", "request_scan", "request_report", "ask_assistant"\]/);
+  assert.match(permisos, /admin: \["register_domain", "verify_txt", "request_scan", "request_report", "ask_assistant"(, "triage_findings")?\]/);
   const pagina = leer("../app/(dashboard)/dashboard/hallazgos/page.tsx");
   assert.match(pagina, /canAsk=\{can\(user\.role, "ask_assistant"\)\}/);
   const explorador = leer("../components/screens/hallazgos/FindingsExplorer.tsx");

@@ -1,19 +1,20 @@
 "use client";
 
 import { useId, useMemo, useState } from "react";
-import { SeverityBadge } from "@/components/ui/Badge";
+import { Badge, SeverityBadge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { INPUT, SELECT } from "@/components/ui/Field";
 import { TD, TH } from "@/components/ui/Card";
 import { ApiExport } from "@/components/screens/shared/ApiExport";
 import { SourceAttribution } from "@/components/screens/shared/SourceAttribution";
-import { CATEGORY_LABELS, SEVERITY_LABELS, SOURCE_LABELS } from "@/config/labels";
+import { CATEGORY_LABELS, FINDING_STATUS_LABELS, SEVERITY_LABELS, SOURCE_LABELS } from "@/config/labels";
 import { atribucionesDe } from "@/lib/atribucion";
 import { findingsCountLabel, NO_FINDINGS_PARTIAL } from "@/lib/cobertura";
 import { downloadFindings } from "@/services/exportService";
-import type { Category, DomainFinding, Severity } from "@/types";
+import type { Category, DomainFinding, FindingStatusFilter, Severity } from "@/types";
 import { AssistantPanel } from "./AssistantPanel";
 import { ExplanationPanel } from "./ExplanationPanel";
+import { TriagePanel } from "./TriagePanel";
 
 export function FindingsExplorer({
   domain,
@@ -22,6 +23,8 @@ export function FindingsExplorer({
   partialCoverage = false,
   unscored = false,
   canAsk = false,
+  canTriage = false,
+  status = "open",
 }: {
   domain: string;
   findings: DomainFinding[];
@@ -31,6 +34,10 @@ export function FindingsExplorer({
   unscored?: boolean;
   /** Analista y Admin ven el asistente de IA (RC-77), sobre los hallazgos de la lista filtrada. */
   canAsk?: boolean;
+  /** Analista y Admin marcan falso positivo, riesgo aceptado o resuelto, o reabren (RC-172). */
+  canTriage?: boolean;
+  /** Pestaña de estado de la página (RC-172). Con otra que no sea "open" la tabla muestra el estado de cada uno. */
+  status?: FindingStatusFilter;
 }) {
   const ids = { search: useId(), category: useId(), severity: useId(), rule: useId() };
   const [query, setQuery] = useState("");
@@ -118,7 +125,11 @@ export function FindingsExplorer({
 
       <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
         <div className="overflow-hidden rounded-xl border border-lt-border bg-lt-surface">
-          {visible.length === 0 ? (
+          {visible.length === 0 && findings.length === 0 && status !== "open" ? (
+            <EmptyState title="Ningún hallazgo en este estado">
+              Cuando un Analista o Administrador marque un hallazgo con este estado, aparecerá aquí con quién y cuándo.
+            </EmptyState>
+          ) : visible.length === 0 ? (
             <EmptyState title={findings.length === 0 ? unscored ? "Sin escaneo completo" : partialCoverage ? NO_FINDINGS_PARTIAL : "Sin hallazgos abiertos" : "Ningún hallazgo coincide"}>
               {findings.length === 0
                 ? unscored
@@ -138,6 +149,7 @@ export function FindingsExplorer({
                     <th scope="col" className={TH}>Categoría</th>
                     <th scope="col" className={TH}>Fuente</th>
                     <th scope="col" className={TH}>Criticidad</th>
+                    {status !== "open" && <th scope="col" className={TH}>Estado</th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -164,6 +176,13 @@ export function FindingsExplorer({
                         <td className={TD}>
                           <SeverityBadge severity={f.severity} />
                         </td>
+                        {status !== "open" && (
+                          <td className={TD}>
+                            <Badge tone={f.status === "resolved" ? "green" : f.status === "accepted_risk" ? "amber" : f.status === "false_positive" ? "blue" : "gray"}>
+                              {FINDING_STATUS_LABELS[f.status]}
+                            </Badge>
+                          </td>
+                        )}
                       </tr>
                     );
                   })}
@@ -175,7 +194,12 @@ export function FindingsExplorer({
             </div>
           )}
         </div>
-        {selected && <ExplanationPanel key={selected.id} finding={selected} />}
+        {selected && (
+          <div className="space-y-4">
+            <TriagePanel key={`${selected.id}-${selected.status}`} finding={selected} canTriage={canTriage} />
+            <ExplanationPanel key={selected.id} finding={selected} />
+          </div>
+        )}
       </div>
       {canAsk && findings.length > 0 && <AssistantPanel domain={domain} findings={visible} />}
     </div>
