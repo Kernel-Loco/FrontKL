@@ -1,5 +1,6 @@
 // Lógica sin red del selector de empresa del superadmin (RC-332). Sin imports con @/ para que node --test la cargue.
 import type { OrganizationStatus, PlatformOrganization } from "@/types";
+import { tx } from "@/i18n/tx";
 
 /** Estados en que la API deja trabajar en una empresa (cirdan/api/plataforma.py, ACTIVAS). */
 const WORKABLE: ReadonlySet<OrganizationStatus> = new Set(["trial", "active"]);
@@ -16,7 +17,7 @@ export function canWorkIn(org: PlatformOrganization): boolean {
 
 /** Texto de cada opción: el nombre, y entre paréntesis si es la propia o su estado. */
 export function organizationOptionLabel(org: PlatformOrganization): string {
-  const notes = [org.home ? "tu empresa" : null, STATUS_NOTE[org.status] ?? null].filter(Boolean);
+  const notes = [org.home ? tx("tu empresa") : null, STATUS_NOTE[org.status] ?? null].filter(Boolean);
   return notes.length ? `${org.name} (${notes.join(", ")})` : org.name;
 }
 
@@ -57,12 +58,12 @@ export function refreshListAfterFailedSwitch(status: number | undefined): boolea
 export function switchErrorMessage(status: number | undefined, apiMessage: string | undefined): string {
   switch (status) {
     case 403:
-      return "Tu cuenta ya no tiene permiso de superadmin. Vuelve a iniciar sesión.";
+      return tx("Tu cuenta ya no tiene permiso de superadmin. Vuelve a iniciar sesión.");
     case 404:
-      return "Esa empresa ya no existe. Se intentará actualizar la lista.";
+      return tx("Esa empresa ya no existe. Se intentará actualizar la lista.");
     case 409:
-      return apiMessage || "La empresa está suspendida o cancelada: no se puede trabajar en ella.";
+      return apiMessage || tx("La empresa está suspendida o cancelada: no se puede trabajar en ella.");
     default:
-      return apiMessage || "No pudimos cambiar de empresa. Intenta de nuevo en unos momentos.";
+      return apiMessage || tx("No pudimos cambiar de empresa. Intenta de nuevo en unos momentos.");
   }
 }

@@ -13,6 +13,7 @@ import { getFindingExplanation } from "@/services/domainService";
 import { getErrorMessage } from "@/services/errors";
 import { SHAP_LABELS, shapDisplay, shapLegend, shapPhrase, shapTone } from "@/lib/shap";
 import type { DomainFinding, FindingExplanation } from "@/types";
+import { tx } from "@/i18n/tx";
 
 interface Factor {
   label: string;
@@ -71,19 +72,19 @@ export function ExplanationPanel({ finding }: { finding: DomainFinding }) {
   return (
     <aside aria-labelledby="explicacion-titulo" aria-busy={loading} className="rounded-xl bg-lt-surface p-5">
       <p className="text-xs font-medium text-lt-muted">
-        ¿Por qué tiene severidad {SEVERITY_LABELS[finding.severity].toLowerCase()}?
+        {tx("¿Por qué tiene severidad")}{" "}{SEVERITY_LABELS[finding.severity].toLowerCase()}?
       </p>
       <h2 id="explicacion-titulo" className="mt-1.5 text-lg font-semibold leading-snug text-lt-text">
         {finding.title}
       </h2>
       <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-lt-muted">
         <SeverityBadge severity={finding.severity} />
-        {explanation?.confidence != null && <span>confianza del modelo {explanation.confidence.toFixed(2)}</span>}
-        {explanation?.method === "rules" && <span>calculado por reglas</span>}
+        {explanation?.confidence != null && <span>{tx("confianza del modelo")}{" "}{explanation.confidence.toFixed(2)}</span>}
+        {explanation?.method === "rules" && <span>{tx("calculado por reglas")}</span>}
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-10" role="status" aria-label="Cargando explicación">
+        <div className="flex justify-center py-10" role="status" aria-label={tx("Cargando explicación")}>
           <Spinner className="h-5 w-5 text-lt-muted" />
         </div>
       ) : state?.error ? (
@@ -95,22 +96,22 @@ export function ExplanationPanel({ finding }: { finding: DomainFinding }) {
           <>
             {(explanation.rule_title || explanation.meaning) && (
               <section aria-labelledby="explicacion-significa" className="mt-4">
-                <h3 id="explicacion-significa" className="text-sm text-lt-text">Qué significa</h3>
+                <h3 id="explicacion-significa" className="text-sm text-lt-text">{tx("Qué significa")}</h3>
                 {explanation.rule_title && <p className="mt-1 text-sm font-semibold text-lt-text">{explanation.rule_title}</p>}
                 {explanation.meaning && <p className="mt-1 text-sm leading-relaxed text-lt-muted">{explanation.meaning}</p>}
               </section>
             )}
             <section aria-labelledby="explicacion-calculo" className="mt-4">
-              <h3 id="explicacion-calculo" className="text-sm text-lt-text">Cómo se calculó</h3>
+              <h3 id="explicacion-calculo" className="text-sm text-lt-text">{tx("Cómo se calculó")}</h3>
               <p className="mt-1 text-sm leading-relaxed text-lt-muted">
                 {scoreMethodText(explanation.method, explanation.model_version, explanation.model_fallback_reason)}.
-                {explanation.explanation_model_version && <> La confianza y el SHAP son del modelo {explanation.explanation_model_version}.</>}
+                {explanation.explanation_model_version && <> {" "}{tx("La confianza y el SHAP son del modelo")}{" "}{explanation.explanation_model_version}.</>}
               </p>
             </section>
             <p className="mt-4 text-sm leading-relaxed text-lt-muted">{explanation.summary}</p>
             {topShap.length > 0 ? (
               <>
-                <h3 className="mt-5 text-sm text-lt-text">Lo que más influyó</h3>
+                <h3 className="mt-5 text-sm text-lt-text">{tx("Lo que más influyó")}</h3>
                 <ol className="mt-3 space-y-2">
                   {topShap.map((factor, index) => (
                     <li key={`${factor.feature}-${index}`} className="text-sm leading-relaxed text-lt-text">
@@ -119,7 +120,7 @@ export function ExplanationPanel({ finding }: { finding: DomainFinding }) {
                   ))}
                 </ol>
                 <details className="mt-4 border-t border-lt-border pt-3">
-                  <summary className="cursor-pointer text-xs text-lt-muted hover:text-lt-text">Ver detalle SHAP</summary>
+                  <summary className="cursor-pointer text-xs text-lt-muted hover:text-lt-text">{tx("Ver detalle SHAP")}</summary>
                   <p className="mt-2 text-[11px] text-lt-faint">{shapLegend(explanation.model_prediction)}</p>
                   <ul className="mt-3 space-y-3">
                     {factors.map((f) => (
@@ -141,7 +142,7 @@ export function ExplanationPanel({ finding }: { finding: DomainFinding }) {
               </>
             ) : (
               <>
-                <h3 className="mt-5 text-sm text-lt-text">Factores que más pesaron</h3>
+                <h3 className="mt-5 text-sm text-lt-text">{tx("Factores que más pesaron")}</h3>
                 <ul className="mt-3 space-y-3">
                   {factors.map((f) => (
                     <li key={f.label}>
@@ -162,16 +163,15 @@ export function ExplanationPanel({ finding }: { finding: DomainFinding }) {
             )}
             {explanation.method === "rules" && (
               <p className="mt-2 text-[11px] text-lt-faint">
-                Suma {explanation.penalty} de {explanation.max_penalty} puntos posibles en su categoría.
-              </p>
+                {tx("Suma")}{" "}{tx("{0} de {1}", explanation.penalty, explanation.max_penalty)}{" "}{tx("puntos posibles en su categoría.")}</p>
             )}
             <div className="mt-5 rounded-lg bg-lt-raised p-4">
-              <p className="text-sm font-semibold text-lt-text">Recomendación</p>
+              <p className="text-sm font-semibold text-lt-text">{tx("Recomendación")}</p>
               <p className="mt-1 text-sm leading-relaxed text-lt-muted">{explanation.recommendation}</p>
             </div>
             {marcosDelHallazgo(explanation.frameworks ?? finding.frameworks).length > 0 && (
               <div className="mt-5 border-t border-lt-border pt-4">
-                <p className="text-xs font-semibold text-lt-text">Marcos de referencia</p>
+                <p className="text-xs font-semibold text-lt-text">{tx("Marcos de referencia")}</p>
                 <dl className="mt-2 space-y-1.5 text-xs">
                   {marcosDelHallazgo(explanation.frameworks ?? finding.frameworks).map((m) => (
                     <div key={m.marco} className="flex gap-2">
@@ -203,7 +203,7 @@ export function ExplanationPanel({ finding }: { finding: DomainFinding }) {
               <dd className="mt-0.5 text-lt-text tabular-nums">{cveFacts(finding).epss}</dd>
             </div>
             <div>
-              <dt className="text-lt-faint">KEV de CISA</dt>
+              <dt className="text-lt-faint">{tx("KEV de CISA")}</dt>
               <dd className={`mt-0.5 ${finding.in_kev ? "font-semibold text-lt-red" : "text-lt-text"}`}>
                 {cveFacts(finding).kev}
               </dd>
@@ -215,27 +215,27 @@ export function ExplanationPanel({ finding }: { finding: DomainFinding }) {
       )}
       <dl className="mt-5 grid grid-cols-2 gap-3 border-t border-lt-border pt-4 text-xs">
         <div>
-          <dt className="text-lt-faint">Tipo</dt>
+          <dt className="text-lt-faint">{tx("Tipo")}</dt>
           <dd className="mt-0.5 text-lt-text">{c.tipo.replace(/_/g, " ")}</dd>
         </div>
         <div>
-          <dt className="text-lt-faint">Antigüedad</dt>
+          <dt className="text-lt-faint">{tx("Antigüedad")}</dt>
           <dd className="mt-0.5 text-lt-text">
-            {c.antiguedad_dias} {c.antiguedad_dias === 1 ? "día" : "días"}
+            {c.antiguedad_dias} {c.antiguedad_dias === 1 ? tx("día") : tx("días")}
           </dd>
         </div>
         <div>
-          <dt className="text-lt-faint">Exposición</dt>
+          <dt className="text-lt-faint">{tx("Exposición")}</dt>
           <dd className="mt-0.5 text-lt-text">{EXPOSICION_LABELS[c.exposicion]}</dd>
         </div>
         <div>
-          <dt className="text-lt-faint">Sensibilidad</dt>
+          <dt className="text-lt-faint">{tx("Sensibilidad")}</dt>
           <dd className="mt-0.5 text-lt-text">{SENSIBILIDAD_LABELS[c.sensibilidad]}</dd>
         </div>
       </dl>
       {Object.keys(finding.evidence).length > 0 && (
         <details className="mt-4 text-xs">
-          <summary className="cursor-pointer text-lt-muted hover:text-lt-text">Evidencia</summary>
+          <summary className="cursor-pointer text-lt-muted hover:text-lt-text">{tx("Evidencia")}</summary>
           <dl className="mt-2 space-y-1.5 rounded-lg bg-lt-bg p-3 tabular-nums text-[11px]">
             {Object.entries(finding.evidence).map(([key, value]) => (
               <div key={key} className="flex gap-2">
@@ -248,8 +248,7 @@ export function ExplanationPanel({ finding }: { finding: DomainFinding }) {
       )}
       {atribucion && <SourceAttribution atribucion={atribucion} className="mt-4" />}
       <p className="mt-4 text-[11px] leading-relaxed text-lt-faint">
-        Solo observación: se reporta la exposición; nunca se usan las credenciales filtradas ni se accede a los sistemas.
-      </p>
+        {tx("Solo observación: se reporta la exposición; nunca se usan las credenciales filtradas ni se accede a los sistemas.")}</p>
     </aside>
   );
 }

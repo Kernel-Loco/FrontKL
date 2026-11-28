@@ -26,7 +26,7 @@ export default function AsvsPage() {
   const sinRequisitos = capitulos.filter((c) => !conRequisitos.some((con) => con.id === c.id));
 
   return (
-    <div className="lt-dark min-h-dvh bg-lt-bg text-lt-text">
+    <div lang="es" className="lt-dark min-h-dvh bg-lt-bg text-lt-text">
       <header className="border-b border-lt-border">
         <div className="mx-auto flex w-full max-w-4xl items-center justify-between gap-4 px-4 py-4 md:px-8">
           <Link href="/" aria-label="LowTide, ir al portal" className="rounded-sm">

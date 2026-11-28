@@ -24,15 +24,16 @@ import type {
   SourceRunStatus,
   TxtStatus,
 } from "@/types";
+import { localized } from "@/i18n/tx";
 
-export const SEVERITY_LABELS: Record<Severity, string> = {
+export const SEVERITY_LABELS: Record<Severity, string> = localized({
   critical: "Crítica",
   high: "Alta",
   medium: "Media",
   low: "Baja",
-};
+});
 
-export const SOURCE_LABELS: Record<FindingSource, string> = {
+export const SOURCE_LABELS: Record<FindingSource, string> = localized({
   ct_logs: "crt.sh",
   dns: "DNS",
   whois: "WHOIS",
@@ -40,35 +41,35 @@ export const SOURCE_LABELS: Record<FindingSource, string> = {
   github: "GitHub",
   censys: "Censys",
   hibp: "Have I Been Pwned",
-};
+});
 
 /** Bandas del score (criterio #29): bajo 0–39, medio 40–59, alto 60–79, crítico 80–100. */
-export const BAND_LABELS: Record<Band, string> = {
+export const BAND_LABELS: Record<Band, string> = localized({
   low: "Bajo",
   medium: "Medio",
   high: "Alto",
   critical: "Crítico",
-};
+});
 
 /** Las 4 categorías del reto, en el orden en que se muestran. */
-export const CATEGORY_LABELS: Record<Category, string> = {
+export const CATEGORY_LABELS: Record<Category, string> = localized({
   infrastructure: "Infraestructura",
   digital_identity: "Identidad digital",
   configuration: "Configuración",
   data_leaks: "Fugas de datos",
-};
+});
 
-export const SCORE_METHOD_LABELS: Record<ScoreMethod, string> = {
+export const SCORE_METHOD_LABELS: Record<ScoreMethod, string> = localized({
   rules: "Reglas",
   ml: "Modelo de ML",
-};
+});
 
 /** Por qué el score salió por reglas y no por el modelo (domain_scores.model_fallback_reason). */
-export const MODEL_FALLBACK_LABELS: Record<string, string> = {
+export const MODEL_FALLBACK_LABELS: Record<string, string> = localized({
   macro_f1_no_supera_reglas: "el modelo todavía no supera a las reglas",
   artefacto_ml_no_disponible: "el modelo no está disponible",
   inferencia_ml_no_disponible: "el modelo no pudo calcular este score",
-};
+});
 
 /**
  * Método del score con la versión del modelo o, si cayó a reglas, el motivo (RC-229). Lo usan el histórico y el panel
@@ -81,34 +82,34 @@ export function scoreMethodText(method: ScoreMethod, modelVersion?: string | nul
     : SCORE_METHOD_LABELS.rules;
 }
 
-export const SCORE_REASON_LABELS: Record<ScoreReason, string> = {
+export const SCORE_REASON_LABELS: Record<ScoreReason, string> = localized({
   scan: "Escaneo",
   intel_update: "Recálculo por información de amenazas nueva",
   rules_change: "Recálculo por cambio de reglas",
   correction: "Corrección del score guardado",
-};
+});
 
-export const DOMAIN_STATUS_LABELS: Record<DomainStatus, string> = {
+export const DOMAIN_STATUS_LABELS: Record<DomainStatus, string> = localized({
   pending_verification: "Pendiente de verificar",
   verified: "Verificado",
   paused: "En pausa",
   removed: "Eliminado",
-};
+});
 
-export const AUTHORIZATION_STATUS_LABELS: Record<AuthorizationStatus, string> = {
+export const AUTHORIZATION_STATUS_LABELS: Record<AuthorizationStatus, string> = localized({
   valid: "Vigente",
   expired: "Vencida",
   revoked: "Revocada",
   missing: "Sin autorización",
-};
+});
 
-export const TXT_STATUS_LABELS: Record<TxtStatus, string> = {
+export const TXT_STATUS_LABELS: Record<TxtStatus, string> = localized({
   verified: "Verificado",
   missing: "No encontrado",
-};
+});
 
 /** Por qué no se puede escanear un dominio. */
-export const SCAN_BLOCK_REASON_LABELS: Record<ScanBlockReason, string> = {
+export const SCAN_BLOCK_REASON_LABELS: Record<ScanBlockReason, string> = localized({
   authorization_missing: "Falta la autorización firmada",
   authorization_not_started: "La autorización todavía no entra en vigor",
   authorization_expired: "La autorización venció",
@@ -119,21 +120,21 @@ export const SCAN_BLOCK_REASON_LABELS: Record<ScanBlockReason, string> = {
   domain_not_found: "El dominio no está registrado",
   scan_in_progress: "Ya hay un escaneo en curso",
   live_scan_not_allowed: "Dominio de la demo: no se consulta en vivo",
-};
+});
 
-export const FINDING_STATUS_LABELS: Record<FindingStatus, string> = {
+export const FINDING_STATUS_LABELS: Record<FindingStatus, string> = localized({
   open: "Abierto",
   resolved: "Resuelto",
   accepted_risk: "Riesgo aceptado",
   false_positive: "Falso positivo",
-};
+});
 
-export const RECURRENCE_LABELS: Record<Recurrence, string> = {
+export const RECURRENCE_LABELS: Record<Recurrence, string> = localized({
   new: "Nuevo",
   recurring: "Recurrente",
-};
+});
 
-export const ASSET_TYPE_LABELS: Record<AssetType, string> = {
+export const ASSET_TYPE_LABELS: Record<AssetType, string> = localized({
   domain: "Dominio",
   subdomain: "Subdominio",
   ip: "IP",
@@ -141,82 +142,82 @@ export const ASSET_TYPE_LABELS: Record<AssetType, string> = {
   certificate: "Certificado",
   email: "Correo",
   api_doc: "Documentación de API",
-};
+});
 
-export const EXPOSICION_LABELS: Record<Caracteristicas["exposicion"], string> = {
+export const EXPOSICION_LABELS: Record<Caracteristicas["exposicion"], string> = localized({
   directa: "Directa (responde en internet)",
   publica: "Pública (dato público)",
-};
+});
 
-export const SENSIBILIDAD_LABELS: Record<Caracteristicas["sensibilidad"], string> = {
+export const SENSIBILIDAD_LABELS: Record<Caracteristicas["sensibilidad"], string> = localized({
   baja: "Baja",
   media: "Media",
   alta: "Alta",
-};
+});
 
-export const SCAN_STATUS_LABELS: Record<ScanStatus, string> = {
+export const SCAN_STATUS_LABELS: Record<ScanStatus, string> = localized({
   queued: "En cola",
   running: "En curso",
   completed: "Completado",
   partial: "Parcial",
   failed: "Fallido",
-};
+});
 
-export const SCAN_TRIGGER_LABELS: Record<ScanTrigger, string> = {
+export const SCAN_TRIGGER_LABELS: Record<ScanTrigger, string> = localized({
   scheduled: "Programado",
   on_demand: "Manual",
   api: "API",
-};
+});
 
-export const SOURCE_RUN_STATUS_LABELS: Record<SourceRunStatus, string> = {
+export const SOURCE_RUN_STATUS_LABELS: Record<SourceRunStatus, string> = localized({
   pending: "Pendiente",
   running: "En curso",
   succeeded: "Correcto",
   retrying: "Reintentando",
   failed: "Falló",
-};
+});
 
-export const REPORT_KIND_LABELS: Record<ReportKind, string> = {
+export const REPORT_KIND_LABELS: Record<ReportKind, string> = localized({
   weekly_summary: "Resumen semanal",
   pdf_report: "Reporte ejecutivo (PDF)",
   html_report: "Reporte ejecutivo (HTML)",
-};
+});
 
-export const REPORT_STATUS_LABELS: Record<ReportStatus, string> = {
+export const REPORT_STATUS_LABELS: Record<ReportStatus, string> = localized({
   pending: "Pendiente",
   generating: "Generando",
   ready: "Listo",
   failed: "Falló",
-};
+});
 
 export const REPORT_FORMAT_LABELS: Record<ReportFormat, string> = {
   pdf: "PDF",
   html: "HTML",
 };
 
-export const INTEGRATION_KIND_LABELS: Record<IntegrationKind, string> = {
+export const INTEGRATION_KIND_LABELS: Record<IntegrationKind, string> = localized({
   webhook: "Webhook",
   siem_cef: "SIEM (CEF)",
   email: "Correo",
-};
+});
 
-export const ALERT_EVENT_LABELS: Record<AlertEvent, { label: string; description: string }> = {
+export const ALERT_EVENT_LABELS: Record<AlertEvent, { label: string; description: string }> = localized({
   "score.above_threshold": { label: "Score en el umbral o arriba", description: "Cada cálculo en que el score de un dominio llega al umbral o lo pasa." },
   "finding.created": { label: "Hallazgo nuevo", description: "Un escaneo encuentra un hallazgo que no existía." },
   "finding.resolved": { label: "Hallazgo resuelto", description: "Un hallazgo deja de aparecer en el escaneo." },
   "authorization.expiring": { label: "Autorización por vencer", description: "Faltan 30 días o menos para que venza la autorización firmada de un dominio." },
   "scan.partial": { label: "Escaneo parcial", description: "Alguna fuente falló después de sus reintentos, revisó solo una parte de sus repos o IP, o hay reglas que las fuentes todavía no pueden revisar, así que el score puede estar incompleto." },
-};
+});
 
-export const AUDIT_ACTOR_LABELS: Record<AuditActorType, string> = {
+export const AUDIT_ACTOR_LABELS: Record<AuditActorType, string> = localized({
   user: "Usuario",
   system: "Sistema",
   api_key: "Llave de API",
   platform: "Superadmin de LowTide",
-};
+});
 
 /** Acciones de la bitácora (audit_log.action). Las que no estén aquí se muestran con su código. */
-export const AUDIT_ACTION_LABELS: Record<string, string> = {
+export const AUDIT_ACTION_LABELS: Record<string, string> = localized({
   "domain.added": "Registró un dominio",
   "authorization.uploaded": "Subió una autorización firmada",
   "organization.threshold_changed": "Cambió el umbral de alerta",
@@ -233,12 +234,12 @@ export const AUDIT_ACTION_LABELS: Record<string, string> = {
   "platform.organization_switched": "Cambió de empresa activa (superadmin)",
   "platform.organization_entered": "El superadmin de LowTide entró a la empresa",
   "platform.organization_switch_failed": "Un cambio de empresa del superadmin no se aplicó",
-};
+});
 
-export const API_SCOPE_LABELS: Record<string, string> = {
+export const API_SCOPE_LABELS: Record<string, string> = localized({
   "findings:read": "Leer hallazgos",
   "scores:read": "Leer scores",
   "domains:read": "Leer dominios",
   "reports:read": "Leer reportes",
   "scans:write": "Lanzar escaneos",
-};
+});

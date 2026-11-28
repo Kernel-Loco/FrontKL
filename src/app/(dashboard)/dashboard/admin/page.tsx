@@ -15,8 +15,9 @@ import { ROLES } from "@/types";
 import { getApiKeys, getAuditLog, getIntegrations } from "@/services/adminService";
 import { getDomains } from "@/services/queries";
 import { getUsers } from "@/services/userService";
+import { tx, localized } from "@/i18n/tx";
 
-export const metadata: Metadata = { title: "Administración" };
+export const metadata: Metadata = localized({ title: "Administración" });
 
 export default async function AdminOverviewPage() {
   const { forbidden } = await checkSectionAccess("admin");
@@ -29,19 +30,19 @@ export default async function AdminOverviewPage() {
 
   return (
     <div className="space-y-8">
-      <PageHeader title="Administración" description="Estado de la organización: usuarios, dominios, accesos e integraciones." />
-      <AvisoSimulado datos={["getUsers", "getApiKeys", "getIntegrations", "getAuditLog"]} datosDe="usuarios, llaves de API, integraciones y actividad reciente" />
+      <PageHeader title={tx("Administración")} description={tx("Estado de la organización: usuarios, dominios, accesos e integraciones.")} />
+      <AvisoSimulado datos={["getUsers", "getApiKeys", "getIntegrations", "getAuditLog"]} datosDe={tx("usuarios, llaves de API, integraciones y actividad reciente")} />
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiTile label="Usuarios activos" value={users.items.filter((u) => u.is_active).length} hint={`${users.total} en total`} />
-        <KpiTile label="Dominios" value={domains.items.filter((d) => d.status !== "removed").length} hint={`${attention.length} requieren atención`} />
-        <KpiTile label="Llaves de API activas" value={activeKeys} />
-        <KpiTile label="Integraciones activas" value={integrations.items.filter((i) => i.enabled).length} hint={`${integrations.total} configuradas`} />
+        <KpiTile label={tx("Usuarios activos")} value={users.items.filter((u) => u.is_active).length} hint={tx("{0} en total", users.total)} />
+        <KpiTile label={tx("Dominios")} value={domains.items.filter((d) => d.status !== "removed").length} hint={tx("{0} requieren atención", attention.length)} />
+        <KpiTile label={tx("Llaves de API activas")} value={activeKeys} />
+        <KpiTile label={tx("Integraciones activas")} value={integrations.items.filter((i) => i.enabled).length} hint={tx("{0} configuradas", integrations.total)} />
       </div>
       <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)]">
         <div className="space-y-6">
-          <Card title="Requieren atención" icon={<TriangleAlert aria-hidden="true" className="h-4 w-4" />} action={<Link href={SECTIONS.dominios.href} className={TEXT_LINK}>Ver dominios</Link>}>
+          <Card title={tx("Requieren atención")} icon={<TriangleAlert aria-hidden="true" className="h-4 w-4" />} action={<Link href={SECTIONS.dominios.href} className={TEXT_LINK}>{tx("Ver dominios")}</Link>}>
             {attention.length === 0 ? (
-              <p className="text-sm text-lt-muted">Todos los dominios están autorizados y verificados.</p>
+              <p className="text-sm text-lt-muted">{tx("Todos los dominios están autorizados y verificados.")}</p>
             ) : (
               <ul className="-my-2 divide-y divide-lt-border">
                 {attention.map((d) => {
@@ -58,7 +59,7 @@ export default async function AdminOverviewPage() {
               </ul>
             )}
           </Card>
-          <Card title="Usuarios por rol" action={<Link href={SECTIONS.usuarios.href} className={TEXT_LINK}>Gestionar</Link>}>
+          <Card title={tx("Usuarios por rol")} action={<Link href={SECTIONS.usuarios.href} className={TEXT_LINK}>{tx("Gestionar")}</Link>}>
             <ul className="space-y-2.5">
               {ROLES.map((role) => (
                 <li key={role} className="flex items-center justify-between text-sm">
@@ -69,7 +70,7 @@ export default async function AdminOverviewPage() {
             </ul>
           </Card>
         </div>
-        <Card title="Actividad reciente" padded={false} action={<Link href={SECTIONS.bitacora.href} className={TEXT_LINK}>Ver bitácora</Link>}>
+        <Card title={tx("Actividad reciente")} padded={false} action={<Link href={SECTIONS.bitacora.href} className={TEXT_LINK}>{tx("Ver bitácora")}</Link>}>
           <AuditTable entries={audit.items.slice(0, 5)} />
         </Card>
       </div>

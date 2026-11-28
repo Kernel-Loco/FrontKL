@@ -26,6 +26,7 @@ import { conVista, type DatosArbol, type Vista } from "@/lib/arbolActivos";
 import { AssetsTree } from "./AssetsTree";
 import { downloadAssets } from "@/services/exportService";
 import type { OrganizationAssets } from "@/types";
+import { tx } from "@/i18n/tx";
 
 const hayFiltros = (f: FiltrosActivos) => Boolean(f.dominio || f.tipo || f.texto);
 
@@ -85,78 +86,77 @@ export function AssetsInventory({
 
   return (
     <Card padded={false}>
-      <form onSubmit={buscar} role="search" aria-label="Filtrar activos"
+      <form onSubmit={buscar} role="search" aria-label={tx("Filtrar activos")}
         className="grid gap-3 border-b border-lt-border p-5 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,2fr)_auto]">
         <div>
-          <label htmlFor={ids.dominio} className="mb-1.5 block text-xs font-medium text-lt-muted">Dominio</label>
+          <label htmlFor={ids.dominio} className="mb-1.5 block text-xs font-medium text-lt-muted">{tx("Dominio")}</label>
           <select id={ids.dominio} value={dominio} onChange={(e) => setDominio(e.target.value)}
             className={`${SELECT} tabular-nums text-[13px]`}>
-            <option value="">Todos</option>
+            <option value="">{tx("Todos")}</option>
             {dominios.map((d) => <option key={d} value={d}>{d}</option>)}
           </select>
         </div>
         <div>
-          <label htmlFor={ids.tipo} className="mb-1.5 block text-xs font-medium text-lt-muted">Tipo</label>
+          <label htmlFor={ids.tipo} className="mb-1.5 block text-xs font-medium text-lt-muted">{tx("Tipo")}</label>
           <select id={ids.tipo} value={tipo} onChange={(e) => setTipo(e.target.value as TipoActivoFiltro | "")}
             className={SELECT}>
-            <option value="">Todos</option>
+            <option value="">{tx("Todos")}</option>
             {TIPOS_ACTIVO.map((t) => <option key={t} value={t}>{ASSET_TYPE_LABELS[t]}</option>)}
           </select>
         </div>
         <div>
-          <label htmlFor={ids.texto} className="mb-1.5 block text-xs font-medium text-lt-muted">Buscar</label>
+          <label htmlFor={ids.texto} className="mb-1.5 block text-xs font-medium text-lt-muted">{tx("Buscar")}</label>
           <input id={ids.texto} type="search" value={texto} maxLength={200} onChange={(e) => setTexto(e.target.value)}
-            placeholder="Subdominio, IP, correo…" className={INPUT} />
+            placeholder={tx("Subdominio, IP, correo…")} className={INPUT} />
         </div>
         <div className="flex items-end gap-2">
-          <ActionButton type="submit" variant="secondary">Buscar</ActionButton>
-          {hayFiltros(filtros) && <ActionLink href={`${pathname}${conVista("", vista)}`} variant="ghost">Limpiar</ActionLink>}
+          <ActionButton type="submit" variant="secondary">{tx("Buscar")}</ActionButton>
+          {hayFiltros(filtros) && <ActionLink href={`${pathname}${conVista("", vista)}`} variant="ghost">{tx("Limpiar")}</ActionLink>}
         </div>
       </form>
 
       <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3">
         <p className="text-xs text-lt-muted" aria-live="polite">
           {conteo(total, activos.offset, enVista)}
-          {hayFiltros(filtros) && " con estos filtros"}
+          {hayFiltros(filtros) && tx(" con estos filtros")}
         </p>
         <div className="flex flex-col items-end gap-1">
-          <ApiExport filename={filtros.dominio ? `${filtros.dominio}-activos` : "activos"} label="Exportar activos"
+          <ApiExport filename={filtros.dominio ? `${filtros.dominio}-activos` : "activos"} label={tx("Exportar activos")}
             formats={["csv"]} disabled={total === 0 || sinCarta}
             download={(_, signal) => downloadAssets(consultaActivos(filtros, false), signal)} />
           <p className="text-[11px] text-lt-faint">
             {sinCarta
               ? filtros.dominio
-                ? "Este dominio no tiene autorización vigente: no se puede exportar."
-                : "Ningún dominio tiene autorización vigente: no hay nada que exportar."
-              : "Todas las páginas con estos filtros, solo de dominios con autorización vigente."}
+                ? tx("Este dominio no tiene autorización vigente: no se puede exportar.")
+                : tx("Ningún dominio tiene autorización vigente: no hay nada que exportar.")
+              : tx("Todas las páginas con estos filtros, solo de dominios con autorización vigente.")}
           </p>
         </div>
       </div>
 
       {enVista === 0 ? (
         fueraDeRango && !arbol ? (
-          <EmptyState title="Esta página no existe">
-            Los filtros dan {ultima} {ultima === 1 ? "página" : "páginas"}.{" "}
-            <Link href={enlacePagina(1)} className={TEXT_LINK}>Ir a la primera</Link>
+          <EmptyState title={tx("Esta página no existe")}>
+            {tx("Los filtros dan")}{" "}{ultima} {ultima === 1 ? tx("página") : tx("páginas")}.{" "}
+            <Link href={enlacePagina(1)} className={TEXT_LINK}>{tx("Ir a la primera")}</Link>
           </EmptyState>
         ) : hayFiltros(filtros) ? (
-          <EmptyState title="Ningún activo coincide">Prueba con otra búsqueda o quita los filtros.</EmptyState>
+          <EmptyState title={tx("Ningún activo coincide")}>{tx("Prueba con otra búsqueda o quita los filtros.")}</EmptyState>
         ) : (
-          <EmptyState title="Sin activos todavía">Aparecen después del primer escaneo de un dominio autorizado.</EmptyState>
+          <EmptyState title={tx("Sin activos todavía")}>{tx("Aparecen después del primer escaneo de un dominio autorizado.")}</EmptyState>
         )
       ) : arbol ? (
         <>
           <div role="status" className="space-y-1 px-5 pb-3 text-xs text-lt-amber empty:hidden">
             {arbol.fallidas > 0 ? (
               <p>
-                No se pudieron traer {arbol.fallidas} de {arbol.partes} partes de la lista: el árbol muestra {enVista} de{" "}
-                {cantidad(total, "activo")} y algunos pueden salir sueltos. Vuelve a cargar la página.
-              </p>
+                {tx("No se pudieron traer")}{" "}{tx("{0} de {1}", arbol.fallidas, arbol.partes)}{" "}{tx("partes de la lista: el árbol muestra")}{" "}{tx("{0} de {1}", enVista, cantidad(total, "activo"))}{" "}
+                {tx("y algunos pueden salir sueltos. Vuelve a cargar la página.")}</p>
             ) : total > enVista && (
-              <p>El árbol muestra {enVista} de {cantidad(total, "activo")}. Filtra por dominio o tipo para ver el resto.</p>
+              <p>{tx("El árbol muestra")}{" "}{tx("{0} de {1}", enVista, cantidad(total, "activo"))}{tx(". Filtra por dominio o tipo para ver el resto.")}</p>
             )}
             {arbol.cambio && (
-              <p>La lista cambió mientras se armaba el árbol (un escaneo en curso): puede faltar o sobrar un activo. Vuelve a cargar la página.</p>
+              <p>{tx("La lista cambió mientras se armaba el árbol (un escaneo en curso): puede faltar o sobrar un activo. Vuelve a cargar la página.")}</p>
             )}
           </div>
           <AssetsTree key={clave} activos={arbol.activos} canOpenDetail={canOpenDetail} />
@@ -164,15 +164,15 @@ export function AssetsInventory({
       ) : (
         <TableWrap>
           <table className="w-full min-w-[820px]">
-            <caption className="sr-only">Activos de la organización</caption>
+            <caption className="sr-only">{tx("Activos de la organización")}</caption>
             <thead>
               <tr>
-                <th scope="col" className={TH}>Activo</th>
-                <th scope="col" className={TH}>Tipo</th>
-                <th scope="col" className={TH}>Dominio</th>
-                <th scope="col" className={TH}>Pertenece a</th>
-                <th scope="col" className={TH}>Visto por primera vez</th>
-                <th scope="col" className={TH}>Visto por última vez</th>
+                <th scope="col" className={TH}>{tx("Activo")}</th>
+                <th scope="col" className={TH}>{tx("Tipo")}</th>
+                <th scope="col" className={TH}>{tx("Dominio")}</th>
+                <th scope="col" className={TH}>{tx("Pertenece a")}</th>
+                <th scope="col" className={TH}>{tx("Visto por primera vez")}</th>
+                <th scope="col" className={TH}>{tx("Visto por última vez")}</th>
               </tr>
             </thead>
             <tbody>
@@ -196,13 +196,13 @@ export function AssetsInventory({
       )}
 
       {vista === "lista" && total > POR_PAGINA && !fueraDeRango && (
-        <nav aria-label="Páginas de activos" className="flex items-center justify-between gap-3 border-t border-lt-border px-5 py-3">
+        <nav aria-label={tx("Páginas de activos")} className="flex items-center justify-between gap-3 border-t border-lt-border px-5 py-3">
           {filtros.pagina > 1
-            ? <ActionLink href={enlacePagina(Math.min(filtros.pagina - 1, ultima))} size="sm"><ChevronLeft aria-hidden="true" className="h-4 w-4" />Anterior</ActionLink>
+            ? <ActionLink href={enlacePagina(Math.min(filtros.pagina - 1, ultima))} size="sm"><ChevronLeft aria-hidden="true" className="h-4 w-4" />{tx("Anterior")}</ActionLink>
             : <span />}
-          <span className="text-xs text-lt-muted">Página {filtros.pagina} de {ultima}</span>
+          <span className="text-xs text-lt-muted">{tx("Página")}{" "}{tx("{0} de {1}", filtros.pagina, ultima)}</span>
           {filtros.pagina < ultima
-            ? <ActionLink href={enlacePagina(filtros.pagina + 1)} size="sm">Siguiente<ChevronRight aria-hidden="true" className="h-4 w-4" /></ActionLink>
+            ? <ActionLink href={enlacePagina(filtros.pagina + 1)} size="sm">{tx("Siguiente")}<ChevronRight aria-hidden="true" className="h-4 w-4" /></ActionLink>
             : <span />}
         </nav>
       )}

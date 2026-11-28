@@ -12,11 +12,12 @@ import { esSimulada } from "@/config/simulado";
 import { createIntegration, setIntegrationEnabled } from "@/services/adminService";
 import { getErrorMessage } from "@/services/errors";
 import type { AlertEvent, Integration, IntegrationKind } from "@/types";
+import { tx } from "@/i18n/tx";
 
 const EVENTS = Object.keys(ALERT_EVENT_LABELS) as AlertEvent[];
 
 function eventLabel(event: string) {
-  return event in ALERT_EVENT_LABELS ? ALERT_EVENT_LABELS[event as AlertEvent].label : event === "report.weekly_summary" ? "Resumen semanal" : event;
+  return event in ALERT_EVENT_LABELS ? ALERT_EVENT_LABELS[event as AlertEvent].label : event === "report.weekly_summary" ? tx("Resumen semanal") : event;
 }
 
 export function IntegrationsManager({ initial }: { initial: Integration[] }) {
@@ -37,7 +38,7 @@ export function IntegrationsManager({ initial }: { initial: Integration[] }) {
       const created = await createIntegration({ kind, name: String(data.get("name") ?? ""), endpoint: String(data.get("endpoint") ?? "").trim(), events });
       setItems((current) => [...current, created]);
       form.reset();
-      setResult({ tone: "success", message: esSimulada("createIntegration") ? `Simulado. «${created.name}» quedó en la lista, sin evento de prueba.` : `«${created.name}» quedó activa. Enviaremos un evento de prueba.` });
+      setResult({ tone: "success", message: esSimulada("createIntegration") ? tx("Simulado. «{0}» quedó en la lista, sin evento de prueba.", created.name) : tx("«{0}» quedó activa. Enviaremos un evento de prueba.", created.name) });
     } catch (error) {
       setResult({ tone: "error", message: getErrorMessage(error) });
     } finally {
@@ -59,19 +60,19 @@ export function IntegrationsManager({ initial }: { initial: Integration[] }) {
 
   return (
     <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)]">
-      <Card title="Nueva integración" description="LowTide envía cada evento firmado con HMAC." icon={<Webhook aria-hidden="true" className="h-4 w-4" />}>
+      <Card title={tx("Nueva integración")} description={tx("LowTide envía cada evento firmado con HMAC.")} icon={<Webhook aria-hidden="true" className="h-4 w-4" />}>
         <form onSubmit={onCreate} noValidate className="space-y-4">
-          <Field label="Tipo" htmlFor="int-kind">
+          <Field label={tx("Tipo")} htmlFor="int-kind">
             <select id="int-kind" value={kind} onChange={(e) => setKind(e.target.value as IntegrationKind)} className={SELECT}>
               {(Object.keys(INTEGRATION_KIND_LABELS) as IntegrationKind[]).map((k) => (
                 <option key={k} value={k}>{INTEGRATION_KIND_LABELS[k]}</option>
               ))}
             </select>
           </Field>
-          <Field label="Nombre" htmlFor="int-name">
-            <input id="int-name" name="name" placeholder="Canal de seguridad" className={INPUT} autoComplete="off" />
+          <Field label={tx("Nombre")} htmlFor="int-name">
+            <input id="int-name" name="name" placeholder={tx("Canal de seguridad")} className={INPUT} autoComplete="off" />
           </Field>
-          <Field label={kind === "email" ? "Correo" : "URL (https)"} htmlFor="int-endpoint">
+          <Field label={kind === "email" ? tx("Correo") : tx("URL (https)")} htmlFor="int-endpoint">
             <input
               id="int-endpoint"
               name="endpoint"
@@ -82,7 +83,7 @@ export function IntegrationsManager({ initial }: { initial: Integration[] }) {
             />
           </Field>
           <fieldset>
-            <legend className="mb-2 text-xs font-medium text-lt-muted">Eventos</legend>
+            <legend className="mb-2 text-xs font-medium text-lt-muted">{tx("Eventos")}</legend>
             <div className="space-y-2">
               {EVENTS.map((e) => (
                 <label key={e} className="flex items-center gap-2.5 text-[13px] text-lt-text">
@@ -98,11 +99,11 @@ export function IntegrationsManager({ initial }: { initial: Integration[] }) {
             </div>
           </fieldset>
           {result && <InlineAlert tone={result.tone}>{result.message}</InlineAlert>}
-          <ActionButton type="submit" loading={busy} className="w-full">Agregar integración</ActionButton>
+          <ActionButton type="submit" loading={busy} className="w-full">{tx("Agregar integración")}</ActionButton>
         </form>
       </Card>
 
-      <Card title="Integraciones" action={`${items.filter((i) => i.enabled).length} de ${items.length} activas`}>
+      <Card title={tx("Integraciones")} action={tx("{0} de {1} activas", items.filter((i) => i.enabled).length, items.length)}>
         <ul className="-my-3 divide-y divide-lt-border">
           {items.map((item) => (
             <li key={item.id} className="flex flex-wrap items-start justify-between gap-3 py-4">
@@ -121,7 +122,7 @@ export function IntegrationsManager({ initial }: { initial: Integration[] }) {
                 type="button"
                 role="switch"
                 aria-checked={item.enabled}
-                aria-label={`${item.enabled ? "Desactivar" : "Activar"} ${item.name}`}
+                aria-label={`${item.enabled ? tx("Desactivar") : tx("Activar")} ${item.name}`}
                 disabled={togglingId === item.id}
                 onClick={() => toggle(item)}
                 className={`relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-60 ${item.enabled ? "bg-lt-indigo" : "bg-lt-raised ring-1 ring-lt-border"}`}

@@ -32,7 +32,7 @@ test("3. un interruptor por fuente OSINT y el aviso de cobertura siempre y antes
   // Apagar no llama a la API al primer clic: primero muestra el aviso y pide confirmar.
   assert.match(pantalla, /if \(encendidaEnEmpresa\(s\)\) setPendingOff\(s\.code\);/);
   assert.match(pantalla, /<InlineAlert tone="warning">\{AVISO_COBERTURA\}<\/InlineAlert>/);
-  assert.match(pantalla, /¿Apagar \{nombre\(s\.code\)\} para tu empresa\? \{AVISO_COBERTURA\}/);
+  assert.match(pantalla, /tx\("¿Apagar \{0\} para tu empresa\?", nombre\(s\.code\)\)\} \{AVISO_COBERTURA\}/);
   assert.match(pantalla, /reduce la cobertura/);
   assert.match(pantalla, /deja de ser comparable con los anteriores/);
   // Las de inteligencia se muestran sin interruptor.

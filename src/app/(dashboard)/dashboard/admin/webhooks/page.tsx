@@ -5,6 +5,7 @@ import { IntegrationsManager } from "@/components/screens/admin/IntegrationsMana
 import { AvisoSimulado } from "@/components/ui/AvisoSimulado";
 import { SECTIONS } from "@/config/permissions";
 import { getIntegrations } from "@/services/adminService";
+import { tx } from "@/i18n/tx";
 
 export const metadata: Metadata = { title: SECTIONS.webhooks.label };
 
@@ -14,7 +15,7 @@ export default async function WebhooksPage() {
 
   return (
     <div className="space-y-8">
-      <PageHeader title={SECTIONS.webhooks.label} description="A dónde envía LowTide las alertas: webhooks, SIEM o correo." />
+      <PageHeader title={SECTIONS.webhooks.label} description={tx("A dónde envía LowTide las alertas: webhooks, SIEM o correo.")} />
       <AvisoSimulado acciones={["createIntegration", "setIntegrationEnabled"]} datos={["getIntegrations"]} />
       <IntegrationsManager initial={(await getIntegrations()).items} />
     </div>

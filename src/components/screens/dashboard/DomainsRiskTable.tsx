@@ -8,6 +8,7 @@ import { BAND_TONE } from "@/components/ui/tones";
 import { formatDateTime } from "@/lib/format";
 import type { Domain, Scan } from "@/types";
 import { domainState, failedScanAt, hasResults, lastScanAt } from "../shared/domainState";
+import { tx } from "@/i18n/tx";
 
 /**
  * `lastScans`: último escaneo terminado de cada dominio entre los 50 de /scans, para marcar uno que falló.
@@ -25,19 +26,19 @@ export function DomainsRiskTable({
   canOpenDetail: boolean;
 }) {
   return (
-    <Card title="Dominios" padded={false}>
+    <Card title={tx("Dominios")} padded={false}>
       {domains.length === 0 ? (
-        <EmptyState title="Aún no hay dominios">Un Administrador debe registrar el primer dominio con su autorización firmada.</EmptyState>
+        <EmptyState title={tx("Aún no hay dominios")}>{tx("Un Administrador debe registrar el primer dominio con su autorización firmada.")}</EmptyState>
       ) : (
         <TableWrap>
           <table className="w-full min-w-[640px]">
             <thead>
               <tr>
-                <th scope="col" className={TH}>Dominio</th>
-                <th scope="col" className={TH}>Riesgo global</th>
-                <th scope="col" className={TH}>Nivel</th>
-                <th scope="col" className={TH}>Último escaneo</th>
-                <th scope="col" className={TH}><span className="sr-only">Acciones</span></th>
+                <th scope="col" className={TH}>{tx("Dominio")}</th>
+                <th scope="col" className={TH}>{tx("Riesgo global")}</th>
+                <th scope="col" className={TH}>{tx("Nivel")}</th>
+                <th scope="col" className={TH}>{tx("Último escaneo")}</th>
+                <th scope="col" className={TH}><span className="sr-only">{tx("Acciones")}</span></th>
               </tr>
             </thead>
             <tbody>
@@ -63,20 +64,20 @@ export function DomainsRiskTable({
                     <td className={TD}>
                       {d.band ? (
                         <BandBadge band={d.band} />
-                      ) : state.label === "Autorizado" ? (
-                        <Badge tone="gray">Sin escaneo completo</Badge>
+                      ) : state.label === tx("Autorizado") ? (
+                        <Badge tone="gray">{tx("Sin escaneo completo")}</Badge>
                       ) : (
                         <Badge tone={state.tone}>{state.label}</Badge>
                       )}
                     </td>
                     {/* Cuándo terminó, si /scans lo trae. Si el último terminado falló antes del que calculó el riesgo, la hora de este. */}
                     <td className={`${TD} text-lt-muted`}>
-                      {failedAt ? `${formatDateTime(failedAt)}, falló` : finishedAt ? formatDateTime(finishedAt) : "—"}
+                      {failedAt ? tx("{0}, falló", formatDateTime(failedAt)) : finishedAt ? formatDateTime(finishedAt) : "—"}
                     </td>
                     <td className={`${TD} text-right`}>
                       {canOpenDetail && hasResults(d) ? (
                         <Link href={`/dashboard/dominios/${d.fqdn}`} className={`${TEXT_LINK} text-sm`}>
-                          Ver detalle<span className="sr-only"> de {d.fqdn}</span>
+                          {tx("Ver detalle")}<span className="sr-only">{tx(" de {0}", d.fqdn)}</span>
                         </Link>
                       ) : (
                         <span className="text-lt-faint">—</span>

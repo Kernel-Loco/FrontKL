@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { tx } from "@/i18n/tx";
 
 export interface Tab {
   label: string;
@@ -9,7 +10,7 @@ export interface Tab {
 /** Pestañas de un dominio: Resumen, Hallazgos e Histórico. */
 export function DomainTabs({ tabs }: { tabs: Tab[] }) {
   return (
-    <nav aria-label="Secciones del dominio" className="border-b border-lt-border">
+    <nav aria-label={tx("Secciones del dominio")} className="border-b border-lt-border">
       <ul className="relative -mb-px flex gap-6 overflow-x-auto">
         {tabs.map((tab) => (
           <li key={tab.href}>
@@ -39,15 +40,15 @@ export function domainTabs(
   partial = false,
 ): Tab[] {
   // Con cobertura parcial y sin hallazgos la pestaña no dice 0: no se puede concluir que no haya (RC-229).
-  const findingsLabel = partial && findingsCount === 0 ? "Hallazgos (parcial)" : `Hallazgos (${findingsCount})`;
+  const findingsLabel = partial && findingsCount === 0 ? tx("Hallazgos (parcial)") : tx("Hallazgos ({0})", findingsCount);
   const q = `?dominio=${encodeURIComponent(fqdn)}`;
   return [
-    { label: "Resumen", href: `/dashboard/dominios/${fqdn}`, active: active === "resumen" },
+    { label: tx("Resumen"), href: `/dashboard/dominios/${fqdn}`, active: active === "resumen" },
     ...(canSeeFindings ? [{ label: findingsLabel, href: `/dashboard/hallazgos${q}`, active: active === "hallazgos" }] : []),
     ...(scored
       ? [
-          { label: "Histórico", href: `/dashboard/historico${q}`, active: active === "historico" },
-          { label: "Plan de acción", href: `/dashboard/plan${q}`, active: active === "plan" },
+          { label: tx("Histórico"), href: `/dashboard/historico${q}`, active: active === "historico" },
+          { label: tx("Plan de acción"), href: `/dashboard/plan${q}`, active: active === "plan" },
         ]
       : []),
   ];

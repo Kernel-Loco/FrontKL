@@ -9,6 +9,7 @@ import { comparable, hasNewCertificate, isNewAsset, type ScanBase } from "@/lib/
 import { detallesDelActivo } from "@/lib/atributos";
 import { formatDateTime } from "@/lib/format";
 import type { Asset } from "@/types";
+import { tx } from "@/i18n/tx";
 
 /**
  * Inventario de lo que el dominio deja expuesto: subdominios, certificados, IP y servicios, con sus detalles.
@@ -19,12 +20,12 @@ export function AssetsCard({ assets, base }: { assets: Asset[]; base: ScanBase |
   // Si el último falló no marca nada, igual que el panel del dashboard, que no da conteos.
   const marks = comparable(base) ? base : null;
   const fresh = marks ? assets.filter((a) => isNewAsset(a, marks)).length : 0;
-  const note = base?.firstScan ? " · primer escaneo" : marks && fresh > 0 ? ` · ${fresh} ${fresh === 1 ? "nuevo" : "nuevos"}` : "";
+  const note = base?.firstScan ? tx(" · primer escaneo") : marks && fresh > 0 ? ` · ${fresh} ${fresh === 1 ? tx("nuevo") : tx("nuevos")}` : "";
   const inventario = useComparacionInventario(assets);
   return (
-    <Card title="Activos" padded={false} action={`${assets.length} en el inventario${note}`}>
+    <Card title={tx("Activos")} padded={false} action={tx("{0} en el inventario{1}", assets.length, note)}>
       {assets.length === 0 ? (
-        <EmptyState title="Sin activos todavía">Aparecen después del primer escaneo.</EmptyState>
+        <EmptyState title={tx("Sin activos todavía")}>{tx("Aparecen después del primer escaneo.")}</EmptyState>
       ) : (
         <>
         <ComparadorInventario control={inventario} />
@@ -32,12 +33,12 @@ export function AssetsCard({ assets, base }: { assets: Asset[]; base: ScanBase |
           <table className="w-full min-w-[760px]">
             <thead>
               <tr>
-                <th scope="col" className={TH}>Activo</th>
-                <th scope="col" className={TH}>Tipo</th>
-                <th scope="col" className={TH}>Pertenece a</th>
-                <th scope="col" className={TH}>Detalles</th>
-                <th scope="col" className={TH}>Visto por última vez</th>
-                {inventario.resultado && <th scope="col" className={TH}>Inventario</th>}
+                <th scope="col" className={TH}>{tx("Activo")}</th>
+                <th scope="col" className={TH}>{tx("Tipo")}</th>
+                <th scope="col" className={TH}>{tx("Pertenece a")}</th>
+                <th scope="col" className={TH}>{tx("Detalles")}</th>
+                <th scope="col" className={TH}>{tx("Visto por última vez")}</th>
+                {inventario.resultado && <th scope="col" className={TH}>{tx("Inventario")}</th>}
               </tr>
             </thead>
             <tbody>
@@ -47,8 +48,8 @@ export function AssetsCard({ assets, base }: { assets: Asset[]; base: ScanBase |
                     {a.value}
                     {marks && (isNewAsset(a, marks) || hasNewCertificate(a, marks)) && (
                       <span className="ml-2 inline-flex flex-wrap gap-1 align-middle font-sans">
-                        {isNewAsset(a, marks) && <Badge tone="green">Nuevo</Badge>}
-                        {hasNewCertificate(a, marks) && <Badge tone="teal">Certificado nuevo</Badge>}
+                        {isNewAsset(a, marks) && <Badge tone="green">{tx("Nuevo")}</Badge>}
+                        {hasNewCertificate(a, marks) && <Badge tone="teal">{tx("Certificado nuevo")}</Badge>}
                       </span>
                     )}
                   </td>

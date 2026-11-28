@@ -2,6 +2,7 @@ import { BAND_LABELS, SCORE_REASON_LABELS } from "@/config/labels";
 import type { Band, Grade, ScoreReason } from "@/types";
 import { Badge, GradeBadge } from "@/components/ui/Badge";
 import { BAND_TONE, SOLID_TONES } from "@/components/ui/tones";
+import { tx } from "@/i18n/tx";
 
 interface RiskGaugeProps {
   score: number;
@@ -24,11 +25,11 @@ const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 /** Anillo de 0 a 100 con el score global del dominio. */
 export function RiskGauge({ score, band, grade, partial, delta, reason, previousReason }: RiskGaugeProps) {
   const tone = BAND_TONE[band];
-  const previous = previousReason === "scan" ? "escaneo anterior" : "cálculo anterior";
+  const previous = previousReason === "scan" ? tx("escaneo anterior") : tx("cálculo anterior");
   return (
     <div className="flex flex-col items-center">
       <div className="relative h-40 w-40">
-        <svg viewBox="0 0 120 120" className="h-full w-full -rotate-90" role="img" aria-label={`Riesgo global ${score} de 100, ${BAND_LABELS[band].toLowerCase()}`}>
+        <svg viewBox="0 0 120 120" className="h-full w-full -rotate-90" role="img" aria-label={tx("Riesgo global {0} de 100, {1}", score, BAND_LABELS[band].toLowerCase())}>
           <circle cx="60" cy="60" r={RADIUS} fill="none" strokeWidth="9" className="stroke-lt-border" />
           <circle
             cx="60"
@@ -44,21 +45,21 @@ export function RiskGauge({ score, band, grade, partial, delta, reason, previous
         </svg>
         <div aria-hidden="true" className="absolute inset-0 flex flex-col items-center justify-center">
           <span className="text-4xl font-bold tabular-nums text-lt-text">{score}</span>
-          <span className="text-xs text-lt-muted">de 100</span>
+          <span className="text-xs text-lt-muted">{tx("de 100")}</span>
         </div>
       </div>
       <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
         <GradeBadge grade={grade} band={band} partial={partial} />
         <Badge tone={tone} className="px-3 py-1">
-          Riesgo {BAND_LABELS[band]}
+          {tx("Riesgo")}{" "}{BAND_LABELS[band]}
         </Badge>
       </div>
       {delta !== null && (
         <p className="mt-2 text-center text-xs text-lt-muted">
           {reason === "correction"
-            ? `Antes decía ${score - delta}`
+            ? tx("Antes decía {0}", score - delta)
             : delta === 0
-              ? `Igual que el ${previous}`
+              ? tx("Igual que el {0}", previous)
               : `${delta > 0 ? "+" : "−"}${Math.abs(delta)} vs. ${previous}`}
           {reason !== "scan" && <span className="block">{SCORE_REASON_LABELS[reason]}</span>}
         </p>

@@ -5,6 +5,7 @@ import { ApiKeysManager } from "@/components/screens/admin/ApiKeysManager";
 import { AvisoSimulado } from "@/components/ui/AvisoSimulado";
 import { SECTIONS } from "@/config/permissions";
 import { getApiKeys } from "@/services/adminService";
+import { tx } from "@/i18n/tx";
 
 export const metadata: Metadata = { title: SECTIONS.api.label };
 
@@ -14,7 +15,7 @@ export default async function ApiAccessPage() {
 
   return (
     <div className="space-y-8">
-      <PageHeader title={SECTIONS.api.label} description="Llaves para que otros sistemas consulten LowTide. Solo se guarda su huella, nunca la llave completa." />
+      <PageHeader title={SECTIONS.api.label} description={tx("Llaves para que otros sistemas consulten LowTide. Solo se guarda su huella, nunca la llave completa.")} />
       <AvisoSimulado acciones={["createApiKey", "revokeApiKey"]} datos={["getApiKeys"]} />
       <ApiKeysManager initial={(await getApiKeys()).items} />
     </div>

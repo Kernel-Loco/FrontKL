@@ -1,5 +1,6 @@
 import { coverageGapsFallback, coverageGroups } from "@/lib/cobertura";
 import type { CoverageGap } from "@/types";
+import { tx } from "@/i18n/tx";
 
 /**
  * Qué códigos no revisó el último escaneo y por qué, dentro de la franja de cobertura parcial (RC-229). Trae su
@@ -12,7 +13,7 @@ export function CoverageGapsList({ gaps }: { gaps: CoverageGap[] | undefined }) 
   const groups = coverageGroups(gaps ?? []);
   return (
     <>
-      <p className="mt-2">Reglas sin revisar en el último escaneo:</p>
+      <p className="mt-2">{tx("Reglas sin revisar en el último escaneo:")}</p>
       <ul className="mt-1 space-y-1">
         {groups.map((group) => (
           <li key={`${group.reason}:${group.label}`}>

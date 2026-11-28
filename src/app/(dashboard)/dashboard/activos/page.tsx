@@ -8,6 +8,7 @@ import { canAccessSection, SECTIONS } from "@/config/permissions";
 import { conVista, leerVista, MAX_ARBOL, soloArbol, traerArbol, type Vista } from "@/lib/arbolActivos";
 import { consultaActivos, leerFiltros, urlFiltros, type FiltrosActivos } from "@/lib/filtrosActivos";
 import { getAssets, getDomains } from "@/services/queries";
+import { tx } from "@/i18n/tx";
 
 export const metadata: Metadata = { title: SECTIONS.activos.label };
 
@@ -51,7 +52,7 @@ export default async function ActivosPage({ searchParams }: Props) {
     <div className="space-y-6">
       <PageHeader
         title={SECTIONS.activos.label}
-        description="Subdominios, certificados, IP, servicios y correos que dejan expuestos todos los dominios de la organización."
+        description={tx("Subdominios, certificados, IP, servicios y correos que dejan expuestos todos los dominios de la organización.")}
         actions={<SelectorVista vista={vista} href={hrefVista} />}
       />
       <AssetsInventory

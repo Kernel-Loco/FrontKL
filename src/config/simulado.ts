@@ -1,3 +1,4 @@
+import { tx } from "@/i18n/tx";
 // Funciones de src/services que todavía no llaman a la API: esperan con `mockDelay` y devuelven
 // un resultado inventado, sin guardar nada (#190, RC-308).
 //
@@ -49,5 +50,5 @@ export function esSimulada(...funciones: FuncionDeServicio[]): boolean {
 
 /** Mensaje de éxito de una función: si sigue simulada, empieza con «Simulado». */
 export function mensajeDeExito(funcion: FuncionDeServicio, texto: string): string {
-  return esSimulada(funcion) ? `Simulado. ${texto}` : texto;
+  return esSimulada(funcion) ? tx("Simulado. {0}", texto) : texto;
 }

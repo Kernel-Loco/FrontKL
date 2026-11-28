@@ -14,17 +14,18 @@ import { getErrorMessage } from "@/services/errors";
 import { compareScores, downloadComparison } from "@/services/historyService";
 import type { Category, ComparisonChange, ComparisonItem, ScoreComparison, ScoreHistoryPoint } from "@/types";
 import { Delta } from "./Delta";
+import { tx, localized } from "@/i18n/tx";
 
 function reasonSuffix(p: ScoreHistoryPoint) {
   if (p.reason === "scan") return "";
-  return p.reason === "correction" ? " · corrección" : " · recálculo";
+  return p.reason === "correction" ? tx(" · corrección") : tx(" · recálculo");
 }
 
-const CHANGE_LABELS: Record<ComparisonChange, string> = {
+const CHANGE_LABELS: Record<ComparisonChange, string> = localized({
   new: "Nuevos",
   gone: "Ya no están",
   kept: "Siguen",
-};
+});
 
 function severityText(item: ComparisonItem) {
   const from = item.severity_from ? SEVERITY_LABELS[item.severity_from] : null;
@@ -76,14 +77,13 @@ function FindingComparison({
   const current = state?.attempt === attempt ? state : null;
   const data = current?.data;
 
-  if (!current) return <p className="mt-4 text-sm text-lt-muted" role="status">Comparando hallazgos…</p>;
+  if (!current) return <p className="mt-4 text-sm text-lt-muted" role="status">{tx("Comparando hallazgos…")}</p>;
   if (current.error) {
     return (
       <div className="mt-4 space-y-2">
         <InlineAlert tone="error">{current.error}</InlineAlert>
         <ActionButton variant="secondary" size="sm" onClick={() => setAttempt((n) => n + 1)}>
-          Reintentar
-        </ActionButton>
+          {tx("Reintentar")}</ActionButton>
       </div>
     );
   }
@@ -97,30 +97,27 @@ function FindingComparison({
   const keptSame = data.summary.kept - data.summary.severity_changed;
 
   return (
-    <section className="mt-5 border-t border-lt-border pt-4" aria-label="Hallazgos entre los dos escaneos">
+    <section className="mt-5 border-t border-lt-border pt-4" aria-label={tx("Hallazgos entre los dos escaneos")}>
       <div className="flex flex-wrap items-start justify-between gap-2">
-        <h3 className="text-sm font-semibold text-lt-text">Hallazgo por hallazgo</h3>
-        <ApiExport filename={`${domain}-comparacion`} label="Exportar comparación" variant="ghost"
+        <h3 className="text-sm font-semibold text-lt-text">{tx("Hallazgo por hallazgo")}</h3>
+        <ApiExport filename={`${domain}-comparacion`} label={tx("Exportar comparación")} variant="ghost"
           disabled={data.total === 0}
           download={(format, signal) => downloadComparison(domain, fromScoreId, toScoreId, format, signal)} />
       </div>
       {withCorrection ? (
         <p className="mt-1 text-xs text-lt-muted">
-          Por la corrección de arriba no se marcan nuevos ni los que ya no están. La exportación trae
-          los {data.total} {data.total === 1 ? "hallazgo" : "hallazgos"} de las dos fechas.
-        </p>
+          {tx("Por la corrección de arriba no se marcan nuevos ni los que ya no están. La exportación trae los")}{" "}{data.total} {data.total === 1 ? tx("hallazgo") : tx("hallazgos")} {" "}{tx("de las dos fechas.")}</p>
       ) : (
         <>
           <p className="mt-1 text-xs text-lt-muted">
-            {data.summary.new} {data.summary.new === 1 ? "nuevo" : "nuevos"}, {data.summary.gone} que ya no{" "}
-            {data.summary.gone === 1 ? "está" : "están"} y {data.summary.kept} que{" "}
-            {data.summary.kept === 1 ? "sigue" : "siguen"}
-            {data.summary.severity_changed > 0 && ` (${data.summary.severity_changed} con otra criticidad)`}.
+            {tx("{0} {1}, {2} que ya no {3} y {4} que {5}", data.summary.new, data.summary.new === 1 ? tx("nuevo") : tx("nuevos"), data.summary.gone,
+              data.summary.gone === 1 ? tx("está") : tx("están"), data.summary.kept, data.summary.kept === 1 ? tx("sigue") : tx("siguen"))}
+            {data.summary.severity_changed > 0 && tx(" ({0} con otra criticidad)", data.summary.severity_changed)}.
           </p>
           {groups.map(({ change, items }) => items.length > 0 && (
             <div key={change} className="mt-3">
               <h4 className="text-xs font-medium text-lt-muted">
-                {change === "kept" ? "Siguen con otra criticidad" : CHANGE_LABELS[change]} ({items.length})
+                {change === "kept" ? tx("Siguen con otra criticidad") : CHANGE_LABELS[change]} ({items.length})
               </h4>
               <ul className="divide-y divide-lt-border">
                 {items.map((item) => <FindingRow key={item.finding_id} item={item} />)}
@@ -129,13 +126,12 @@ function FindingComparison({
           ))}
           {keptSame > 0 && (
             <p className="mt-3 text-xs text-lt-muted">
-              {keptSame} {keptSame === 1 ? "hallazgo sigue" : "hallazgos siguen"} igual.
+              {tx("{0} {1} igual.", keptSame, keptSame === 1 ? tx("hallazgo sigue") : tx("hallazgos siguen"))}
             </p>
           )}
           {data.summary.gone > 0 && (
             <p className="mt-2 text-xs text-lt-muted">
-              Un hallazgo que ya no está pudo resolverse o marcarse como falso positivo. La exportación trae su estado de hoy.
-            </p>
+              {tx("Un hallazgo que ya no está pudo resolverse o marcarse como falso positivo. La exportación trae su estado de hoy.")}</p>
           )}
         </>
       )}
@@ -157,12 +153,11 @@ export function CompareScans({ domain, points }: { domain: string; points: Score
     .some((p) => p.reason === "correction");
 
   return (
-    <Card title="Comparar escaneos">
+    <Card title={tx("Comparar escaneos")}>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <label htmlFor={fromId} className="mb-1.5 block text-xs font-medium text-lt-muted">
-            Desde
-          </label>
+            {tx("Desde")}</label>
           <select id={fromId} value={from} onChange={(e) => setFrom(Number(e.target.value))} className={SELECT}>
             {points.map((p, i) => (
               <option key={p.score_id} value={i}>
@@ -173,8 +168,7 @@ export function CompareScans({ domain, points }: { domain: string; points: Score
         </div>
         <div>
           <label htmlFor={toId} className="mb-1.5 block text-xs font-medium text-lt-muted">
-            Hasta
-          </label>
+            {tx("Hasta")}</label>
           <select id={toId} value={to} onChange={(e) => setTo(Number(e.target.value))} className={SELECT}>
             {points.map((p, i) => (
               <option key={p.score_id} value={i}>
@@ -186,7 +180,7 @@ export function CompareScans({ domain, points }: { domain: string; points: Score
       </div>
       <ul className="mt-4 divide-y divide-lt-border">
         <li className="flex flex-wrap items-center justify-between gap-2 py-3 text-sm">
-          <span className="font-semibold text-lt-text">Riesgo global</span>
+          <span className="font-semibold text-lt-text">{tx("Riesgo global")}</span>
           <span className="flex items-center gap-2 tabular-nums text-lt-text">
             {a.score} → {b.score} {!withCorrection && <Delta value={b.score - a.score} />}
           </span>
@@ -203,10 +197,7 @@ export function CompareScans({ domain, points }: { domain: string; points: Score
       </ul>
       {withCorrection && (
         <p className="mt-2 text-xs text-lt-muted">
-          Entre estas fechas hay una corrección del score guardado, así que la diferencia no es un cambio de exposición
-          y los hallazgos no se comparan como nuevos o que ya no están. Para ver qué cambió, elige dos escaneos sin una
-          corrección entre ellos.
-        </p>
+          {tx("Entre estas fechas hay una corrección del score guardado, así que la diferencia no es un cambio de exposición y los hallazgos no se comparan como nuevos o que ya no están. Para ver qué cambió, elige dos escaneos sin una corrección entre ellos.")}</p>
       )}
       <FindingComparison key={`${a.score_id}|${b.score_id}`} domain={domain} fromScoreId={a.score_id}
         toScoreId={b.score_id} withCorrection={withCorrection} />

@@ -1,3 +1,4 @@
+import { tx } from "@/i18n/tx";
 // Plan de acción por regla o por activo y en orden acumulado (RC-263). Sin imports, para que node --test lo cargue
 // sin alias. Por regla la API deja el orden de siempre (lo que baja cada una sola) y por activo ordena de forma voraz
 // (primero la que más baja el score después de las de arriba). En las dos, cada acción trae dos impactos: el de
@@ -23,5 +24,5 @@ export function urlPlan(dominio: string, agrupar: Agrupar): string {
 
 /** Cómo se lee una reducción: "−7" o "sin cambio". */
 export function reduccion(puntos: number): string {
-  return puntos > 0 ? `−${puntos}` : "sin cambio";
+  return puntos > 0 ? `−${puntos}` : tx("sin cambio");
 }

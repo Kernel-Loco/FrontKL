@@ -158,7 +158,7 @@ test("con cobertura parcial nunca dice 0 hallazgos ni 'Sin hallazgos abiertos'",
   assert.equal(noFindingsTitle(false), "Sin hallazgos abiertos");
   // La pestaña: con cobertura parcial y sin hallazgos no dice 'Hallazgos (0)'.
   assert.match(leer("components/screens/detalle/DomainTabs.tsx"),
-    /partial && findingsCount === 0 \? "Hallazgos \(parcial\)" : `Hallazgos \(\$\{findingsCount\}\)`/);
+    /partial && findingsCount === 0 \? "Hallazgos \(parcial\)" : tx\("Hallazgos \(\{0\}\)", findingsCount\)/);
   const explorador = leer("components/screens/hallazgos/FindingsExplorer.tsx");
   assert.match(explorador, /partialCoverage \? NO_FINDINGS_PARTIAL : "Sin hallazgos abiertos"/);
   assert.match(explorador, /findingsCountLabel\(visible\.length, findings\.length, partialCoverage \|\| unscored\)/);

@@ -1,38 +1,39 @@
 // Códigos sin cobertura del último escaneo con su motivo (RC-229). La API los da en `coverage_gaps` de
 // GET /domains/{fqdn}/score (cirdan/score/cobertura.py de BackKL). Con cobertura parcial el portal nunca dice 0 hallazgos.
 import type { CoverageGap, CoverageGapReason } from "@/types";
+import { tx, localized } from "@/i18n/tx";
 
 /** Lo que dice el portal en vez de 0 hallazgos cuando la cobertura es parcial. */
 export const NO_FINDINGS_PARTIAL = "Sin hallazgos en las fuentes que respondieron";
 
 /** Motivo de cada grupo, en el orden en que se muestran. */
-export const COVERAGE_GAP_REASON_LABELS: Record<CoverageGapReason, string> = {
+export const COVERAGE_GAP_REASON_LABELS: Record<CoverageGapReason, string> = localized({
   source_failed: "No respondió la fuente",
   source_not_run: "No corrió en este escaneo (fuente apagada)",
   source_disabled_by_org: "No corrió porque tu empresa la apagó en Fuentes",
   no_api_key: "Sin llave de la fuente",
   source_partial: "La fuente respondió pero no pudo revisarlas",
   partially_checked: "Revisadas solo en una parte de lo de la fuente",
-};
+});
 
 /**
  * Con no_api_key cada fuente va en su propio grupo con su texto (RC-54): sin la API de host Shodan no revisa algunos
  * códigos y sin la llave de la plataforma HIBP no revisa ninguno, y el portal dice «Sin cobertura de HIBP», nunca 0.
  * Una fuente que no está aquí usa el texto general de COVERAGE_GAP_REASON_LABELS.
  */
-export const NO_API_KEY_LABELS: Record<string, string> = {
+export const NO_API_KEY_LABELS: Record<string, string> = localized({
   shodan: "Sin llave de la API de host de Shodan",
   hibp: "Sin cobertura de HIBP",
-};
+});
 
 /**
  * Fuentes con su propio texto con los demás motivos (RC-54): si HIBP no respondió, no tuvo correos que consultar o
  * no hay grabación, el portal también dice «Sin cobertura de HIBP», con el motivo después, y nunca 0. partially_checked
  * no entra: la búsqueda por correo siempre es parcial y trae hallazgos (ownLabel).
  */
-export const SOURCE_GAP_LABELS: Record<string, string> = {
+export const SOURCE_GAP_LABELS: Record<string, string> = localized({
   hibp: "Sin cobertura de HIBP",
-};
+});
 
 /** El texto propio del grupo de una fuente con un motivo, o null si va en el grupo general del motivo. */
 function ownLabel(reason: CoverageGapReason, source: string | null): string | null {
@@ -58,7 +59,7 @@ export function coverageIncomplete(score: { partial_coverage: boolean; coverage_
 }
 
 /** Nombre de cada fuente de los escaneos. Incluye web, api_docs y subfinder, que no son fuentes de hallazgos. */
-export const COVERAGE_SOURCE_LABELS: Record<string, string> = {
+export const COVERAGE_SOURCE_LABELS: Record<string, string> = localized({
   ct_logs: "crt.sh",
   dns: "DNS",
   whois: "WHOIS",
@@ -68,7 +69,7 @@ export const COVERAGE_SOURCE_LABELS: Record<string, string> = {
   api_docs: "Documentación de APIs",
   subfinder: "subfinder",
   hibp: "Have I Been Pwned",
-};
+});
 
 export interface CoverageGroup {
   /**
@@ -86,7 +87,7 @@ function bySourceOf(gaps: CoverageGap[]): CoverageGroup["sources"] {
   for (const gap of gaps) bySource.set(gap.source, [...(bySource.get(gap.source) ?? []), gap.code]);
   return [...bySource].map(([source, codes]) => ({
     source,
-    name: source === null ? "Fuente sin identificar"
+    name: source === null ? tx("Fuente sin identificar")
       : Object.hasOwn(COVERAGE_SOURCE_LABELS, source) ? COVERAGE_SOURCE_LABELS[source] : source,
     codes,
   }));
@@ -113,7 +114,7 @@ export function coverageGroups(gaps: CoverageGap[]): CoverageGroup[] {
   const reasons = [...new Set(unknown.map((g) => String(g.reason)))];
   const sources = reasons.flatMap((reason) =>
     bySourceOf(unknown.filter((g) => g.reason === reason)).map((s) => ({ ...s, name: `${s.name}, ${reason}` })));
-  return [...known, { reason: "other", label: OTHER_REASON_LABEL, sources }];
+  return [...known, { reason: "other", label: tx(OTHER_REASON_LABEL), sources }];
 }
 
 /** Texto de CoverageGapsList cuando no queda ningún grupo que listar. */
@@ -127,8 +128,8 @@ export const COVERAGE_GAPS_EMPTY =
  * algún código, null: va la lista.
  */
 export function coverageGapsFallback(gaps: CoverageGap[] | undefined): string | null {
-  if (gaps === undefined) return COVERAGE_GAPS_MISSING;
-  return coverageGroups(gaps).length === 0 ? COVERAGE_GAPS_EMPTY : null;
+  if (gaps === undefined) return tx(COVERAGE_GAPS_MISSING);
+  return coverageGroups(gaps).length === 0 ? tx(COVERAGE_GAPS_EMPTY) : null;
 }
 
 /** Una línea por grupo: «No respondió la fuente: crt.sh (cert_expired, lookalike_domain)». */
@@ -140,18 +141,18 @@ export function coverageLines(gaps: CoverageGap[]): string[] {
 
 /** Texto de la lista vacía: con cobertura parcial nunca «Sin hallazgos abiertos» ni 0 hallazgos. */
 export function noFindingsTitle(partial: boolean): string {
-  return partial ? NO_FINDINGS_PARTIAL : "Sin hallazgos abiertos";
+  return partial ? tx(NO_FINDINGS_PARTIAL) : tx("Sin hallazgos abiertos");
 }
 
-const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+const plural = (n: number, one: string, many: string) => `${n} ${tx(n === 1 ? one : many)}`;
 
 /**
  * El contador de la lista de hallazgos. Con cobertura parcial (o sin score) y la lista vacía no dice «0 de 0»: dice
  * que no hay en lo que se revisó.
  */
 export function findingsCountLabel(shown: number, total: number, incomplete: boolean): string {
-  if (total === 0 && incomplete) return "Ningún hallazgo registrado en las fuentes que respondieron";
-  return `${shown} de ${plural(total, "hallazgo", "hallazgos")}`;
+  if (total === 0 && incomplete) return tx("Ningún hallazgo registrado en las fuentes que respondieron");
+  return tx("{0} de {1}", shown, plural(total, "hallazgo", "hallazgos"));
 }
 
 /** Lo que dice el KPI de críticos en vez de 0 cuando algún dominio quedó parcial o sin escaneo completo. */
@@ -163,19 +164,19 @@ export const NO_CRITICAL_INCOMPLETE = "Ninguno en lo revisado";
  */
 export function criticalKpi(critical: number, scored: number, partial: number, unscanned: number): { value: number | string; hint: string } {
   const parts = [
-    unscanned > 0 ? `${plural(unscanned, "dominio", "dominios")} sin escaneo completo` : "",
-    partial > 0 ? "cobertura parcial: puede no estar al día" : "",
+    unscanned > 0 ? tx("{0} sin escaneo completo", plural(unscanned, "dominio", "dominios")) : "",
+    partial > 0 ? tx("cobertura parcial: puede no estar al día") : "",
   ];
   const incomplete = partial > 0 || unscanned > 0;
   // Sin ningún dominio con score no hay 0 que dar, aunque ninguno esté autorizado (Pendiente TXT, Sin autorización o
   // Vencido no cuentan como sin escaneo completo).
   if (critical === 0 && scored === 0) {
-    return { value: "Sin escaneo completo", hint: ["0 críticos abiertos registrados", ...parts].filter(Boolean).join(" · ") };
+    return { value: "Sin escaneo completo", hint: [tx("0 críticos abiertos registrados"), ...parts].filter(Boolean).join(" · ") };
   }
   if (critical > 0 || !incomplete) return { value: critical, hint: parts.filter(Boolean).join(" · ") };
   return {
-    value: NO_CRITICAL_INCOMPLETE,
-    hint: ["0 críticos abiertos registrados", ...parts].filter(Boolean).join(" · "),
+    value: tx(NO_CRITICAL_INCOMPLETE),
+    hint: [tx("0 críticos abiertos registrados"), ...parts].filter(Boolean).join(" · "),
   };
 }
 
@@ -185,9 +186,9 @@ export function criticalKpi(critical: number, scored: number, partial: number, u
  */
 export function cveFacts(finding: { cvss: number | null; epss: number | null; in_kev: boolean | null }): { cvss: string; epss: string; kev: string } {
   return {
-    cvss: finding.cvss != null ? finding.cvss.toFixed(1) : "Sin dato",
-    epss: finding.epss != null ? epssText(finding.epss) : "Sin dato",
-    kev: finding.in_kev === null ? "Sin dato" : finding.in_kev ? "Explotada activamente" : "No está en el catálogo",
+    cvss: finding.cvss != null ? finding.cvss.toFixed(1) : tx("Sin dato"),
+    epss: finding.epss != null ? epssText(finding.epss) : tx("Sin dato"),
+    kev: finding.in_kev === null ? tx("Sin dato") : finding.in_kev ? tx("Explotada activamente") : tx("No está en el catálogo"),
   };
 }
 

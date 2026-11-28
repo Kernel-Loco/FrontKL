@@ -22,6 +22,7 @@ import { getErrorMessage } from "@/services/errors";
 import { listOrganizations, switchOrganization } from "@/services/platformService";
 import type { PlatformOrganization, User } from "@/types";
 import { Spinner } from "./Spinner";
+import { tx } from "@/i18n/tx";
 
 function reloadDashboard() {
   // Recarga completa a propósito: router.push conserva en memoria datos de la empresa anterior.
@@ -67,7 +68,7 @@ export function OrganizationSwitcher({ user }: { user: User }) {
           return;
         }
         setOrgs(null);
-        setListError("No pudimos identificar la empresa activa. Intenta cargar la lista de nuevo.");
+        setListError(tx("No pudimos identificar la empresa activa. Intenta cargar la lista de nuevo."));
         return;
       }
       setOrgs(sortOrganizations(list.items));
@@ -134,8 +135,7 @@ export function OrganizationSwitcher({ user }: { user: User }) {
   return (
     <div>
       <label htmlFor={selectId} className="text-xs font-medium text-lt-faint">
-        Empresa activa
-      </label>
+        {tx("Empresa activa")}</label>
       <div className="mt-1 flex items-center gap-2">
         <select
           id={selectId}
@@ -163,7 +163,7 @@ export function OrganizationSwitcher({ user }: { user: User }) {
       </div>
       {user.outside_home && (
         <p className="mt-1.5 text-xs text-lt-amber">
-          Superadmin{user.home_organization_name ? ` · tu empresa: ${user.home_organization_name}` : ""}
+          {tx("Superadmin")}{user.home_organization_name ? tx(" · tu empresa: {0}", user.home_organization_name) : ""}
         </p>
       )}
       {(error || listError) && (
@@ -173,8 +173,7 @@ export function OrganizationSwitcher({ user }: { user: User }) {
       )}
       {listError && (
         <ActionButton variant="secondary" size="sm" className="mt-2" onClick={() => void refresh()} disabled={loadingList || switching}>
-          Reintentar lista
-        </ActionButton>
+          {tx("Reintentar lista")}</ActionButton>
       )}
     </div>
   );

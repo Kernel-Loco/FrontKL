@@ -1,4 +1,5 @@
 import { evaluatePassword, type StrengthScore } from "@/lib/passwordStrength";
+import { tx } from "@/i18n/tx";
 
 const BAR_COLORS: Record<StrengthScore, string> = {
   0: "bg-red-400",
@@ -29,7 +30,7 @@ export function PasswordStrength({ password, context }: PasswordStrengthProps) {
         ))}
       </div>
       <p className="mt-1 text-xs text-slate-600">
-        Fortaleza: <span className="font-semibold">{label}</span>
+        {tx("Fortaleza:")}{" "}<span className="font-semibold">{label}</span>
         {hint && <span className="text-slate-500"> · {hint}</span>}
       </p>
     </div>

@@ -10,6 +10,7 @@ import { useFlowState } from "@/hooks/useFlowState";
 import { clearFlow } from "@/lib/flowStorage";
 import { verifyMfa } from "@/services/authService";
 import { getErrorMessage } from "@/services/errors";
+import { tx } from "@/i18n/tx";
 
 const MFA_LENGTH = 6;
 
@@ -32,7 +33,7 @@ export function MfaForm() {
     event.preventDefault();
     if (!data || submitting) return;
     if (code.length !== MFA_LENGTH) {
-      setError(`Ingresa los ${MFA_LENGTH} dígitos del código.`);
+      setError(tx("Ingresa los {0} dígitos del código.", MFA_LENGTH));
       return;
     }
     setError(null);
@@ -60,7 +61,7 @@ export function MfaForm() {
 
   if (!ready || !data) {
     return (
-      <div className="flex justify-center py-8" role="status" aria-label="Cargando">
+      <div className="flex justify-center py-8" role="status" aria-label={tx("Cargando")}>
         <Spinner className="h-6 w-6" />
       </div>
     );
@@ -69,11 +70,11 @@ export function MfaForm() {
   return (
     <form onSubmit={onSubmit} noValidate className="space-y-5">
       <div>
-        <p className="mb-1.5 text-xs font-medium text-slate-600">Código de autenticación</p>
+        <p className="mb-1.5 text-xs font-medium text-slate-600">{tx("Código de autenticación")}</p>
         <CodeInput
           key={codeKey}
           length={MFA_LENGTH}
-          label="Código de autenticación de 6 dígitos"
+          label={tx("Código de autenticación de 6 dígitos")}
           onChange={(value) => {
             setCode(value);
             if (error) setError(null);
@@ -84,25 +85,22 @@ export function MfaForm() {
       {error && <Notice tone="error">{error}</Notice>}
       {info && <Notice>{info}</Notice>}
       <Button type="submit" loading={submitting || navigating}>
-        Verificar
-      </Button>
+        {tx("Verificar")}</Button>
       <div className="flex items-center justify-between gap-4 text-sm">
         <button
           type="button"
           // TODO: conectar con backend — códigos de recuperación de MFA (POST /auth/mfa/recovery).
-          onClick={() => setInfo("Los códigos de recuperación estarán disponibles próximamente. Pide ayuda a un Administrador.")}
+          onClick={() => setInfo(tx("Los códigos de recuperación estarán disponibles próximamente. Pide ayuda a un Administrador."))}
           className="rounded-sm font-medium text-lt-primary hover:underline"
         >
-          Código de recuperación
-        </button>
+          {tx("Código de recuperación")}</button>
         <button
           type="button"
           onClick={goBack}
           disabled={submitting || navigating}
           className="rounded-sm font-medium text-lt-primary hover:underline disabled:opacity-60"
         >
-          Volver al inicio
-        </button>
+          {tx("Volver al inicio")}</button>
       </div>
     </form>
   );

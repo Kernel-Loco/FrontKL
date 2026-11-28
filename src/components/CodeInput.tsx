@@ -2,6 +2,7 @@
 
 import { useId, useRef, useState, type ChangeEvent, type ClipboardEvent, type KeyboardEvent } from "react";
 import { FieldError } from "./FieldError";
+import { tx } from "@/i18n/tx";
 
 interface CodeInputProps {
   /** Número de dígitos (4 para recuperación, 6 para MFA TOTP). */
@@ -139,7 +140,7 @@ export function CodeInput({ length, onChange, label, disabled, error, autoFocus 
             pattern="[0-9]*"
             autoComplete={index === 0 ? "one-time-code" : "off"}
             autoFocus={autoFocus && index === 0}
-            aria-label={`Dígito ${index + 1} de ${length}`}
+            aria-label={tx("Dígito {0} de {1}", index + 1, length)}
             aria-invalid={error ? true : undefined}
             disabled={disabled}
             value={digit}

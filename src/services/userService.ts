@@ -4,6 +4,7 @@ import { mockDelay } from "@/lib/mock";
 import { mockUsers } from "@/mocks/api/provisional";
 import type { InviteRequest, ListResponse, OrgUser, Role } from "@/types";
 import { ServiceError } from "./errors";
+import { tx } from "@/i18n/tx";
 
 export async function getUsers(): Promise<ListResponse<OrgUser>> {
   // TODO: conectar con backend → GET /users
@@ -15,7 +16,7 @@ export async function inviteUser(request: InviteRequest): Promise<OrgUser> {
   // TODO: conectar con backend → POST /users/invitations
   await mockDelay(600);
   if (mockUsers.items.some((u) => u.email === request.email)) {
-    throw new ServiceError("duplicate", "Ya existe un usuario con ese correo.");
+    throw new ServiceError("duplicate", tx("Ya existe un usuario con ese correo."));
   }
   return { id: `u-${Date.now()}`, ...request, mfa_enabled: false, is_active: false, last_login_at: null };
 }
@@ -24,6 +25,6 @@ export async function changeUserRole(userId: string, role: Role): Promise<OrgUse
   // TODO: conectar con backend → PATCH /users/{id} { role }
   await mockDelay(400);
   const user = mockUsers.items.find((u) => u.id === userId);
-  if (!user) throw new ServiceError("not_found", "Usuario no encontrado.");
+  if (!user) throw new ServiceError("not_found", tx("Usuario no encontrado."));
   return { ...structuredClone(user), role };
 }

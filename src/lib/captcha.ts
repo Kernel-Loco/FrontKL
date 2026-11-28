@@ -1,3 +1,4 @@
+import { localized } from "@/i18n/tx";
 // Captcha del inicio de sesión (RC-154): widget ALTCHA autohospedado. El navegador resuelve una prueba de trabajo
 // con el reto que da la API (GET /api/v1/auth/captcha) y el resultado viaja en el campo `captcha` de /login.
 // Nada sale a terceros: el reto, la solución y la revisión son del propio portal y su API.
@@ -8,7 +9,7 @@ export const CAPTCHA_URL = "/api/v1/auth/captcha";
 export const CAPTCHA_LANGUAGE = "es-419";
 
 /** Textos del widget. altcha trae es-419, pero su paquete no tiene los tipos de ese archivo: se ponen aquí. */
-export const CAPTCHA_STRINGS = {
+export const CAPTCHA_STRINGS = localized({
   ariaLinkLabel: "ALTCHA (sitio oficial)",
   enterCode: "Escribe el código",
   enterCodeAria: "Escribe el código que escuchas. Pulsa Espacio para oír el audio.",
@@ -25,7 +26,7 @@ export const CAPTCHA_STRINGS = {
   verified: "Verificado",
   verifying: "Verificando…",
   waitAlert: "Verificando, espera un momento.",
-} as const;
+} as const);
 
 /**
  * Lo que se le pasa al widget además de sus atributos. Sin el colector de interacción (humanInteractionSignature):

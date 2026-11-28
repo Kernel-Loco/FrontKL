@@ -21,14 +21,15 @@ import {
   type ResultadoComparacion,
 } from "@/lib/inventario";
 import type { Asset } from "@/types";
+import { tx, localized } from "@/i18n/tx";
 
 type Filtro = "todos" | EstadoInventario;
 
-const FILTROS: { valor: Filtro; texto: string }[] = [
+const FILTROS: { valor: Filtro; texto: string }[] = localized([
   { valor: "todos", texto: "Todos" },
   { valor: "inventario", texto: "En tu inventario" },
   { valor: "desconocido", texto: "Desconocidos" },
-];
+]);
 
 const numero = (n: number) => n.toLocaleString("es-MX");
 
@@ -48,7 +49,7 @@ export function useComparacionInventario(assets: Asset[]) {
 type Comparacion = ReturnType<typeof useComparacionInventario>;
 
 export function EstadoInventarioBadge({ estado }: { estado: EstadoInventario | undefined }) {
-  return estado === "inventario" ? <Badge tone="green">En tu inventario</Badge> : <Badge tone="amber">Desconocido</Badge>;
+  return estado === "inventario" ? <Badge tone="green">{tx("En tu inventario")}</Badge> : <Badge tone="amber">{tx("Desconocido")}</Badge>;
 }
 
 function descargarCsv(nombre: string, contenido: string) {
@@ -74,7 +75,7 @@ export function ComparadorInventario({ control }: { control: Comparacion }) {
     if (!archivo) return;
     setError(null);
     if (archivo.size > MAX_BYTES) {
-      setError("El archivo pasa de 1 MB.");
+      setError(tx("El archivo pasa de 1 MB."));
       return;
     }
     setLeyendo(true);
@@ -83,7 +84,7 @@ export function ComparadorInventario({ control }: { control: Comparacion }) {
       setInventario({ ...leido, archivo: archivo.name });
       setFiltro("todos");
     } catch (e) {
-      setError(e instanceof InventarioError ? e.message : "No se pudo leer el archivo.");
+      setError(e instanceof InventarioError ? e.message : tx("No se pudo leer el archivo."));
     } finally {
       setLeyendo(false);
     }
@@ -106,46 +107,40 @@ export function ComparadorInventario({ control }: { control: Comparacion }) {
         <input ref={entrada} type="file" accept=".csv,.txt,text/csv,text/plain" className="sr-only" tabIndex={-1} aria-hidden="true" onChange={alElegir} />
         <ActionButton variant="secondary" size="sm" loading={leyendo} aria-describedby={idAyuda} onClick={() => entrada.current?.click()}>
           <Upload aria-hidden="true" className="h-4 w-4" />
-          {inventario ? "Cambiar archivo" : "Comparar con mi inventario"}
+          {inventario ? tx("Cambiar archivo") : tx("Comparar con mi inventario")}
         </ActionButton>
         {inventario && (
           <>
             <ActionButton variant="secondary" size="sm" disabled={!resultado?.desconocidos} onClick={exportar}>
               <FileSpreadsheet aria-hidden="true" className="h-4 w-4" />
-              Exportar desconocidos (CSV)
-            </ActionButton>
+              {tx("Exportar desconocidos (CSV)")}</ActionButton>
             <ActionButton variant="ghost" size="sm" onClick={quitar}>
               <X aria-hidden="true" className="h-4 w-4" />
-              Quitar comparación
-            </ActionButton>
+              {tx("Quitar comparación")}</ActionButton>
           </>
         )}
       </div>
       <p id={idAyuda} className="text-xs text-lt-muted">
-        CSV de hasta 1 MB y 5,000 filas, con una columna de valor (subdominio o IP) y, opcional, otra de tipo. <code>*.dominio</code> cubre
-        sus subdominios. El archivo se lee en este navegador: no se manda a LowTide ni se guarda.
-      </p>
+        {tx("CSV de hasta 1 MB y 5,000 filas, con una columna de valor (subdominio o IP) y, opcional, otra de tipo.")}{" "}<code>*.dominio</code> {" "}{tx("cubre sus subdominios. El archivo se lee en este navegador: no se manda a LowTide ni se guarda.")}</p>
       {error && <InlineAlert tone="error">{error}</InlineAlert>}
       {inventario && resultado && (
         <>
           <InlineAlert tone="info">
-            La comparación con <span className="break-all tabular-nums">{inventario.archivo}</span> vive solo en esta pestaña: si recargas la
-            página se pierde y hay que volver a subir el archivo.
-          </InlineAlert>
+            {tx("La comparación con")}{" "}<span className="break-all tabular-nums">{inventario.archivo}</span> {" "}{tx("vive solo en esta pestaña: si recargas la página se pierde y hay que volver a subir el archivo.")}</InlineAlert>
           {(inventario.invalidas > 0 || inventario.duplicadas > 0) && (
             <InlineAlert tone="warning">
-              {inventario.invalidas === 1 && "Se ignoró 1 fila que no es subdominio ni IP o cuyo tipo no coincide con el valor. "}
-              {inventario.invalidas > 1 && `Se ignoraron ${numero(inventario.invalidas)} filas que no son subdominio ni IP o cuyo tipo no coincide con el valor. `}
-              {inventario.duplicadas === 1 && "1 fila estaba repetida."}
-              {inventario.duplicadas > 1 && `${numero(inventario.duplicadas)} filas estaban repetidas.`}
+              {inventario.invalidas === 1 && tx("Se ignoró 1 fila que no es subdominio ni IP o cuyo tipo no coincide con el valor. ")}
+              {inventario.invalidas > 1 && tx("Se ignoraron {0} filas que no son subdominio ni IP o cuyo tipo no coincide con el valor. ", numero(inventario.invalidas))}
+              {inventario.duplicadas === 1 && tx("1 fila estaba repetida.")}
+              {inventario.duplicadas > 1 && tx("{0} filas estaban repetidas.", numero(inventario.duplicadas))}
             </InlineAlert>
           )}
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
             <p className="text-sm text-lt-text" aria-live="polite">
-              <strong className="font-semibold">{numero(resultado.enInventario)}</strong> en tu inventario ·{" "}
-              <strong className="font-semibold">{numero(resultado.desconocidos)}</strong> desconocidos · de {numero(assets.length)} activos
+              <strong className="font-semibold">{numero(resultado.enInventario)}</strong> {" "}{tx("en tu inventario ·")}{" "}
+              <strong className="font-semibold">{numero(resultado.desconocidos)}</strong> {" "}{tx("desconocidos · de")}{" "}{tx("{0} activos", numero(assets.length))}
             </p>
-            <div role="group" aria-label="Filtrar por estado" className="flex flex-wrap gap-1">
+            <div role="group" aria-label={tx("Filtrar por estado")} className="flex flex-wrap gap-1">
               {FILTROS.map((f) => (
                 <ActionButton key={f.valor} variant={filtro === f.valor ? "secondary" : "ghost"} size="sm" aria-pressed={filtro === f.valor} onClick={() => setFiltro(f.valor)}>
                   {f.texto}
@@ -153,15 +148,13 @@ export function ComparadorInventario({ control }: { control: Comparacion }) {
               ))}
             </div>
           </div>
-          {visibles.length === 0 && <p className="text-sm text-lt-muted">Ningún activo con ese estado.</p>}
+          {visibles.length === 0 && <p className="text-sm text-lt-muted">{tx("Ningún activo con ese estado.")}</p>}
           {resultado.noVistos.length > 0 && (
             <details className="rounded-lg border border-lt-border px-3 py-2 text-sm">
               <summary className="cursor-pointer text-lt-text">
-                {numero(resultado.noVistos.length)} de tu inventario que LowTide no vio
-              </summary>
+                {numero(resultado.noVistos.length)} {" "}{tx("de tu inventario que LowTide no vio")}</summary>
               <p className="mt-2 text-xs text-lt-muted">
-                No aparecieron en las fuentes públicas de este escaneo. Eso no quiere decir que no existan.
-              </p>
+                {tx("No aparecieron en las fuentes públicas de este escaneo. Eso no quiere decir que no existan.")}</p>
               <ul className="mt-2 max-h-48 space-y-0.5 overflow-y-auto tabular-nums text-xs text-lt-muted">
                 {resultado.noVistos.map((v) => (
                   <li key={v} className="break-all">{v}</li>

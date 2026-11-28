@@ -13,11 +13,12 @@ import { formatDate, formatDateTime } from "@/lib/format";
 import { API_KEY_MAX_DAYS, API_KEY_OWN_USE_ERROR, API_SCOPES, createApiKey, revokeApiKey } from "@/services/adminService";
 import { getErrorMessage } from "@/services/errors";
 import type { ApiKey } from "@/types";
+import { tx } from "@/i18n/tx";
 
 function keyStatus(key: ApiKey): { label: string; tone: "teal" | "red" | "gray" } {
-  if (key.revoked_at) return { label: "Revocada", tone: "red" };
-  if (key.expires_at < new Date().toISOString()) return { label: "Vencida", tone: "gray" };
-  return { label: "Activa", tone: "teal" };
+  if (key.revoked_at) return { label: tx("Revocada"), tone: "red" };
+  if (key.expires_at < new Date().toISOString()) return { label: tx("Vencida"), tone: "gray" };
+  return { label: tx("Activa"), tone: "teal" };
 }
 
 export function ApiKeysManager({ initial }: { initial: ApiKey[] }) {
@@ -38,7 +39,7 @@ export function ApiKeysManager({ initial }: { initial: ApiKey[] }) {
     setSecret(null);
     setError(null);
     if (data.get("own_use") !== "on") {
-      setOwnUseError(API_KEY_OWN_USE_ERROR);
+      setOwnUseError(tx(API_KEY_OWN_USE_ERROR));
       return;
     }
     setOwnUseError(null);
@@ -80,19 +81,19 @@ export function ApiKeysManager({ initial }: { initial: ApiKey[] }) {
       await navigator.clipboard.writeText(secret.value);
       setCopied(true);
     } catch {
-      setError("No se pudo copiar. Selecciona la llave y cópiala a mano.");
+      setError(tx("No se pudo copiar. Selecciona la llave y cópiala a mano."));
     }
   };
 
   return (
     <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.8fr)]">
-      <Card title="Crear llave" description={`Para conectar LowTide con los sistemas de tu propia empresa. Vigencia máxima de ${API_KEY_MAX_DAYS} días.`} icon={<KeyRound aria-hidden="true" className="h-4 w-4" />}>
+      <Card title={tx("Crear llave")} description={tx("Para conectar LowTide con los sistemas de tu propia empresa. Vigencia máxima de {0} días.", API_KEY_MAX_DAYS)} icon={<KeyRound aria-hidden="true" className="h-4 w-4" />}>
         <form onSubmit={onCreate} noValidate className="space-y-4">
-          <Field label="Nombre" htmlFor="key-name">
-            <input id="key-name" name="name" placeholder="SIEM corporativo" className={INPUT} autoComplete="off" />
+          <Field label={tx("Nombre")} htmlFor="key-name">
+            <input id="key-name" name="name" placeholder={tx("SIEM corporativo")} className={INPUT} autoComplete="off" />
           </Field>
           <fieldset>
-            <legend className="mb-2 text-xs font-medium text-lt-muted">Permisos</legend>
+            <legend className="mb-2 text-xs font-medium text-lt-muted">{tx("Permisos")}</legend>
             <div className="space-y-2">
               {API_SCOPES.map((s) => (
                 <label key={s} className="flex flex-wrap items-center gap-2.5 text-[13px] text-lt-text">
@@ -107,7 +108,7 @@ export function ApiKeysManager({ initial }: { initial: ApiKey[] }) {
               ))}
             </div>
           </fieldset>
-          <Field label="Vigencia (días)" htmlFor="key-days">
+          <Field label={tx("Vigencia (días)")} htmlFor="key-days">
             <input id="key-days" name="days" type="number" min={1} max={API_KEY_MAX_DAYS} defaultValue={90} className={`${INPUT} w-28`} />
           </Field>
           <div className="rounded-lg bg-lt-raised/60 p-3.5">
@@ -119,8 +120,7 @@ export function ApiKeysManager({ initial }: { initial: ApiKey[] }) {
                 onChange={(e) => e.target.checked && setOwnUseError(null)}
                 {...(ownUseError ? { "aria-invalid": true, "aria-describedby": "own_use-error" } : {})}
               />
-              Confirmo que la llave es para un sistema de mi propia empresa. No se da a un integrador ni a otra empresa.
-            </label>
+              {tx("Confirmo que la llave es para un sistema de mi propia empresa. No se da a un integrador ni a otra empresa.")}</label>
             {ownUseError && (
               <p id="own_use-error" className="mt-1.5 text-xs font-medium text-lt-red">
                 {ownUseError}
@@ -129,31 +129,30 @@ export function ApiKeysManager({ initial }: { initial: ApiKey[] }) {
           </div>
           {error && <InlineAlert tone="error">{error}</InlineAlert>}
           <ActionButton type="submit" loading={creating} className="w-full">
-            Crear llave
-          </ActionButton>
+            {tx("Crear llave")}</ActionButton>
         </form>
         {secret && (
           <div className="mt-5 space-y-2 rounded-lg bg-lt-raised p-3.5">
-            <p className="text-xs font-semibold text-lt-text">{mensajeDeExito("createApiKey", `Copia la llave «${secret.name}» ahora: no se volverá a mostrar.`)}</p>
+            <p className="text-xs font-semibold text-lt-text">{mensajeDeExito("createApiKey", tx("Copia la llave «{0}» ahora: no se volverá a mostrar.", secret.name))}</p>
             <div className="flex items-center gap-2 rounded-md bg-lt-bg px-3 py-2">
               <code className="min-w-0 flex-1 break-all tabular-nums text-[11px] text-lt-text">{secret.value}</code>
-              <ActionButton variant="secondary" size="sm" onClick={copy}>{copied ? "Copiada" : "Copiar"}</ActionButton>
+              <ActionButton variant="secondary" size="sm" onClick={copy}>{copied ? tx("Copiada") : tx("Copiar")}</ActionButton>
             </div>
           </div>
         )}
       </Card>
 
-      <Card title="Llaves" padded={false} action={`${keys.filter((k) => keyStatus(k).label === "Activa").length} activas`}>
+      <Card title={tx("Llaves")} padded={false} action={tx("{0} activas", keys.filter((k) => keyStatus(k).label === tx("Activa")).length)}>
         <TableWrap>
           <table className="w-full min-w-[640px]">
             <thead>
               <tr>
-                <th scope="col" className={TH}>Llave</th>
-                <th scope="col" className={TH}>Permisos</th>
-                <th scope="col" className={TH}>Vence</th>
-                <th scope="col" className={TH}>Último uso</th>
-                <th scope="col" className={TH}>Estado</th>
-                <th scope="col" className={TH}><span className="sr-only">Acciones</span></th>
+                <th scope="col" className={TH}>{tx("Llave")}</th>
+                <th scope="col" className={TH}>{tx("Permisos")}</th>
+                <th scope="col" className={TH}>{tx("Vence")}</th>
+                <th scope="col" className={TH}>{tx("Último uso")}</th>
+                <th scope="col" className={TH}>{tx("Estado")}</th>
+                <th scope="col" className={TH}><span className="sr-only">{tx("Acciones")}</span></th>
               </tr>
             </thead>
             <tbody>
@@ -173,18 +172,18 @@ export function ApiKeysManager({ initial }: { initial: ApiKey[] }) {
                       </div>
                     </td>
                     <td className={`${TD} whitespace-nowrap text-[13px] text-lt-muted`}>{formatDate(k.expires_at)}</td>
-                    <td className={`${TD} whitespace-nowrap text-[13px] text-lt-muted`}>{k.last_used_at ? formatDateTime(k.last_used_at) : "Nunca"}</td>
+                    <td className={`${TD} whitespace-nowrap text-[13px] text-lt-muted`}>{k.last_used_at ? formatDateTime(k.last_used_at) : tx("Nunca")}</td>
                     <td className={TD}><Badge tone={status.tone} dot>{status.label}</Badge></td>
                     <td className={`${TD} text-right`}>
-                      {status.label === "Activa" &&
+                      {status.label === tx("Activa") &&
                         (confirmId === k.id ? (
                           <span className="inline-flex gap-1">
-                            <ActionButton variant="danger" size="sm" loading={revokingId === k.id} onClick={() => onRevoke(k.id)}>Confirmar</ActionButton>
-                            <ActionButton variant="ghost" size="sm" onClick={() => setConfirmId(null)}>No</ActionButton>
+                            <ActionButton variant="danger" size="sm" loading={revokingId === k.id} onClick={() => onRevoke(k.id)}>{tx("Confirmar")}</ActionButton>
+                            <ActionButton variant="ghost" size="sm" onClick={() => setConfirmId(null)}>{tx("No")}</ActionButton>
                           </span>
                         ) : (
                           <ActionButton variant="ghost" size="sm" onClick={() => setConfirmId(k.id)}>
-                            Revocar<span className="sr-only"> {k.name}</span>
+                            {tx("Revocar")}<span className="sr-only"> {k.name}</span>
                           </ActionButton>
                         ))}
                     </td>

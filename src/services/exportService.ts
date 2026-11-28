@@ -1,5 +1,6 @@
 import { ApiError, apiErrorFromResponse } from "@/lib/apiClient";
 import { statusFromFetchFailure, withTimeout } from "@/lib/http";
+import { tx } from "@/i18n/tx";
 
 export type ExportFormat = "csv" | "json";
 
@@ -19,7 +20,7 @@ async function fetchBlob(url: string, accept: string, signal?: AbortSignal): Pro
   try {
     response = await fetch(url, { credentials: "same-origin", headers: { Accept: accept }, signal: withTimeout(signal) });
   } catch (error) {
-    throw new ApiError(statusFromFetchFailure(error, signal), "Sin conexión con el servicio.");
+    throw new ApiError(statusFromFetchFailure(error, signal), tx("Sin conexión con el servicio."));
   }
   if (!response.ok) throw await apiErrorFromResponse(response);
   return response.blob();

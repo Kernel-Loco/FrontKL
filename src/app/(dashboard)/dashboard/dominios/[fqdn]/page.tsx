@@ -27,6 +27,7 @@ import { formatDate, formatDateTime } from "@/lib/format";
 import { ServiceError } from "@/services/errors";
 import { getDomainAssets, getDomainFindings, getDomains, getDomainScore, getScans, getScoreHistory } from "@/services/queries";
 import type { Severity } from "@/types";
+import { tx } from "@/i18n/tx";
 
 type Props = { params: Promise<{ fqdn: string }> };
 
@@ -80,37 +81,37 @@ export default async function DomainDetailPage({ params }: Props) {
   // Sin score, el mismo estado que la tabla Dominios: «Sin autorización», «Vencido»... o «Sin escaneo completo» si está autorizado.
   const unscored = unscoredLabel(domain);
   const subtitle = [
-    running ? "Escaneo en curso" : null,
-    failedAt ? `Último escaneo: ${formatDateTime(failedAt)}, falló` : null,
+    running ? tx("Escaneo en curso") : null,
+    failedAt ? tx("Último escaneo: {0}, falló", formatDateTime(failedAt)) : null,
     riskAt
-      ? `${failedAt ? "Último con riesgo" : "Último escaneo"}: ${formatDateTime(riskAt)}`
+      ? `${failedAt ? tx("Último con riesgo") : tx("Último escaneo")}: ${formatDateTime(riskAt)}`
       : failedAt
         ? null
         : domain.score === null
           ? unscored
-          : "Sin fecha de escaneo",
+          : tx("Sin fecha de escaneo"),
     domain.authorization.valid_until
-      ? `${domain.authorization.status === "expired" ? "Venció el" : "Autorizado hasta"} ${formatDate(domain.authorization.valid_until)}`
+      ? `${domain.authorization.status === "expired" ? tx("Venció el") : tx("Autorizado hasta")} ${formatDate(domain.authorization.valid_until)}`
       : null,
   ]
     .filter(Boolean)
     .join(" · ");
   const pendingNote = [
     running
-      ? "Hay un escaneo en curso: el riesgo se calcula al cerrarlo."
+      ? tx("Hay un escaneo en curso: el riesgo se calcula al cerrarlo.")
       : failedAt
-        ? "El último escaneo falló antes de calcular el riesgo."
-        : "El riesgo se calcula al cerrar un escaneo; uno que se cae antes no lo calcula.",
+        ? tx("El último escaneo falló antes de calcular el riesgo.")
+        : tx("El riesgo se calcula al cerrar un escaneo; uno que se cae antes no lo calcula."),
     hasFindings
-      ? `Abajo están ${findings ? "los hallazgos" : "los conteos de los hallazgos"} que alcanzaron a registrar las fuentes.`
+      ? tx("Abajo están {0} que alcanzaron a registrar las fuentes.", findings ? tx("los hallazgos") : tx("los conteos de los hallazgos"))
       : "",
-    "Solo se puede escanear con autorización vigente y registro TXT verificado.",
+    tx("Solo se puede escanear con autorización vigente y registro TXT verificado."),
   ]
     .filter(Boolean)
     .join(" ");
 
   const topFindings = !findings ? (
-    <Card title="Hallazgos abiertos por severidad">
+    <Card title={tx("Hallazgos abiertos por severidad")}>
       {openTotal === 0 ? (
         <EmptyState title={noFindingsTitle(coverageIncomplete(score))} />
       ) : (
@@ -126,12 +127,12 @@ export default async function DomainDetailPage({ params }: Props) {
     </Card>
   ) : (
     <Card
-      title="Hallazgos más críticos"
+      title={tx("Hallazgos más críticos")}
       padded={false}
       action={
         canSeeFindings && findings.total > 0 ? (
           <Link href={`/dashboard/hallazgos?dominio=${encodeURIComponent(fqdn)}`} className={TEXT_LINK}>
-            {findings.total === 1 ? "Ver el hallazgo" : `Ver los ${findings.total} hallazgos`}
+            {findings.total === 1 ? tx("Ver el hallazgo") : tx("Ver los {0} hallazgos", findings.total)}
           </Link>
         ) : undefined
       }
@@ -156,7 +157,7 @@ export default async function DomainDetailPage({ params }: Props) {
   return (
     <div className="space-y-6">
       <PageHeader
-        breadcrumb={[{ label: "Dashboard", href: "/dashboard" }, { label: fqdn }]}
+        breadcrumb={[{ label: tx("Dashboard"), href: "/dashboard" }, { label: fqdn }]}
         title={<span className="tabular-nums">{fqdn}</span>}
         description={subtitle}
         actions={
@@ -165,21 +166,21 @@ export default async function DomainDetailPage({ params }: Props) {
               <ReportButton key={fqdn} domain={fqdn} disabledReason={reportBlocked} technical={canSeeFindings} />
             )}
             {can(user.role, "request_report") && <SiemExportButton key={`siem-${fqdn}`} domain={fqdn} />}
-            {can(user.role, "request_scan") && <ScanButton domains={domains.items} fixedDomain={fqdn} label="Escanear ahora" />}
+            {can(user.role, "request_scan") && <ScanButton domains={domains.items} fixedDomain={fqdn} label={tx("Escanear ahora")} />}
           </>
         }
       />
       <DomainTabs tabs={domainTabs(fqdn, findingsTotal, "resumen", canSeeFindings, domain.score !== null, coverageIncomplete(score))} />
 
       {blocked && (
-        <InlineAlert tone="warning">Este dominio no se puede escanear{reportBlocked ? " ni exportar" : ""}: {blocked}.</InlineAlert>
+        <InlineAlert tone="warning">{tx("Este dominio no se puede escanear")}{reportBlocked ? tx(" ni exportar") : ""}: {blocked}.</InlineAlert>
       )}
 
       {score ? (
         <>
           <KriPanel kris={score.kris} subcategories={score.subcategories} mapVersion={score.kri_map_version} />
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)]">
-            <Card title="Riesgo global">
+            <Card title={tx("Riesgo global")}>
               <div className="py-2">
                 <RiskGauge
                   score={score.score}
@@ -192,7 +193,7 @@ export default async function DomainDetailPage({ params }: Props) {
                 />
               </div>
               <p className="mt-3 text-center text-xs text-lt-muted">
-                Calculado con {score.method === "ml" ? `el modelo de ML${score.model_version ? ` ${score.model_version}` : ""}` : "reglas"}
+                {tx("Calculado con")}{" "}{score.method === "ml" ? tx("el modelo de ML{0}", score.model_version ? ` ${score.model_version}` : "") : "reglas"}
                 {score.method === "rules" && score.model_fallback_reason
                   ? `: ${MODEL_FALLBACK_LABELS[score.model_fallback_reason] ?? score.model_fallback_reason}`
                   : ""}
@@ -200,18 +201,17 @@ export default async function DomainDetailPage({ params }: Props) {
               </p>
               {score.floor_applied && (
                 <InlineAlert tone="warning" className="mt-4">
-                  Subido a {score.floor} por {score.critical_open} hallazgo{score.critical_open === 1 ? "" : "s"} crítico
-                  {score.critical_open === 1 ? "" : "s"} vigente{score.critical_open === 1 ? "" : "s"}; la suma ponderada da {score.weighted}.
+                  {score.critical_open === 1
+                    ? tx("Subido a {0} por 1 hallazgo crítico vigente; la suma ponderada da {1}.", score.floor, score.weighted)
+                    : tx("Subido a {0} por {1} hallazgos críticos vigentes; la suma ponderada da {2}.", score.floor, score.critical_open, score.weighted)}
                 </InlineAlert>
               )}
             </Card>
-            <Card title="Riesgo por categoría" action="Ponderación configurable">
+            <Card title={tx("Riesgo por categoría")} action="Ponderación configurable">
               <CategoryBars categories={score.categories} subcategories={score.subcategories} kris={score.kris} />
               {coverageIncomplete(score) && (
                 <InlineAlert tone="warning" className="mt-5">
-                  Cobertura parcial: alguna fuente falló o no corrió, revisó solo una parte de sus repos o IP, o hay reglas
-                  que las fuentes actuales todavía no pueden revisar. El score y su letra pueden estar incompletos.
-                  <CoverageGapsList gaps={score.coverage_gaps} />
+                  {tx("Cobertura parcial: alguna fuente falló o no corrió, revisó solo una parte de sus repos o IP, o hay reglas que las fuentes actuales todavía no pueden revisar. El score y su letra pueden estar incompletos.")}<CoverageGapsList gaps={score.coverage_gaps} />
                 </InlineAlert>
               )}
             </Card>

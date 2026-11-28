@@ -7,9 +7,10 @@ import { TEXT_LINK } from "@/components/ui/ActionButton";
 import { Badge } from "@/components/ui/Badge";
 import { ASSET_TYPE_LABELS } from "@/config/labels";
 import { abreAbierto, armarArbol, textoSuelto, type ActivoArbol, type NodoActivo, type RamaDominio } from "@/lib/arbolActivos";
+import { tx } from "@/i18n/tx";
 
 const etiqueta = (tipo: string) => ASSET_TYPE_LABELS[tipo as keyof typeof ASSET_TYPE_LABELS] ?? tipo;
-const cuantos = (n: number) => `${n} ${n === 1 ? "activo" : "activos"} debajo`;
+const cuantos = (n: number) => `${n} ${n === 1 ? tx("activo") : tx("activos")} debajo`;
 
 /**
  * Vista en árbol de 'Activos' (RC-248): cada dominio con sus subdominios, IP y servicios debajo, armado en
@@ -22,7 +23,7 @@ export function AssetsTree({ activos, canOpenDetail }: { activos: ActivoArbol[];
   const ramas = useMemo(() => armarArbol(activos), [activos]);
   const abierto = abreAbierto(activos.length);
   return (
-    <ul aria-label="Árbol de activos" className="space-y-1 px-3 pb-5">
+    <ul aria-label={tx("Árbol de activos")} className="space-y-1 px-3 pb-5">
       {ramas.map((r) => <Dominio key={r.dominio} rama={r} abiertoInicial={abierto} canOpenDetail={canOpenDetail} />)}
     </ul>
   );
@@ -40,7 +41,7 @@ function Dominio({ rama, abiertoInicial, canOpenDetail }: {
     <Fila hijos={rama.hijos} descendientes={rama.descendientes} abiertoInicial={abiertoInicial} nombre={rama.dominio}
       contenido={<>
         <span className="break-all tabular-nums text-[13px] font-semibold text-lt-text">{nombre}</span>
-        <Badge tone="indigo">Dominio</Badge>
+        <Badge tone="indigo">{tx("Dominio")}</Badge>
       </>} />
   );
 }
@@ -55,7 +56,7 @@ function Nodo({ nodo, abiertoInicial }: { nodo: NodoActivo<ActivoArbol>; abierto
         {suelto && (
           <>
             {/* El motivo va a la vista, para teclado y pantallas táctiles. El lector lo lee una vez, del texto. */}
-            <span aria-hidden="true"><Badge tone="amber">Suelto</Badge></span>
+            <span aria-hidden="true"><Badge tone="amber">{tx("Suelto")}</Badge></span>
             <span className="text-xs text-lt-amber">{textoSuelto(suelto, activo.parent)}</span>
           </>
         )}
@@ -78,7 +79,7 @@ function Fila({ hijos, descendientes, abiertoInicial, nombre, contenido }: {
       <div className="flex min-h-9 flex-wrap items-center gap-2 rounded-md px-2 py-1 hover:bg-lt-raised">
         {hijos.length > 0 ? (
           <button type="button" aria-expanded={abierto} aria-controls={abierto ? id : undefined} onClick={() => setAbierto(!abierto)}
-            aria-label={`Activos debajo de ${nombre}`}
+            aria-label={tx("Activos debajo de {0}", nombre)}
             className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-lt-muted hover:bg-lt-border hover:text-lt-text">
             <ChevronRight aria-hidden="true" className={`h-4 w-4 transition-transform ${abierto ? "rotate-90" : ""}`} />
           </button>

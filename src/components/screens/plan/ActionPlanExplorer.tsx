@@ -16,13 +16,14 @@ import { reduccion, urlPlan, type Agrupar } from "@/lib/planAcumulado";
 import { getErrorMessage } from "@/services/errors";
 import { downloadActionPlan, simulateActionPlan, type PlanExportFormat } from "@/services/planService";
 import type { ActionPlan, ActionPlanSimulation, Category, PlanAction, PlanAssetAction } from "@/types";
+import { tx, localized } from "@/i18n/tx";
 
 const CATEGORIES = Object.keys(CATEGORY_LABELS) as Category[];
 
-const AGRUPACIONES: { value: Agrupar; label: string }[] = [
+const AGRUPACIONES: { value: Agrupar; label: string }[] = localized([
   { value: "regla", label: "Por regla" },
   { value: "activo", label: "Por activo" },
-];
+]);
 
 function saveBlob(blob: Blob, domain: string, format: PlanExportFormat, agrupar: Agrupar) {
   const url = URL.createObjectURL(blob);
@@ -99,8 +100,8 @@ export function ActionPlanExplorer({
   return (
     <div className="grid min-w-0 grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.65fr)]">
       <Card
-        title="Acciones recomendadas"
-        description={`${cantidad(plan.total, "acción", "acciones")} para ${plan.domain}, ${porActivo ? "una por activo" : "una por regla"}`}
+        title={tx("Acciones recomendadas")}
+        description={tx("{0} para {1}, {2}", cantidad(plan.total, "acción", "acciones"), plan.domain, porActivo ? tx("una por activo") : tx("una por regla"))}
         action={(
           <span className="flex gap-1">
             <ActionButton variant="ghost" size="sm" disabled={!canExport || (exporting !== null && exporting !== "csv")} loading={exporting === "csv"} onClick={() => exportPlan("csv")}>
@@ -113,7 +114,7 @@ export function ActionPlanExplorer({
         )}
       >
         {canGroupByAsset && (
-        <nav aria-label="Agrupar el plan" className="mb-4 inline-flex rounded-lg border border-lt-border p-0.5">
+        <nav aria-label={tx("Agrupar el plan")} className="mb-4 inline-flex rounded-lg border border-lt-border p-0.5">
           {AGRUPACIONES.map((opcion) => (
             <Link
               key={opcion.value}
@@ -129,33 +130,28 @@ export function ActionPlanExplorer({
         {plan.actions.length > 1 && (
           <p className="mb-4 text-xs leading-relaxed text-lt-muted">
             {porActivo
-              ? "En orden de lo que recupera cada una después de las de arriba (acumulado)."
-              : "En orden de lo que recupera cada una sola. El acumulado dice lo que recupera después de las de arriba."}{" "}
-            Lo que recupera cada una sola no se suma: los topes por categoría y el piso de un hallazgo crítico cambian lo
-            que recupera cada una según las que ya se resolvieron.
-          </p>
+              ? tx("En orden de lo que recupera cada una después de las de arriba (acumulado).")
+              : tx("En orden de lo que recupera cada una sola. El acumulado dice lo que recupera después de las de arriba.")}{" "}
+            {tx("Lo que recupera cada una sola no se suma: los topes por categoría y el piso de un hallazgo crítico cambian lo que recupera cada una según las que ya se resolvieron.")}</p>
         )}
         {!canExport && (
           <InlineAlert tone="warning" className="mb-4">
-            Para exportar el plan, el dominio debe tener una autorización firmada vigente.
-          </InlineAlert>
+            {tx("Para exportar el plan, el dominio debe tener una autorización firmada vigente.")}</InlineAlert>
         )}
         {plan.partial_coverage && (
           <InlineAlert tone="warning" className="mb-4">
-            Cobertura parcial: alguna fuente falló, revisó solo una parte de sus repos o IP, o hay reglas que las fuentes
-            actuales todavía no pueden revisar. El impacto se estima con los hallazgos disponibles.
-          </InlineAlert>
+            {tx("Cobertura parcial: alguna fuente falló, revisó solo una parte de sus repos o IP, o hay reglas que las fuentes actuales todavía no pueden revisar. El impacto se estima con los hallazgos disponibles.")}</InlineAlert>
         )}
         {exportError && <InlineAlert tone="error" className="mb-4">{exportError}</InlineAlert>}
         {plan.actions.length === 0 ? (
-          <EmptyState title="Sin acciones pendientes">No hay hallazgos abiertos que generen acciones para este dominio.</EmptyState>
+          <EmptyState title={tx("Sin acciones pendientes")}>{tx("No hay hallazgos abiertos que generen acciones para este dominio.")}</EmptyState>
         ) : (
           <ol className="divide-y divide-lt-border">
             {porActivo
               ? (plan.actions as PlanAssetAction[]).map((action) => (
                 <li key={action.id} className="min-w-0 py-4 first:pt-0 last:pb-0">
                   <span className="flex flex-wrap items-center gap-2">
-                    <Badge tone="indigo">{action.asset_type === "profile" ? "Perfil" : (ASSET_TYPE_LABELS[action.asset_type] ?? action.asset_type)}</Badge>
+                    <Badge tone="indigo">{action.asset_type === "profile" ? tx("Perfil") : (ASSET_TYPE_LABELS[action.asset_type] ?? action.asset_type)}</Badge>
                     <span className="break-all tabular-nums text-[13px] text-lt-text">{action.asset_value}</span>
                     <span className="text-xs text-lt-faint">{cantidad(action.finding_count, "hallazgo")}</span>
                   </span>
@@ -180,7 +176,7 @@ export function ActionPlanExplorer({
                       checked={checked}
                       onChange={() => toggle(action.id)}
                       className={`${CHECKBOX} mt-1`}
-                      aria-label={`Simular: ${action.recommendation}`}
+                      aria-label={tx("Simular: {0}", action.recommendation)}
                     />
                     <div className="min-w-0 flex-1">
                       <label htmlFor={`action-${action.id}`} className="block cursor-pointer">
@@ -194,11 +190,10 @@ export function ActionPlanExplorer({
                       {canSeeFindings && (
                         <Link
                           href={`/dashboard/hallazgos?dominio=${encodeURIComponent(plan.domain)}&regla=${encodeURIComponent(action.rule_code)}`}
-                          aria-label={`Ver ${cantidad(action.finding_count, "hallazgo")} de esta acción`}
+                          aria-label={tx("Ver {0} de esta acción", cantidad(action.finding_count, "hallazgo"))}
                           className="mt-2 inline-block text-xs font-medium text-lt-teal underline-offset-2 hover:underline"
                         >
-                          Ver hallazgos
-                        </Link>
+                          {tx("Ver hallazgos")}</Link>
                       )}
                     </div>
                   </li>
@@ -209,32 +204,29 @@ export function ActionPlanExplorer({
       </Card>
 
       <Card
-        title="¿Qué pasa si lo arreglo?"
-        description="La selección no modifica hallazgos ni el score guardado."
+        title={tx("¿Qué pasa si lo arreglo?")}
+        description={tx("La selección no modifica hallazgos ni el score guardado.")}
         action={(
           <ActionButton variant="ghost" size="sm" disabled={selected.length === 0} onClick={() => setSelected([])}>
-            Limpiar selección
-          </ActionButton>
+            {tx("Limpiar selección")}</ActionButton>
         )}
       >
         {porActivo && (
           <InlineAlert className="mb-4">
-            El simulador combina acciones por regla.{" "}
+            {tx("El simulador combina acciones por regla.")}{" "}
             <Link href={urlPlan(plan.domain, "regla")} className="font-medium text-lt-teal underline-offset-2 hover:underline">
-              Ver el plan por regla
-            </Link>{" "}
-            para elegir qué arreglar.
-          </InlineAlert>
+              {tx("Ver el plan por regla")}</Link>{" "}
+            {tx("para elegir qué arreglar.")}</InlineAlert>
         )}
         {simulationError && <InlineAlert tone="error" className="mb-4">{simulationError}</InlineAlert>}
         <div aria-busy={simulating} className="grid grid-cols-2 gap-3">
           <div className="min-w-0 rounded-lg bg-lt-raised p-3">
-            <p className="text-xs text-lt-muted">Actual</p>
+            <p className="text-xs text-lt-muted">{tx("Actual")}</p>
             <p className="mt-1 text-3xl font-bold tabular-nums text-lt-text">{scoreBefore}</p>
             <BandBadge band={bandBefore} />
           </div>
           <div className="min-w-0 rounded-lg bg-lt-raised p-3">
-            <p className="text-xs text-lt-muted">Con selección</p>
+            <p className="text-xs text-lt-muted">{tx("Con selección")}</p>
             <p className="mt-1 text-3xl font-bold tabular-nums text-lt-text">{simulating ? "…" : scoreAfter ?? "—"}</p>
             {bandAfter && <BandBadge band={bandAfter} />}
           </div>
@@ -243,28 +235,28 @@ export function ActionPlanExplorer({
           {selected.length === 0 ? (
             <p className="text-sm text-lt-muted">
               {porActivo
-                ? "En la vista por regla puedes seleccionar acciones para calcular el impacto conjunto."
-                : "Selecciona una o varias acciones para calcular el impacto conjunto."}
+                ? tx("En la vista por regla puedes seleccionar acciones para calcular el impacto conjunto.")
+                : tx("Selecciona una o varias acciones para calcular el impacto conjunto.")}
             </p>
           ) : simulating ? (
-            <p role="status" className="text-sm text-lt-muted">Calculando combinación de {selected.length} {selected.length === 1 ? "acción" : "acciones"}…</p>
+            <p role="status" className="text-sm text-lt-muted">{tx("Calculando combinación de")}{" "}{selected.length} {selected.length === 1 ? tx("acción") : tx("acciones")}…</p>
           ) : simulation ? (
             <p className="text-sm font-semibold text-lt-teal">
               {simulation.score_reduction > 0
-                ? `Reducción estimada: ${simulation.score_reduction} puntos`
+                ? tx("Reducción estimada: {0} puntos", simulation.score_reduction)
                 : simulation.score_reduction < 0
-                  ? `Aumento estimado: ${Math.abs(simulation.score_reduction)} puntos`
-                  : "La selección no cambia el score"}
+                  ? tx("Aumento estimado: {0} puntos", Math.abs(simulation.score_reduction))
+                  : tx("La selección no cambia el score")}
             </p>
           ) : null}
           {simulation?.floor_message_after && <p className="mt-2 text-xs text-lt-amber">{simulation.floor_message_after}</p>}
         </div>
         <div className="mt-4 border-t border-lt-border pt-4">
           <div className="mb-3 flex items-center justify-between gap-3">
-            <h3 className="text-sm font-semibold text-lt-text">Impacto por categoría</h3>
+            <h3 className="text-sm font-semibold text-lt-text">{tx("Impacto por categoría")}</h3>
             <div className="flex shrink-0 items-center gap-3 text-[11px] text-lt-muted" aria-hidden="true">
-              <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-lt-faint" />Actual</span>
-              <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-lt-teal" />Estimado</span>
+              <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-lt-faint" />{tx("Actual")}</span>
+              <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-lt-teal" />{tx("Estimado")}</span>
             </div>
           </div>
           <ul className="space-y-4" aria-busy={simulating}>
@@ -283,9 +275,9 @@ export function ActionPlanExplorer({
                     </span>
                   </div>
                   <div className="space-y-1.5">
-                    <ProgressBar value={before} tone="gray" label={`${CATEGORY_LABELS[category]} actual: ${before} de 100`} />
+                    <ProgressBar value={before} tone="gray" label={tx("{0} actual: {1} de 100", CATEGORY_LABELS[category], before)} />
                     {after !== null && (
-                      <ProgressBar value={after} tone="teal" label={`${CATEGORY_LABELS[category]} estimado: ${after} de 100`} />
+                      <ProgressBar value={after} tone="teal" label={tx("{0} estimado: {1} de 100", CATEGORY_LABELS[category], after)} />
                     )}
                   </div>
                 </li>
@@ -304,10 +296,10 @@ function Impacto({ action }: { action: PlanAction | PlanAssetAction }) {
     <span className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
       <span className="inline-flex items-center gap-1 text-lt-teal">
         <ArrowDownRight aria-hidden="true" className="h-3.5 w-3.5" />
-        Acumulado: {action.score_after_acumulado} ({reduccion(action.score_reduction_acumulado)})
+        {tx("Acumulado:")}{" "}{action.score_after_acumulado} ({reduccion(action.score_reduction_acumulado)})
       </span>
       <span className="text-lt-muted">
-        Sola: {action.score_after} ({reduccion(action.score_reduction)})
+        {tx("Sola:")}{" "}{action.score_after} ({reduccion(action.score_reduction)})
       </span>
     </span>
   );

@@ -10,6 +10,7 @@ import { RegisterDomainForm } from "./RegisterDomainForm";
 import { RegisteredDomainsTable } from "./RegisteredDomainsTable";
 import { SignatureRequestsList } from "./SignatureRequestsList";
 import { TxtVerificationList } from "./TxtVerificationList";
+import { tx } from "@/i18n/tx";
 
 interface DomainsAdminProps {
   domains: Domain[];
@@ -41,17 +42,16 @@ export function DomainsAdmin({ domains: initialDomains, txt: initialTxt, signatu
         <HibpVerificationGuide />
       </div>
       <Card
-        title="Dominios registrados"
+        title={tx("Dominios registrados")}
         icon={<Globe aria-hidden="true" className="h-4 w-4" />}
-        action={`${cantidad(domains.length, "dominio")} en inventario`}
+        action={tx("{0} en inventario", cantidad(domains.length, "dominio"))}
       >
         <div className="-mx-5">
           <RegisteredDomainsTable domains={domains} canOpenDetail />
         </div>
         <p className="mt-4 flex items-start gap-2 rounded-lg bg-lt-raised/50 px-3 py-2.5 text-xs text-lt-muted">
           <TriangleAlert aria-hidden="true" className="mt-px h-3.5 w-3.5 shrink-0" />
-          Un dominio vencido o por validar no se puede escanear ni exportar. Se necesita la verificación TXT para activar el monitoreo.
-        </p>
+          {tx("Un dominio vencido o por validar no se puede escanear ni exportar. Se necesita la verificación TXT para activar el monitoreo.")}</p>
         <div className="mt-6">
           <TxtVerificationList
             items={txt}

@@ -1,4 +1,5 @@
 import { CircleAlert } from "lucide-react";
+import { tx } from "@/i18n/tx";
 
 /** Mensaje de error de un campo. */
 export function FieldError({ id, message }: { id: string; message?: string }) {
@@ -6,7 +7,7 @@ export function FieldError({ id, message }: { id: string; message?: string }) {
   return (
     <p id={id} className="mt-1.5 flex items-start gap-1.5 text-[13px] font-medium text-red-600">
       <CircleAlert aria-hidden="true" className="mt-px h-3.5 w-3.5 shrink-0" />
-      {message}
+      {tx(message)}
     </p>
   );
 }

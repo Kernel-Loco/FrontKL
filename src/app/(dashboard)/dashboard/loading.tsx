@@ -1,6 +1,7 @@
+import { tx } from "@/i18n/tx";
 export default function DashboardLoading() {
   return (
-    <div className="animate-pulse space-y-8" role="status" aria-label="Cargando">
+    <div className="animate-pulse space-y-8" role="status" aria-label={tx("Cargando")}>
       <div className="space-y-2">
         <div className="h-7 w-48 rounded bg-lt-raised" />
         <div className="h-4 w-72 rounded bg-lt-raised" />

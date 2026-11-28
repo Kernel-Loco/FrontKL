@@ -1,8 +1,9 @@
+import { localized } from "@/i18n/tx";
 // Textos de la sección 'Tráfico de LowTide' de la página Seguridad. El User-Agent de LowTide liga a esta página,
 // que dice qué es LowTide y a quién escribir (BackKL, constante AGENTE de los recolectores y sección 9 de la carta).
 // Si el User-Agent o el ritmo cambian allá, cambian aquí.
 
-export const TRAFICO = {
+export const TRAFICO = localized({
   id: "trafico",
   titulo: "Tráfico de LowTide",
   agente: "lowtide-osint/<versión> (+https://lowtidesec.com/seguridad)",
@@ -22,4 +23,4 @@ export const TRAFICO = {
   aviso: "aviso de privacidad integral",
   avisoRuta: "/privacidad",
   avisoDespues: " dice qué datos se tratan, quién más los recibe y cuánto se conservan.",
-} as const;
+} as const);

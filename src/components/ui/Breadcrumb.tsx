@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { tx } from "@/i18n/tx";
 
 export interface Crumb {
   label: string;
@@ -7,7 +8,7 @@ export interface Crumb {
 
 export function Breadcrumb({ items }: { items: Crumb[] }) {
   return (
-    <nav aria-label="Ruta" className="mb-2 text-xs text-lt-muted">
+    <nav aria-label={tx("Ruta")} className="mb-2 text-xs text-lt-muted">
       <ol className="flex flex-wrap items-center gap-1.5">
         {items.map((item, i) => (
           <li key={`${item.label}-${i}`} className="flex items-center gap-1.5">

@@ -16,8 +16,9 @@ import { bandaEnRangos } from "@/lib/bandas";
 import { ServiceError } from "@/services/errors";
 import { getDomainAssets, getDomainFindings, getDomainScore, getDomains, getScans, getScoringWeights } from "@/services/queries";
 import type { Scan } from "@/types";
+import { tx, localized } from "@/i18n/tx";
 
-export const metadata: Metadata = { title: "Dashboard" };
+export const metadata: Metadata = localized({ title: "Dashboard" });
 
 export default async function DashboardPage() {
   const { user, forbidden } = await checkSectionAccess("dashboard");
@@ -116,27 +117,24 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-8">
       <PageHeader
-        title="Dashboard"
-        description="Riesgo de todos los dominios autorizados."
+        title={tx("Dashboard")}
+        description={tx("Riesgo de todos los dominios autorizados.")}
         actions={can(user.role, "request_scan") ? <ScanButton domains={visible} /> : undefined}
       />
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiTile label="Dominios monitoreados" value={visible.filter((d) => d.status === "verified").length} />
-        <KpiTile label="Riesgo promedio" value={average ?? "—"} tone={averageBand ? BAND_TONE[averageBand] : undefined} />
+        <KpiTile label={tx("Dominios monitoreados")} value={visible.filter((d) => d.status === "verified").length} />
+        <KpiTile label={tx("Riesgo promedio")} value={average ?? "—"} tone={averageBand ? BAND_TONE[averageBand] : undefined} />
         <KpiTile
-          label="Hallazgos críticos"
+          label={tx("Hallazgos críticos")}
           value={kpi.value}
           tone={critical > 0 ? "red" : undefined}
           hint={criticalHint ? criticalHint.charAt(0).toUpperCase() + criticalHint.slice(1) : undefined}
         />
-        <KpiTile label="Escaneos en curso" value={running} />
+        <KpiTile label={tx("Escaneos en curso")} value={running} />
       </div>
       {partialDomains.length > 0 && (
         <InlineAlert tone="warning">
-          <strong>Cobertura parcial.</strong> El último escaneo de {partialDomains.join(", ")} no revisó todo: alguna fuente falló o no corrió,
-          revisó solo una parte de sus repos o IP, o hay reglas que las fuentes actuales todavía no pueden revisar. Su score y su letra
-          pueden estar incompletos, y los conteos muestran los hallazgos abiertos registrados y pueden no estar al día.
-        </InlineAlert>
+          <strong>{tx("Cobertura parcial.")}</strong> {" "}{tx("El último escaneo de")}{" "}{partialDomains.join(", ")} {" "}{tx("no revisó todo: alguna fuente falló o no corrió, revisó solo una parte de sus repos o IP, o hay reglas que las fuentes actuales todavía no pueden revisar. Su score y su letra pueden estar incompletos, y los conteos muestran los hallazgos abiertos registrados y pueden no estar al día.")}</InlineAlert>
       )}
       <FindingsByTypeChart
         groupBy={findings ? "category" : "severity"}

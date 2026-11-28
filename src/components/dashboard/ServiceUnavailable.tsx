@@ -3,6 +3,7 @@
 import { useEffect, useRef, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { SectionError } from "./SectionError";
+import { tx } from "@/i18n/tx";
 
 /**
  * La API no respondió al validar la sesión (#108, RC-225). El menú queda visible y Reintentar vuelve a
@@ -22,5 +23,5 @@ export function ServiceUnavailable({ message }: { message: string }) {
     startTransition(() => router.refresh());
   }, [pathname, router]);
 
-  return <SectionError error={null} message={message} section="el panel" retry={() => startTransition(() => router.refresh())} />;
+  return <SectionError error={null} message={message} section={tx("el panel")} retry={() => startTransition(() => router.refresh())} />;
 }

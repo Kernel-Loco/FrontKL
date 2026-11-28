@@ -1,5 +1,6 @@
 import { formatShortDate } from "@/lib/format";
 import type { ScoreHistoryPoint } from "@/types";
+import { tx } from "@/i18n/tx";
 
 const W = 1000;
 const H = 300;
@@ -22,9 +23,9 @@ export function ScoreChart({ points }: { points: ScoreHistoryPoint[] }) {
   const last = points.length - 1;
 
   return (
-    <figure role="region" aria-label="Gráfica desplazable horizontalmente" tabIndex={0} className="relative overflow-x-auto">
+    <figure role="region" aria-label={tx("Gráfica desplazable horizontalmente")} tabIndex={0} className="relative overflow-x-auto">
       <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full min-w-[600px]" role="img" aria-labelledby="grafica-titulo grafica-desc">
-        <title id="grafica-titulo">Riesgo global en el tiempo</title>
+        <title id="grafica-titulo">{tx("Riesgo global en el tiempo")}</title>
         <desc id="grafica-desc">{points.map((p) => `${formatShortDate(p.computed_at)}: ${p.score}`).join("; ")}</desc>
         {ticks.map((t) => (
           <g key={t}>

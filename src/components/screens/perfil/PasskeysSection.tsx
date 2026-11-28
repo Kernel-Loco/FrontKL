@@ -20,6 +20,7 @@ import {
 import { deletePasskey, listPasskeys, passkeyRegisterOptions, passkeyRegisterVerify } from "@/services/authService";
 import { getErrorMessage } from "@/services/errors";
 import type { PasskeyList } from "@/types";
+import { tx } from "@/i18n/tx";
 
 const noSubscribe = () => () => {};
 
@@ -71,9 +72,9 @@ export function PasskeysSection({ mfaEnabled }: { mfaEnabled: boolean }) {
     const form = new FormData(event.currentTarget);
     const current = String(form.get("current") ?? "");
     const name = cleanPasskeyName(String(form.get("name") ?? ""));
-    if (!name) return setError("Ponle un nombre a la passkey, por ejemplo 'Laptop del trabajo'.");
-    if (!current) return setError("Escribe tu contraseña actual.");
-    if (mfaEnabled && code.length !== 6) return setError("Escribe los 6 dígitos que muestra tu app.");
+    if (!name) return setError(tx("Ponle un nombre a la passkey, por ejemplo 'Laptop del trabajo'."));
+    if (!current) return setError(tx("Escribe tu contraseña actual."));
+    if (mfaEnabled && code.length !== 6) return setError(tx("Escribe los 6 dígitos que muestra tu app."));
     setBusy(true);
     setError(null);
     setNotice(null);
@@ -85,15 +86,15 @@ export function PasskeysSection({ mfaEnabled }: { mfaEnabled: boolean }) {
       const credential = await startRegistration({ optionsJSON: options });
       await passkeyRegisterVerify({ credential, name });
       setAdding(false);
-      setNotice(`Listo: ya puedes entrar con la passkey '${name}'.`);
+      setNotice(tx("Listo: ya puedes entrar con la passkey '{0}'.", name));
       await load();
     } catch (err) {
       const aborted = isCeremonyAborted(err);
       if (err instanceof ApiError && registrationMustRestart(err.status, err.message)) {
         // Cada intento vuelve a pedir contraseña y, con TOTP, un código: el reto vence o se gasta en el paso 2.
         setError(mfaEnabled
-          ? "La solicitud venció o ya se usó. Escribe otra vez tu contraseña y un código nuevo."
-          : "La solicitud venció o ya se usó. Escribe otra vez tu contraseña.");
+          ? tx("La solicitud venció o ya se usó. Escribe otra vez tu contraseña y un código nuevo.")
+          : tx("La solicitud venció o ya se usó. Escribe otra vez tu contraseña."));
       } else if (codeSpent) {
         setError(withNextCodeHint(aborted ? null : message(err)));
       } else if (!aborted) {
@@ -118,7 +119,7 @@ export function PasskeysSection({ mfaEnabled }: { mfaEnabled: boolean }) {
     try {
       await deletePasskey(id);
       setConfirming(null);
-      setNotice("Se borró la passkey. Ya no sirve para entrar.");
+      setNotice(tx("Se borró la passkey. Ya no sirve para entrar."));
       await load();
     } catch (err) {
       // 404: ya no existe (se borró en otra pestaña o al activar TOTP). Se cierra la confirmación y la lista se pone al día.
@@ -133,70 +134,65 @@ export function PasskeysSection({ mfaEnabled }: { mfaEnabled: boolean }) {
   };
 
   if (!supported) {
-    return <InlineAlert tone="info">Este navegador no admite passkeys. Usa uno reciente (Chrome, Edge, Safari o Firefox).</InlineAlert>;
+    return <InlineAlert tone="info">{tx("Este navegador no admite passkeys. Usa uno reciente (Chrome, Edge, Safari o Firefox).")}</InlineAlert>;
   }
-  if (!data) return error ? <InlineAlert tone="error">{error}</InlineAlert> : <p className="text-sm text-lt-muted">Cargando…</p>;
+  if (!data) return error ? <InlineAlert tone="error">{error}</InlineAlert> : <p className="text-sm text-lt-muted">{tx("Cargando…")}</p>;
 
   const full = data.passkeys.length >= data.max;
 
   return (
     <div className="space-y-4">
       <p className="text-sm text-lt-muted">
-        Una passkey te deja entrar con la huella, el rostro o el PIN de tu dispositivo, sin contraseña. Cuenta como
-        verificación en dos pasos.
-      </p>
+        {tx("Una passkey te deja entrar con la huella, el rostro o el PIN de tu dispositivo, sin contraseña. Cuenta como verificación en dos pasos.")}</p>
       {data.passkeys.length > 0 ? (
         <ul className="divide-y divide-lt-border rounded-lg border border-lt-border">
           {data.passkeys.map((passkey) => (
             <li key={passkey.id} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2.5">
               <div className="min-w-0">
                 <p className="truncate text-sm font-medium text-lt-text">
-                  {passkey.name} {passkey.backed_up && <Badge tone="teal">Sincronizada</Badge>}
+                  {passkey.name} {passkey.backed_up && <Badge tone="teal">{tx("Sincronizada")}</Badge>}
                 </p>
                 <p className="text-xs text-lt-muted">
-                  Creada {formatDateTime(passkey.created_at)} ·{" "}
-                  {passkey.last_used_at ? `último uso ${formatDateTime(passkey.last_used_at)}` : "sin usar"}
+                  {tx("Creada")}{" "}{formatDateTime(passkey.created_at)} ·{" "}
+                  {passkey.last_used_at ? tx("último uso {0}", formatDateTime(passkey.last_used_at)) : tx("sin usar")}
                 </p>
               </div>
               {confirming === passkey.id ? (
                 <div className="flex gap-2">
                   <ActionButton size="sm" variant="danger" loading={busy} onClick={() => onDelete(passkey.id)}>
-                    Borrar
-                  </ActionButton>
+                    {tx("Borrar")}</ActionButton>
                   <ActionButton size="sm" variant="ghost" disabled={busy} onClick={() => setConfirming(null)}>
-                    Cancelar
-                  </ActionButton>
+                    {tx("Cancelar")}</ActionButton>
                 </div>
               ) : (
                 <ActionButton size="sm" variant="ghost" disabled={busy} onClick={() => setConfirming(passkey.id)}>
-                  Borrar…
-                </ActionButton>
+                  {tx("Borrar…")}</ActionButton>
               )}
             </li>
           ))}
         </ul>
       ) : (
-        <p className="text-sm text-lt-muted">Todavía no tienes passkeys.</p>
+        <p className="text-sm text-lt-muted">{tx("Todavía no tienes passkeys.")}</p>
       )}
       {notice && <InlineAlert tone="success">{notice}</InlineAlert>}
       {!data.available ? (
-        <InlineAlert tone="info">Las passkeys no están disponibles en este servidor.</InlineAlert>
+        <InlineAlert tone="info">{tx("Las passkeys no están disponibles en este servidor.")}</InlineAlert>
       ) : full ? (
-        <InlineAlert tone="info">Ya tienes {data.max} passkeys. Borra una para registrar otra.</InlineAlert>
+        <InlineAlert tone="info">{tx("Ya tienes")}{" "}{data.max} {" "}{tx("passkeys. Borra una para registrar otra.")}</InlineAlert>
       ) : adding ? (
         <form method="post" onSubmit={onAdd} noValidate className="space-y-4">
-          <Field label="Nombre de la passkey" htmlFor="passkey-name">
-            <input id="passkey-name" name="name" maxLength={60} placeholder="Laptop del trabajo" className={INPUT} />
+          <Field label={tx("Nombre de la passkey")} htmlFor="passkey-name">
+            <input id="passkey-name" name="name" maxLength={60} placeholder={tx("Laptop del trabajo")} className={INPUT} />
           </Field>
-          <Field label="Contraseña actual" htmlFor="passkey-current">
+          <Field label={tx("Contraseña actual")} htmlFor="passkey-current">
             <input id="passkey-current" name="current" type="password" autoComplete="current-password" className={INPUT} />
           </Field>
           {mfaEnabled && (
-            <CodeInput key={codeKey} length={6} onChange={setCode} label="Código de 6 dígitos de tu app" disabled={busy} autoFocus={false} />
+            <CodeInput key={codeKey} length={6} onChange={setCode} label={tx("Código de 6 dígitos de tu app")} disabled={busy} autoFocus={false} />
           )}
           {error && <InlineAlert tone="error">{error}</InlineAlert>}
           <div className="flex flex-wrap gap-2">
-            <ActionButton type="submit" loading={busy}>Crear passkey</ActionButton>
+            <ActionButton type="submit" loading={busy}>{tx("Crear passkey")}</ActionButton>
             <ActionButton
               variant="ghost"
               disabled={busy}
@@ -205,8 +201,7 @@ export function PasskeysSection({ mfaEnabled }: { mfaEnabled: boolean }) {
                 setError(null);
               }}
             >
-              Cancelar
-            </ActionButton>
+              {tx("Cancelar")}</ActionButton>
           </div>
         </form>
       ) : (
@@ -220,8 +215,7 @@ export function PasskeysSection({ mfaEnabled }: { mfaEnabled: boolean }) {
               setNotice(null);
             }}
           >
-            Agregar passkey
-          </ActionButton>
+            {tx("Agregar passkey")}</ActionButton>
         </>
       )}
     </div>

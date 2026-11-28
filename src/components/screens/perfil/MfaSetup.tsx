@@ -12,6 +12,7 @@ import { groupSecret, isQrDataUri, minutesLeft, setupMustRestart } from "@/lib/m
 import { enableMfa, startMfaSetup } from "@/services/authService";
 import { getErrorMessage } from "@/services/errors";
 import type { MfaSetupResponse } from "@/types";
+import { tx } from "@/i18n/tx";
 
 type Step = "password" | "scan" | "done";
 
@@ -34,12 +35,12 @@ export function MfaSetup({ onDone }: { onDone?: () => void }) {
   const onPassword = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const current = String(new FormData(event.currentTarget).get("current") ?? "");
-    if (!current) return setError("Escribe tu contraseña actual.");
+    if (!current) return setError(tx("Escribe tu contraseña actual."));
     setBusy(true);
     setError(null);
     try {
       const result = await startMfaSetup({ current_password: current });
-      if (!isQrDataUri(result.qr_svg)) throw new Error("La respuesta del servicio no trae el código QR.");
+      if (!isQrDataUri(result.qr_svg)) throw new Error(tx("La respuesta del servicio no trae el código QR."));
       formRef.current?.reset();
       setSetup(result);
       setCode("");
@@ -54,7 +55,7 @@ export function MfaSetup({ onDone }: { onDone?: () => void }) {
 
   const onCode = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (code.length !== 6) return setError("Escribe los 6 dígitos que muestra tu app.");
+    if (code.length !== 6) return setError(tx("Escribe los 6 dígitos que muestra tu app."));
     setBusy(true);
     setError(null);
     try {
@@ -81,9 +82,8 @@ export function MfaSetup({ onDone }: { onDone?: () => void }) {
   if (step === "done") {
     return (
       <InlineAlert tone="success">
-        Listo: desde ahora LowTide te pide el código de tu app al iniciar sesión.
-        {removed > 0 &&
-          ` Se ${removed === 1 ? "borró tu passkey" : `borraron tus ${removed} passkeys`}. Puedes registrar otra con tu contraseña y un código.`}
+        {tx("Listo: desde ahora LowTide te pide el código de tu app al iniciar sesión.")}{removed > 0 &&
+          tx(" Se {0}. Puedes registrar otra con tu contraseña y un código.", removed === 1 ? tx("borró tu passkey") : tx("borraron tus {0} passkeys", removed))}
       </InlineAlert>
     );
   }
@@ -92,28 +92,27 @@ export function MfaSetup({ onDone }: { onDone?: () => void }) {
     return (
       <form method="post" onSubmit={onCode} noValidate className="space-y-4">
         <p className="text-sm text-lt-muted">
-          Escanea el código con tu app autenticadora (Google Authenticator, Microsoft Authenticator, 1Password u otra) y
-          escribe el código de 6 dígitos que te muestra. Vence en {minutesLeft(setup.expires_in_seconds)} minutos.
+          {tx("Escanea el código con tu app autenticadora (Google Authenticator, Microsoft Authenticator, 1Password u otra) y escribe el código de 6 dígitos que te muestra. Vence en")}{" "}{tx("{0} minutos.", minutesLeft(setup.expires_in_seconds))}
         </p>
         {/* El QR lo dibuja la API como data: URI; no pasa por ningún servicio de terceros. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={setup.qr_svg}
-          alt="Código QR para agregar LowTide a tu app autenticadora"
+          alt={tx("Código QR para agregar LowTide a tu app autenticadora")}
           width={216}
           height={216}
           className="mx-auto block h-auto w-full max-w-[216px] rounded-lg bg-white p-2"
         />
         <div>
-          <p className="text-xs text-lt-muted">¿No puedes escanearlo? Escribe esta clave en la app:</p>
+          <p className="text-xs text-lt-muted">{tx("¿No puedes escanearlo? Escribe esta clave en la app:")}</p>
           <p className="mt-1 break-all tabular-nums text-sm text-lt-text" data-testid="mfa-secret">
             {groupSecret(setup.secret)}
           </p>
         </div>
-        <CodeInput key={codeKey} length={6} onChange={setCode} label="Código de 6 dígitos de tu app" disabled={busy} />
+        <CodeInput key={codeKey} length={6} onChange={setCode} label={tx("Código de 6 dígitos de tu app")} disabled={busy} />
         {error && <InlineAlert tone="error">{error}</InlineAlert>}
         <div className="flex flex-wrap gap-2">
-          <ActionButton type="submit" loading={busy} disabled={code.length !== 6}>Verificar y activar</ActionButton>
+          <ActionButton type="submit" loading={busy} disabled={code.length !== 6}>{tx("Verificar y activar")}</ActionButton>
           <ActionButton
             variant="ghost"
             disabled={busy}
@@ -123,8 +122,7 @@ export function MfaSetup({ onDone }: { onDone?: () => void }) {
               setStep("password");
             }}
           >
-            Cancelar
-          </ActionButton>
+            {tx("Cancelar")}</ActionButton>
         </div>
       </form>
     );
@@ -133,13 +131,12 @@ export function MfaSetup({ onDone }: { onDone?: () => void }) {
   return (
     <form ref={formRef} method="post" onSubmit={onPassword} noValidate className="space-y-4">
       <p className="text-sm text-lt-muted">
-        Protege tu cuenta con un código de 6 dígitos de una app autenticadora. Para empezar, confirma tu contraseña.
-      </p>
-      <Field label="Contraseña actual" htmlFor="mfa-current">
+        {tx("Protege tu cuenta con un código de 6 dígitos de una app autenticadora. Para empezar, confirma tu contraseña.")}</p>
+      <Field label={tx("Contraseña actual")} htmlFor="mfa-current">
         <input id="mfa-current" name="current" type="password" autoComplete="current-password" className={INPUT} />
       </Field>
       {error && <InlineAlert tone="error">{error}</InlineAlert>}
-      <ActionButton type="submit" loading={busy}>Mostrar código QR</ActionButton>
+      <ActionButton type="submit" loading={busy}>{tx("Mostrar código QR")}</ActionButton>
     </form>
   );
 }
@@ -152,7 +149,7 @@ export function MfaSetupCard({ mfaEnabled }: { mfaEnabled: boolean }) {
   const [done, setDone] = useState(false);
   if (mfaEnabled && !done) return null;
   return (
-    <Card title="Activar la verificación en dos pasos">
+    <Card title={tx("Activar la verificación en dos pasos")}>
       <MfaSetup onDone={() => setDone(true)} />
     </Card>
   );

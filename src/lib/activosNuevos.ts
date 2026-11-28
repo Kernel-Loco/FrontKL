@@ -6,6 +6,7 @@
 // en los atributos del dominio o del subdominio) es posterior al inicio del escaneo anterior que sí corrió.
 // Sin imports con @/ de valores, así node --test lo carga.
 import type { Asset, Scan } from "@/types";
+import { tx } from "@/i18n/tx";
 
 /** El último escaneo terminado del dominio y el anterior que no falló (uno fallido no vio nada: no sirve de base). */
 export interface ScanBase {
@@ -164,7 +165,7 @@ export async function mapLimit<T, R>(items: T[], limit: number, task: (item: T, 
   return results;
 }
 
-const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+const plural = (n: number, one: string, many: string) => `${n} ${tx(n === 1 ? one : many)}`;
 
 /** Texto del panel: '2 subdominios · 1 IP · 0 puertos · 1 certificado'. */
 export function newAssetsText(counts: NewAssetCounts): string {

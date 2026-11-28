@@ -3,6 +3,7 @@
 import { useId } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { SELECT } from "@/components/ui/Field";
+import { tx } from "@/i18n/tx";
 
 /** Cambia el dominio de la pantalla actual (parámetro ?dominio=). */
 export function DomainPicker({ domains, value }: { domains: string[]; value: string }) {
@@ -13,8 +14,7 @@ export function DomainPicker({ domains, value }: { domains: string[]; value: str
   return (
     <div className="w-full sm:w-56">
       <label htmlFor={id} className="mb-1.5 block text-xs font-medium text-lt-muted">
-        Dominio
-      </label>
+        {tx("Dominio")}</label>
       <select
         id={id}
         value={value}

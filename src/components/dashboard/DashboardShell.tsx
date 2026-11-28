@@ -8,6 +8,7 @@ import { IdleTimeout } from "../IdleTimeout";
 import { Logo } from "../Logo";
 import { DESKTOP_NAV_ID, MOBILE_NAV_ID, Sidebar, type NavBadges } from "../Sidebar";
 import { ThemeToggle, type ThemeMode } from "../ThemeToggle";
+import { tx } from "@/i18n/tx";
 
 interface DashboardShellProps {
   /** null: la API no respondió al validar la sesión (#108, RC-225). El menú sigue, sin datos de la cuenta. */
@@ -22,7 +23,7 @@ const DEMO_ORGANIZATIONS = new Set(["Acme Demo", "Beta Corp"]);
 const DBIP_URL = "https://db-ip.com";
 const CC_BY_URL = "https://creativecommons.org/licenses/by/4.0/";
 const FOOTER_LINK = "underline underline-offset-2 hover:text-lt-text";
-const NEW_TAB = <span lang="es" className="sr-only"> (se abre en una pestaña nueva)</span>;
+const NEW_TAB = <span lang="es" className="sr-only"> {" "}{tx("(se abre en una pestaña nueva)")}</span>;
 
 function subscribeToTheme(onChange: () => void) {
   window.addEventListener("storage", onChange);
@@ -90,18 +91,17 @@ export function DashboardShell({ user, badges, children }: DashboardShellProps) 
         href="#contenido"
         className="sr-only z-50 rounded-md bg-lt-surface px-4 py-2 text-sm font-semibold text-lt-text focus:not-sr-only focus:fixed focus:left-4 focus:top-4"
       >
-        Saltar al contenido
-      </a>
+        {tx("Saltar al contenido")}</a>
       <Sidebar user={user} badges={badges} theme={theme} onThemeToggle={toggleTheme} mobileOpen={menuOpen} onMobileClose={closeMenu} collapsed={sidebarHidden} onCollapse={hideSidebar} />
       <div className="relative flex min-w-0 flex-1 flex-col">
         {sidebarHidden && (
           <button
             type="button"
             onClick={() => setSidebarHidden(false)}
-            aria-label="Mostrar menú"
+            aria-label={tx("Mostrar menú")}
             aria-controls={DESKTOP_NAV_ID}
             aria-expanded={false}
-            title="Mostrar menú"
+            title={tx("Mostrar menú")}
             className="absolute left-3 top-3 z-30 hidden rounded-md p-1.5 text-lt-faint hover:text-lt-text md:block"
           >
             <Menu aria-hidden="true" className="h-[18px] w-[18px]" strokeWidth={1.5} />
@@ -111,7 +111,7 @@ export function DashboardShell({ user, badges, children }: DashboardShellProps) 
           <button
             type="button"
             onClick={() => setMenuOpen(true)}
-            aria-label="Abrir menú"
+            aria-label={tx("Abrir menú")}
             aria-expanded={menuOpen}
             aria-controls={MOBILE_NAV_ID}
             className="rounded-md p-2 text-lt-muted hover:bg-lt-raised hover:text-lt-text"
@@ -127,33 +127,29 @@ export function DashboardShell({ user, badges, children }: DashboardShellProps) 
         <main id="contenido" className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 md:px-10 md:py-10">
           {user && DEMO_ORGANIZATIONS.has(user.organization_name) && (
             <p role="status" className="mb-6 flex items-center gap-2 text-sm text-lt-muted">
-              <span aria-hidden="true" className="h-1.5 w-1.5 shrink-0 rounded-full bg-lt-amber" />
+              <span aria-hidden="true" className="h-1.5 w-1.5 shrink-0 rounded-full bg-lt-indigo-soft" />
               <span>
-                <span className="font-medium text-lt-text">Datos de demostración.</span> Esta empresa usa información de prueba.
-              </span>
+                <span className="font-medium text-lt-text">{tx("Datos de demostración.")}</span> {" "}{tx("Esta empresa usa información de prueba.")}</span>
             </p>
           )}
           {children}
         </main>
         <footer className="mx-auto w-full max-w-7xl px-4 pb-6 text-xs text-lt-muted md:px-10">
           <Link href="/seguridad" className={FOOTER_LINK}>
-            Seguridad
-          </Link>
+            {tx("Seguridad")}</Link>
           {" · "}
           <Link href="/privacidad" className={FOOTER_LINK}>
-            Aviso de privacidad
-          </Link>
+            {tx("Aviso de privacidad")}</Link>
           {" · "}
           <Link href="/terminos" className={FOOTER_LINK}>
-            Términos de uso
-          </Link>
+            {tx("Términos de uso")}</Link>
           {" · "}
           <a href={DBIP_URL} lang="en" target="_blank" rel="noopener noreferrer" className={FOOTER_LINK}>
-            IP Geolocation by DB-IP{NEW_TAB}
+            {tx("IP Geolocation by DB-IP")}{NEW_TAB}
           </a>
           {" · "}
           <a href={CC_BY_URL} target="_blank" rel="noopener noreferrer" className={FOOTER_LINK}>
-            CC BY 4.0{NEW_TAB}
+            {tx("CC BY 4.0")}{NEW_TAB}
           </a>
         </footer>
       </div>

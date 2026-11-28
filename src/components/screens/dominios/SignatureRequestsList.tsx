@@ -11,8 +11,9 @@ import { formatDate, formatRelative } from "@/lib/format";
 import { acceptSignatureRequest, cancelSignatureRequest, refreshSignatureRequest } from "@/services/domainService";
 import type { Domain, SignatureRequest, SignatureRequestList, SignatureRequestStatus, TxtVerification } from "@/types";
 import { signatureError } from "./RegisterDomainForm";
+import { tx, localized } from "@/i18n/tx";
 
-const STATUS: Record<SignatureRequestStatus, { label: string; tone: Tone }> = {
+const STATUS: Record<SignatureRequestStatus, { label: string; tone: Tone }> = localized({
   creating: { label: "Mandando a Mifiel", tone: "gray" },
   sent: { label: "Esperando firma", tone: "amber" },
   signed: { label: "Firmada, falta confirmar", tone: "blue" },
@@ -21,7 +22,7 @@ const STATUS: Record<SignatureRequestStatus, { label: string; tone: Tone }> = {
   cancelled: { label: "Cancelada", tone: "gray" },
   expired: { label: "Venció sin firma", tone: "orange" },
   failed: { label: "No se pudo mandar", tone: "red" },
-};
+});
 
 interface SignatureRequestsListProps {
   items: SignatureRequest[];
@@ -64,7 +65,7 @@ export function SignatureRequestsList({ items, mode, onChange, onAccepted }: Sig
     run(item.id, async () => {
       const next = await cancelSignatureRequest(item.id);
       onChange(next);
-      setMessage(next.last_error ? `${next.fqdn}: ${next.last_error}` : `${next.fqdn}: carta cancelada.`);
+      setMessage(next.last_error ? `${next.fqdn}: ${next.last_error}` : tx("{0}: carta cancelada.", next.fqdn));
     });
 
   const accept = (item: SignatureRequest) =>
@@ -74,23 +75,23 @@ export function SignatureRequestsList({ items, mode, onChange, onAccepted }: Sig
       onAccepted(domain, txt);
       setConfirming(null);
       setTyped("");
-      setMessage(`${domain.fqdn}: la carta firmada ya cuenta para el dominio.`);
+      setMessage(tx("{0}: la carta firmada ya cuenta para el dominio.", domain.fqdn));
     });
 
   if (items.length === 0 && mode === "off") return null;
 
   return (
     <Card
-      title="Cartas en firma"
+      title={tx("Cartas en firma")}
       description={
         mode === "sandbox"
-          ? "Mifiel en modo de pruebas: estas firmas no tienen validez legal."
-          : "Cartas que Mifiel mandó a firmar por correo. Consulta el estado y confirma la carta firmada."
+          ? tx("Mifiel en modo de pruebas: estas firmas no tienen validez legal.")
+          : tx("Cartas que Mifiel mandó a firmar por correo. Consulta el estado y confirma la carta firmada.")
       }
       icon={<FileSignature aria-hidden="true" className="h-4 w-4" />}
     >
       {items.length === 0 ? (
-        <p className="text-sm text-lt-muted">Todavía no hay cartas mandadas a firmar.</p>
+        <p className="text-sm text-lt-muted">{tx("Todavía no hay cartas mandadas a firmar.")}</p>
       ) : (
         <ul className="divide-y divide-lt-border">
           {items.map((item) => {
@@ -105,8 +106,8 @@ export function SignatureRequestsList({ items, mode, onChange, onAccepted }: Sig
                     <p className="break-all tabular-nums text-xs text-lt-text">{item.fqdn}</p>
                     <p className="mt-0.5 text-[11px] text-lt-faint">
                       {item.signer_name ? `${item.signer_name} · ` : ""}
-                      {formatDate(item.valid_from)} a {formatDate(item.valid_until)}
-                      {item.last_checked_at ? ` · consultada ${formatRelative(item.last_checked_at)}` : ""}
+                      {tx("{0} a {1}", formatDate(item.valid_from), formatDate(item.valid_until))}
+                      {item.last_checked_at ? tx(" · consultada {0}", formatRelative(item.last_checked_at)) : ""}
                     </p>
                   </div>
                   <Badge tone={s.tone} dot>
@@ -115,15 +116,14 @@ export function SignatureRequestsList({ items, mode, onChange, onAccepted }: Sig
                 </div>
                 {item.last_error && item.status !== "accepted" && <p className="mt-1.5 text-xs text-lt-red">{item.last_error}</p>}
                 {item.status === "signed" && !canAccept && (
-                  <p className="mt-1.5 text-xs text-lt-muted">Firmada en el sandbox de Mifiel: no tiene validez legal y no se puede confirmar.</p>
+                  <p className="mt-1.5 text-xs text-lt-muted">{tx("Firmada en el sandbox de Mifiel: no tiene validez legal y no se puede confirmar.")}</p>
                 )}
                 {(open || item.status === "signed") && (
                   <div className="mt-2.5 flex flex-wrap items-center justify-end gap-2">
                     {open && (
                       <ActionButton variant="ghost" size="sm" disabled={working !== null} loading={working === item.id} onClick={() => refresh(item)}>
                         {working !== item.id && <RefreshCw aria-hidden="true" className="h-3.5 w-3.5" />}
-                        Consultar estado
-                      </ActionButton>
+                        {tx("Consultar estado")}</ActionButton>
                     )}
                     {canAccept && confirming !== item.id && (
                       <ActionButton
@@ -135,13 +135,11 @@ export function SignatureRequestsList({ items, mode, onChange, onAccepted }: Sig
                           setMessage(null);
                         }}
                       >
-                        Confirmar
-                      </ActionButton>
+                        {tx("Confirmar")}</ActionButton>
                     )}
                     {/* Una creating se cancela después de revisar en Mifiel; si todavía se está mandando, la API da 409. */}
                     <ActionButton variant="danger" size="sm" disabled={working !== null} onClick={() => cancel(item)}>
-                      Cancelar
-                    </ActionButton>
+                      {tx("Cancelar")}</ActionButton>
                   </div>
                 )}
                 {canAccept && confirming === item.id && (
@@ -153,9 +151,7 @@ export function SignatureRequestsList({ items, mode, onChange, onAccepted }: Sig
                     }}
                   >
                     <label htmlFor={`confirm-${item.id}`} className="block text-xs text-lt-muted">
-                      Revisa el PDF firmado y escribe <span className="tabular-nums text-lt-text">{item.fqdn}</span> para confirmar que la carta
-                      autoriza ese dominio.
-                    </label>
+                      {tx("Revisa el PDF firmado y escribe")}{" "}<span className="tabular-nums text-lt-text">{item.fqdn}</span> {" "}{tx("para confirmar que la carta autoriza ese dominio.")}</label>
                     <input
                       id={`confirm-${item.id}`}
                       value={typed}
@@ -165,16 +161,14 @@ export function SignatureRequestsList({ items, mode, onChange, onAccepted }: Sig
                     />
                     <div className="flex justify-end gap-2">
                       <ActionButton variant="ghost" size="sm" type="button" onClick={() => setConfirming(null)}>
-                        Volver
-                      </ActionButton>
+                        {tx("Volver")}</ActionButton>
                       <ActionButton
                         size="sm"
                         type="submit"
                         disabled={working !== null || typed.trim().toLowerCase() !== item.fqdn}
                         loading={working === item.id}
                       >
-                        Confirmar carta
-                      </ActionButton>
+                        {tx("Confirmar carta")}</ActionButton>
                     </div>
                   </form>
                 )}

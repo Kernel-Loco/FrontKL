@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/Card";
 import { can, canAccessSection, SECTIONS } from "@/config/permissions";
 import { cantidad } from "@/lib/format";
 import { getDomains, getSignatureRequests, getTxtVerifications } from "@/services/queries";
+import { tx } from "@/i18n/tx";
 
 export const metadata: Metadata = { title: SECTIONS.dominios.label };
 
@@ -20,7 +21,7 @@ export default async function DominiosPage() {
 
   return (
     <div className="space-y-8">
-      <PageHeader title={SECTIONS.dominios.label} description="Solo se escanean y reportan dominios con autorización vigente." />
+      <PageHeader title={SECTIONS.dominios.label} description={tx("Solo se escanean y reportan dominios con autorización vigente.")} />
       {isAdmin ? (
         <DomainsAdmin
           domains={domains}
@@ -31,17 +32,16 @@ export default async function DominiosPage() {
         />
       ) : (
         <Card
-          title="Dominios registrados"
+          title={tx("Dominios registrados")}
           icon={<Globe aria-hidden="true" className="h-4 w-4" />}
-          action={`${cantidad(domains.length, "dominio")} en inventario`}
+          action={tx("{0} en inventario", cantidad(domains.length, "dominio"))}
         >
           <div className="-mx-5">
             <RegisteredDomainsTable domains={domains} canOpenDetail={canAccessSection(user.role, "detalle")} />
           </div>
           <p className="mt-4 flex items-start gap-2 text-xs text-lt-muted">
             <TriangleAlert aria-hidden="true" className="mt-px h-3.5 w-3.5 shrink-0" />
-            Un dominio vencido o por validar no se puede escanear ni exportar. Para registrar un dominio, pídeselo a un Administrador.
-          </p>
+            {tx("Un dominio vencido o por validar no se puede escanear ni exportar. Para registrar un dominio, pídeselo a un Administrador.")}</p>
         </Card>
       )}
     </div>

@@ -12,6 +12,7 @@ import { writeFlow } from "@/lib/flowStorage";
 import { forgotPasswordSchema, type ForgotPasswordValues } from "@/lib/validation";
 import { requestPasswordReset } from "@/services/authService";
 import { getErrorMessage } from "@/services/errors";
+import { tx } from "@/i18n/tx";
 
 const CAPTCHA_MISSING = "Marca 'No soy un robot' y espera a que diga Verificado.";
 
@@ -32,13 +33,13 @@ export function ForgotPasswordForm() {
 
   const onCaptcha = (payload: string | null) => {
     setCaptcha(payload);
-    if (payload) setFormError((current) => (current === CAPTCHA_MISSING ? null : current));
+    if (payload) setFormError((current) => (current === tx(CAPTCHA_MISSING) ? null : current));
   };
 
   const onSubmit = async ({ email }: ForgotPasswordValues) => {
     setFormError(null);
     if (!captcha) {
-      setFormError(CAPTCHA_MISSING);
+      setFormError(tx(CAPTCHA_MISSING));
       return;
     }
     try {
@@ -59,16 +60,14 @@ export function ForgotPasswordForm() {
 
   return (
     <form method="post" onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
-      <TextInput label="Correo" placeholder="analista@organizacion.com" type="email" autoComplete="email" error={errors.email?.message} {...register("email")} />
+      <TextInput label={tx("Correo")} placeholder="analista@organizacion.com" type="email" autoComplete="email" error={errors.email?.message} {...register("email")} />
       <Captcha renew={attempts} onChange={onCaptcha} />
       {formError && <Notice tone="error">{formError}</Notice>}
       <div className="space-y-4 pt-2">
         <Button type="submit" loading={busy}>
-          Enviar enlace
-        </Button>
+          {tx("Enviar enlace")}</Button>
         <Button variant="secondary" onClick={() => router.push("/login")} disabled={busy}>
-          Volver
-        </Button>
+          {tx("Volver")}</Button>
       </div>
     </form>
   );

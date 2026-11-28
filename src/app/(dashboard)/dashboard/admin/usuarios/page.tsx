@@ -5,6 +5,7 @@ import { UsersManager } from "@/components/screens/admin/UsersManager";
 import { AvisoSimulado } from "@/components/ui/AvisoSimulado";
 import { SECTIONS } from "@/config/permissions";
 import { getUsers } from "@/services/userService";
+import { tx } from "@/i18n/tx";
 
 export const metadata: Metadata = { title: SECTIONS.usuarios.label };
 
@@ -14,7 +15,7 @@ export default async function UsuariosPage() {
 
   return (
     <div className="space-y-8">
-      <PageHeader title={SECTIONS.usuarios.label} description="Quién entra a LowTide y qué puede hacer cada rol." />
+      <PageHeader title={SECTIONS.usuarios.label} description={tx("Quién entra a LowTide y qué puede hacer cada rol.")} />
       <AvisoSimulado acciones={["inviteUser", "changeUserRole"]} datos={["getUsers"]} />
       <UsersManager initial={(await getUsers()).items} currentUserEmail={user.email} />
     </div>

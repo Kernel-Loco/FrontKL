@@ -2,6 +2,7 @@ import { BAND_LABELS, SEVERITY_LABELS } from "@/config/labels";
 import { gradeText } from "@/lib/riesgo";
 import type { Band, Grade, Severity } from "@/types";
 import { BAND_TONE, BADGE_TONES, SEVERITY_BADGE, SOLID_TONES, type Tone } from "./tones";
+import { tx } from "@/i18n/tx";
 
 const BADGE_BASE = "inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-2 py-0.5 text-xs font-semibold";
 
@@ -41,8 +42,7 @@ export function GradeBadge({ grade, band, partial = false }: { grade: Grade; ban
       </Badge>
       {partial && (
         <span aria-hidden="true" className="rounded-sm border border-lt-amber/30 bg-lt-amber/10 px-1.5 py-0.5 text-[11px] text-lt-amber">
-          Parcial
-        </span>
+          {tx("Parcial")}</span>
       )}
     </span>
   );

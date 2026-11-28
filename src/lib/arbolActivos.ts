@@ -1,3 +1,4 @@
+import { tx } from "@/i18n/tx";
 // Vista en árbol de la pantalla 'Activos' (RC-248): de la lista de GET /api/v1/assets al árbol dominio, subdominio,
 // IP y servicio. Sin imports, para que node --test lo cargue sin alias. La API no manda el id del padre sino su valor
 // y su tipo (parent y parent_type), y la base no repite (domain_id, asset_type, value), así que dominio, tipo y valor
@@ -299,8 +300,8 @@ export function armarArbol<T extends ActivoArbol>(activos: readonly T[]): RamaDo
 
 /** Texto del motivo de un activo suelto, con el padre que trae la API. */
 export function textoSuelto(motivo: MotivoSuelto, padre: string | null): string {
-  if (motivo === "ciclo") return "Suelto: su padre termina apuntando a él mismo (ciclo).";
-  const suPadre = padre ? `su padre ${padre}` : "su padre";
-  if (motivo === "otro_dominio") return `Suelto: ${suPadre} es de otro dominio.`;
-  return `Suelto: ${suPadre} no está en esta vista (filtros o tope del árbol).`;
+  if (motivo === "ciclo") return tx("Suelto: su padre termina apuntando a él mismo (ciclo).");
+  const suPadre = padre ? tx("su padre {0}", padre) : tx("su padre");
+  if (motivo === "otro_dominio") return tx("Suelto: {0} es de otro dominio.", suPadre);
+  return tx("Suelto: {0} no está en esta vista (filtros o tope del árbol).", suPadre);
 }

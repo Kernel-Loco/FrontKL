@@ -2,6 +2,7 @@
 // `attributes` tal cual lo guarda cada fuente: aquí solo se eligen tecnologías, CDN, registrador, país y ASN, con
 // las mismas claves que usan los recolectores, y se salta lo que la fuente dejó como 'No disponible'.
 import type { Asset } from "@/types";
+import { tx, localized } from "@/i18n/tx";
 
 export interface DetalleActivo {
   etiqueta: string;
@@ -11,7 +12,7 @@ export interface DetalleActivo {
 const NO_DISPONIBLE = "No disponible";
 
 /** Código del CDN -> nombre visible, los mismos que en el backend. */
-export const CDN_NOMBRES: Record<string, string> = {
+export const CDN_NOMBRES: Record<string, string> = localized({
   akamai: "Akamai",
   aws_waf: "AWS WAF",
   azure_cdn: "Azure CDN",
@@ -25,10 +26,10 @@ export const CDN_NOMBRES: Record<string, string> = {
   netlify: "Netlify",
   sucuri: "Sucuri",
   vercel: "Vercel",
-};
+});
 
 const texto = (valor: unknown): string | null =>
-  typeof valor === "string" && valor.trim() && valor !== NO_DISPONIBLE ? valor.trim() : null;
+  typeof valor === "string" && valor.trim() && valor !== tx(NO_DISPONIBLE) ? valor.trim() : null;
 
 function tecnologias(valor: unknown): string | null {
   if (!Array.isArray(valor)) return null;
@@ -56,10 +57,10 @@ export function detallesDelActivo(asset: Pick<Asset, "attributes">): DetalleActi
   const a = asset.attributes ?? {};
   const cdn = texto(a.cdn);
   const candidatos: [string, string | null][] = [
-    ["Tecnologías", tecnologias(a.tecnologias)],
+    [tx("Tecnologías"), tecnologias(a.tecnologias)],
     ["CDN", cdn ? (CDN_NOMBRES[cdn] ?? cdn) : null],
-    ["Registrador", texto(a.registrador)],
-    ["País", texto(a.pais)],
+    [tx("Registrador"), texto(a.registrador)],
+    [tx("País"), texto(a.pais)],
     ["ASN", asn(a.asn, a.proveedor)],
   ];
   return candidatos
