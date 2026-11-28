@@ -22,7 +22,6 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           preload="auto"
           className="absolute inset-0 -z-20 h-full w-full object-cover motion-reduce:hidden"
         >
-          <source src="/auth/oceano.webm" type="video/webm" />
           <source src="/auth/oceano.mp4" type="video/mp4" />
         </video>
         <div aria-hidden="true" className="absolute inset-0 -z-10 bg-lt-paper/70" />
