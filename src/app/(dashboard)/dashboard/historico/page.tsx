@@ -21,6 +21,7 @@ import { formatDate } from "@/lib/format";
 import { coverageIncomplete } from "@/lib/cobertura";
 import { getDomainFindings, getDomains, getDomainScore, getScoreHistory } from "@/services/queries";
 import { getReports } from "@/services/reportService";
+import { tx } from "@/i18n/tx";
 
 export const metadata: Metadata = { title: SECTIONS.historico.label };
 
@@ -41,8 +42,8 @@ export default async function HistoricoPage({ searchParams }: Props) {
   if (!fqdn) {
     return (
       <div className="space-y-8">
-        <PageHeader title="Histórico de escaneos" />
-        <AvisoSimulado datos={["getReports"]} datosDe="la tarjeta Reportes" />
+        <PageHeader title={tx("Histórico de escaneos")} />
+        <AvisoSimulado datos={["getReports"]} datosDe={tx("la tarjeta Reportes")} />
         <ReportsCard reports={orgReports} />
       </div>
     );
@@ -62,9 +63,9 @@ export default async function HistoricoPage({ searchParams }: Props) {
   const correctionCount = points.filter((point) => point.reason === "correction").length;
   const recalcCount = points.length - scanCount - correctionCount;
   const countParts = [
-    `${scanCount} ${scanCount === 1 ? "escaneo" : "escaneos"}`,
-    ...(recalcCount > 0 ? [`${recalcCount} ${recalcCount === 1 ? "recálculo" : "recálculos"}`] : []),
-    ...(correctionCount > 0 ? [`${correctionCount} ${correctionCount === 1 ? "corrección" : "correcciones"}`] : []),
+    `${scanCount} ${scanCount === 1 ? tx("escaneo") : tx("escaneos")}`,
+    ...(recalcCount > 0 ? [`${recalcCount} ${recalcCount === 1 ? tx("recálculo") : tx("recálculos")}`] : []),
+    ...(correctionCount > 0 ? [`${correctionCount} ${correctionCount === 1 ? tx("corrección") : tx("correcciones")}`] : []),
   ];
   const newestFirst = points.map((p, i) => ({ point: p, change: i > 0 ? p.score - points[i - 1]!.score : 0, first: i === 0 })).reverse();
   const hasPartialCoverage = points.some((point) => point.partial_coverage);
@@ -98,8 +99,8 @@ export default async function HistoricoPage({ searchParams }: Props) {
   return (
     <div className="space-y-6">
       <PageHeader
-        breadcrumb={[{ label: fqdn, href: canOpenDetail ? `/dashboard/dominios/${fqdn}` : undefined }, { label: "Histórico" }]}
-        title="Histórico de escaneos"
+        breadcrumb={[{ label: fqdn, href: canOpenDetail ? `/dashboard/dominios/${fqdn}` : undefined }, { label: tx("Histórico") }]}
+        title={tx("Histórico de escaneos")}
         actions={(
           <>
             {/* key: al cambiar de dominio con el selector se monta otro botón, sin el mensaje ni la descarga del anterior. */}
@@ -108,17 +109,16 @@ export default async function HistoricoPage({ searchParams }: Props) {
           </>
         )}
       />
-      <AvisoSimulado datos={["getReports"]} datosDe="la tarjeta Reportes" />
+      <AvisoSimulado datos={["getReports"]} datosDe={tx("la tarjeta Reportes")} />
       {canOpenDetail && <DomainTabs tabs={domainTabs(fqdn, findings?.total ?? 0, "historico", canSeeFindings, true, coverageIncomplete(score))} />}
 
       {hasPartialCoverage && (
         <InlineAlert tone="warning">
-          <strong>Cobertura parcial.</strong> En algunos escaneos alguna fuente falló, revisó solo una parte de sus repos o IP, o hay reglas que las fuentes actuales todavía no pueden revisar. Sus conteos de hallazgos nuevos y resueltos solo cuentan lo que el escaneo sí revisó.
-        </InlineAlert>
+          <strong>{tx("Cobertura parcial.")}</strong> {" "}{tx("En algunos escaneos alguna fuente falló, revisó solo una parte de sus repos o IP, o hay reglas que las fuentes actuales todavía no pueden revisar. Sus conteos de hallazgos nuevos y resueltos solo cuentan lo que el escaneo sí revisó.")}</InlineAlert>
       )}
 
       <Card
-        title="Riesgo global en el tiempo"
+        title={tx("Riesgo global en el tiempo")}
         action={(
           <div className="flex flex-wrap items-center justify-end gap-3">
             <span>
@@ -128,30 +128,30 @@ export default async function HistoricoPage({ searchParams }: Props) {
           </div>
         )}
       >
-        {points.length > 0 ? <ScoreChart points={points} /> : <EmptyState title="Sin escaneos todavía" />}
+        {points.length > 0 ? <ScoreChart points={points} /> : <EmptyState title={tx("Sin escaneos todavía")} />}
       </Card>
 
       {lastScan && (
         <InlineAlert tone={lastScanNotes.length > 0 ? "warning" : "info"}>
-          <strong>Cambios del último escaneo ({formatDate(lastScan.computed_at)}).</strong>{" "}
+          <strong>{tx("Cambios del último escaneo (")}{formatDate(lastScan.computed_at)}).</strong>{" "}
           {lastScanSummary(lastScan)}
         </InlineAlert>
       )}
 
       {points.length > 0 && (
         <div className={`grid grid-cols-1 items-start gap-6 ${canSeeFindings ? "xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]" : ""}`}>
-          <Card title="Escaneos" padded={false}>
+          <Card title={tx("Escaneos")} padded={false}>
             <TableWrap>
               <table className="w-full min-w-[680px]">
                 <thead>
                   <tr>
-                    <th scope="col" className={TH}>Fecha</th>
-                    <th scope="col" className={TH}>Riesgo</th>
-                    <th scope="col" className={TH}>Cambio</th>
-                    <th scope="col" className={TH}>Nuevos</th>
-                    <th scope="col" className={TH}>Resueltos</th>
-                    <th scope="col" className={TH}>Método</th>
-                    <th scope="col" className={TH}>Cobertura</th>
+                    <th scope="col" className={TH}>{tx("Fecha")}</th>
+                    <th scope="col" className={TH}>{tx("Riesgo")}</th>
+                    <th scope="col" className={TH}>{tx("Cambio")}</th>
+                    <th scope="col" className={TH}>{tx("Nuevos")}</th>
+                    <th scope="col" className={TH}>{tx("Resueltos")}</th>
+                    <th scope="col" className={TH}>{tx("Método")}</th>
+                    <th scope="col" className={TH}>{tx("Cobertura")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -175,9 +175,9 @@ export default async function HistoricoPage({ searchParams }: Props) {
                       </td>
                       <td className={TD}>
                         {point.partial_coverage ? (
-                          <span className="rounded-sm border border-lt-amber/30 bg-lt-amber/10 px-2 py-1 text-xs text-lt-amber">Parcial</span>
+                          <span className="rounded-sm border border-lt-amber/30 bg-lt-amber/10 px-2 py-1 text-xs text-lt-amber">{tx("Parcial")}</span>
                         ) : (
-                          <span className="text-xs text-lt-muted">Completa</span>
+                          <span className="text-xs text-lt-muted">{tx("Completa")}</span>
                         )}
                       </td>
                     </tr>
@@ -190,8 +190,8 @@ export default async function HistoricoPage({ searchParams }: Props) {
           {!canSeeFindings ? null : points.length >= 2 ? (
             <CompareScans key={fqdn} domain={fqdn} points={points} />
           ) : (
-            <Card title="Comparar escaneos">
-              <p className="text-sm text-lt-muted">Se necesitan al menos dos escaneos para comparar.</p>
+            <Card title={tx("Comparar escaneos")}>
+              <p className="text-sm text-lt-muted">{tx("Se necesitan al menos dos escaneos para comparar.")}</p>
             </Card>
           )}
         </div>

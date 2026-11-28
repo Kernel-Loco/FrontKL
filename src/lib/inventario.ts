@@ -17,6 +17,7 @@
 //   juntar miles de filas en una sola celda.
 
 import type { Asset } from "@/types";
+import { tx } from "@/i18n/tx";
 
 /** Tope del archivo: 1 MB. */
 export const MAX_BYTES = 1024 * 1024;
@@ -267,10 +268,10 @@ export function separadorDe(texto: string): string {
 /** Lee el texto del CSV. Lanza InventarioError si pasa de 1 MB o de 5,000 filas, si no trae ninguna fila o si solo
  *  trae el encabezado. */
 export function leerInventario(texto: string): InventarioLeido {
-  if (new TextEncoder().encode(texto).length > MAX_BYTES) throw new InventarioError("El archivo pasa de 1 MB.");
+  if (new TextEncoder().encode(texto).length > MAX_BYTES) throw new InventarioError(tx("El archivo pasa de 1 MB."));
   const limpio = texto.startsWith("﻿") ? texto.slice(1) : texto;
   const filas = partirCsv(limpio, separadorDe(limpio)).filter((f) => f.some((c) => c.trim() !== ""));
-  if (filas.length === 0) throw new InventarioError("El archivo no trae filas.");
+  if (filas.length === 0) throw new InventarioError(tx("El archivo no trae filas."));
 
   let columnaValor = 0;
   let columnaTipo: number | null = null;
@@ -285,8 +286,8 @@ export function leerInventario(texto: string): InventarioLeido {
   } else if (filas.some((f) => f.length > 1)) {
     columnaTipo = 1;
   }
-  if (datos.length === 0) throw new InventarioError("El archivo solo trae el encabezado, sin activos.");
-  if (datos.length > MAX_FILAS) throw new InventarioError(`El archivo trae ${datos.length.toLocaleString("es-MX")} filas y el tope es de 5,000.`);
+  if (datos.length === 0) throw new InventarioError(tx("El archivo solo trae el encabezado, sin activos."));
+  if (datos.length > MAX_FILAS) throw new InventarioError(tx("El archivo trae {0} filas y el tope es de 5,000.", datos.length.toLocaleString("es-MX")));
 
   const vistas = new Set<string>();
   const entradas: EntradaInventario[] = [];

@@ -14,6 +14,7 @@ import { formatDateTime } from "@/lib/format";
 import { getErrorMessage } from "@/services/errors";
 import { changeUserRole, inviteUser } from "@/services/userService";
 import { ROLES, type OrgUser, type Role } from "@/types";
+import { tx } from "@/i18n/tx";
 
 export function UsersManager({ initial, currentUserEmail }: { initial: OrgUser[]; currentUserEmail: string }) {
   const [users, setUsers] = useState(initial);
@@ -29,7 +30,7 @@ export function UsersManager({ initial, currentUserEmail }: { initial: OrgUser[]
     try {
       const updated = await changeUserRole(user.id, role);
       setUsers((current) => current.map((u) => (u.id === updated.id ? updated : u)));
-      setMessage({ tone: "success", text: mensajeDeExito("changeUserRole", `${user.full_name} ahora es ${ROLE_LABELS[role]}.`) });
+      setMessage({ tone: "success", text: mensajeDeExito("changeUserRole", tx("{0} ahora es {1}.", user.full_name, ROLE_LABELS[role])) });
     } catch (error) {
       setMessage({ tone: "error", text: getErrorMessage(error) });
     } finally {
@@ -44,7 +45,7 @@ export function UsersManager({ initial, currentUserEmail }: { initial: OrgUser[]
     const email = String(data.get("email") ?? "").trim();
     const role = String(data.get("role")) as Role;
     if (!full_name || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setInviteError("Escribe el nombre y un correo válido.");
+      setInviteError(tx("Escribe el nombre y un correo válido."));
       return;
     }
     setInviting(true);
@@ -53,7 +54,7 @@ export function UsersManager({ initial, currentUserEmail }: { initial: OrgUser[]
       const user = await inviteUser({ full_name, email, role });
       setUsers((current) => [...current, user]);
       setInviteOpen(false);
-      setMessage({ tone: "success", text: esSimulada("inviteUser") ? `Simulado. ${email} quedó en la lista, sin correo de invitación.` : `Enviamos la invitación a ${email}. Deberá activar MFA al entrar.` });
+      setMessage({ tone: "success", text: esSimulada("inviteUser") ? tx("Simulado. {0} quedó en la lista, sin correo de invitación.", email) : tx("Enviamos la invitación a {0}. Deberá activar MFA al entrar.", email) });
     } catch (error) {
       setInviteError(getErrorMessage(error));
     } finally {
@@ -64,12 +65,11 @@ export function UsersManager({ initial, currentUserEmail }: { initial: OrgUser[]
   return (
     <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
       <Card
-        title="Usuarios"
+        title={tx("Usuarios")}
         padded={false}
         action={
           <ActionButton size="sm" onClick={() => { setInviteError(null); setInviteOpen(true); }}>
-            <UserPlus aria-hidden="true" className="h-3.5 w-3.5" /> Invitar usuario
-          </ActionButton>
+            <UserPlus aria-hidden="true" className="h-3.5 w-3.5" /> {" "}{tx("Invitar usuario")}</ActionButton>
         }
       >
         {message && <InlineAlert tone={message.tone} className="mx-5 mt-4">{message.text}</InlineAlert>}
@@ -77,11 +77,11 @@ export function UsersManager({ initial, currentUserEmail }: { initial: OrgUser[]
           <table className="mt-2 w-full min-w-[680px]">
             <thead>
               <tr>
-                <th scope="col" className={TH}>Usuario</th>
-                <th scope="col" className={TH}>Rol</th>
+                <th scope="col" className={TH}>{tx("Usuario")}</th>
+                <th scope="col" className={TH}>{tx("Rol")}</th>
                 <th scope="col" className={TH}>MFA</th>
-                <th scope="col" className={TH}>Estado</th>
-                <th scope="col" className={TH}>Último acceso</th>
+                <th scope="col" className={TH}>{tx("Estado")}</th>
+                <th scope="col" className={TH}>{tx("Último acceso")}</th>
               </tr>
             </thead>
             <tbody>
@@ -92,16 +92,16 @@ export function UsersManager({ initial, currentUserEmail }: { initial: OrgUser[]
                     <td className={TD}>
                       <span className="block font-medium">
                         {u.full_name}
-                        {isMe && <span className="ml-2 text-xs font-normal text-lt-faint">(tú)</span>}
+                        {isMe && <span className="ml-2 text-xs font-normal text-lt-faint">{tx("(tú)")}</span>}
                       </span>
                       <span className="block text-xs text-lt-muted">{u.email}</span>
                     </td>
                     <td className={TD}>
                       <select
-                        aria-label={`Rol de ${u.full_name}`}
+                        aria-label={tx("Rol de {0}", u.full_name)}
                         value={u.role}
                         disabled={isMe || busyId === u.id}
-                        title={isMe ? "No puedes cambiar tu propio rol" : undefined}
+                        title={isMe ? tx("No puedes cambiar tu propio rol") : undefined}
                         onChange={(e) => onRoleChange(u, e.target.value as Role)}
                         className={`${SELECT} h-8 w-40 text-xs`}
                       >
@@ -112,9 +112,9 @@ export function UsersManager({ initial, currentUserEmail }: { initial: OrgUser[]
                         ))}
                       </select>
                     </td>
-                    <td className={TD}>{u.mfa_enabled ? <Badge tone="teal">Activo</Badge> : <Badge tone="amber">Pendiente</Badge>}</td>
-                    <td className={TD}>{u.is_active ? <Badge tone="green" dot>Activo</Badge> : <Badge tone="gray" dot>Invitado</Badge>}</td>
-                    <td className={`${TD} whitespace-nowrap text-[13px] text-lt-muted`}>{u.last_login_at ? formatDateTime(u.last_login_at) : "Nunca"}</td>
+                    <td className={TD}>{u.mfa_enabled ? <Badge tone="teal">{tx("Activo")}</Badge> : <Badge tone="amber">{tx("Pendiente")}</Badge>}</td>
+                    <td className={TD}>{u.is_active ? <Badge tone="green" dot>{tx("Activo")}</Badge> : <Badge tone="gray" dot>{tx("Invitado")}</Badge>}</td>
+                    <td className={`${TD} whitespace-nowrap text-[13px] text-lt-muted`}>{u.last_login_at ? formatDateTime(u.last_login_at) : tx("Nunca")}</td>
                   </tr>
                 );
               })}
@@ -123,7 +123,7 @@ export function UsersManager({ initial, currentUserEmail }: { initial: OrgUser[]
         </TableWrap>
       </Card>
 
-      <Card title="Roles">
+      <Card title={tx("Roles")}>
         <ul className="space-y-4">
           {ROLES.map((r) => (
             <li key={r}>
@@ -134,15 +134,15 @@ export function UsersManager({ initial, currentUserEmail }: { initial: OrgUser[]
         </ul>
       </Card>
 
-      <Modal open={inviteOpen} onClose={() => setInviteOpen(false)} title="Invitar usuario" description={esSimulada("inviteUser") ? "Simulado: todavía no se envía ningún correo." : "Recibirá un correo para crear su contraseña y activar MFA."}>
+      <Modal open={inviteOpen} onClose={() => setInviteOpen(false)} title={tx("Invitar usuario")} description={esSimulada("inviteUser") ? tx("Simulado: todavía no se envía ningún correo.") : tx("Recibirá un correo para crear su contraseña y activar MFA.")}>
         <form onSubmit={onInvite} noValidate className="space-y-4">
-          <Field label="Nombre completo" htmlFor="invite-name">
+          <Field label={tx("Nombre completo")} htmlFor="invite-name">
             <input id="invite-name" name="full_name" className={INPUT} autoComplete="off" />
           </Field>
-          <Field label="Correo" htmlFor="invite-email">
+          <Field label={tx("Correo")} htmlFor="invite-email">
             <input id="invite-email" name="email" type="email" className={INPUT} autoComplete="off" />
           </Field>
-          <Field label="Rol" htmlFor="invite-role">
+          <Field label={tx("Rol")} htmlFor="invite-role">
             <select id="invite-role" name="role" defaultValue="analista" className={SELECT}>
               {ROLES.map((r) => (
                 <option key={r} value={r}>
@@ -153,8 +153,8 @@ export function UsersManager({ initial, currentUserEmail }: { initial: OrgUser[]
           </Field>
           {inviteError && <InlineAlert tone="error">{inviteError}</InlineAlert>}
           <div className="flex justify-end gap-2">
-            <ActionButton variant="ghost" onClick={() => setInviteOpen(false)}>Cancelar</ActionButton>
-            <ActionButton type="submit" loading={inviting}>Enviar invitación</ActionButton>
+            <ActionButton variant="ghost" onClick={() => setInviteOpen(false)}>{tx("Cancelar")}</ActionButton>
+            <ActionButton type="submit" loading={inviting}>{tx("Enviar invitación")}</ActionButton>
           </div>
         </form>
       </Modal>

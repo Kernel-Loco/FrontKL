@@ -1,6 +1,8 @@
 import { Card } from "@/components/ui/Card";
 import { CATEGORY_LABELS, SEVERITY_LABELS } from "@/config/labels";
 import type { Category, DomainFinding, SeverityCounts } from "@/types";
+import { tx } from "@/i18n/tx";
+import { cantidad } from "@/lib/format";
 
 interface DomainFindingSeries {
   domain: string;
@@ -28,7 +30,7 @@ export function FindingsByTypeChart({ series, groupBy = "category" }: { series: 
   const groups: { id: string; label: string }[] = groupBy === "severity"
     ? SEVERITIES.map((id) => ({ id, label: SEVERITY_LABELS[id] }))
     : CATEGORIES.map((id) => ({ id, label: CATEGORY_LABELS[id] }));
-  const groupWord = groupBy === "severity" ? "severidad" : "categoría";
+  const groupWord = groupBy === "severity" ? "severidad" : tx("categoría");
   const counts = series.map(({ domain, findings, severityCounts, coverage, stateLabel }) => ({
     domain,
     coverage,
@@ -51,19 +53,19 @@ export function FindingsByTypeChart({ series, groupBy = "category" }: { series: 
   const unscored = counts.filter((item) => item.coverage === "unscanned").length;
   const incomplete = partial + unscored > 0;
   const total = rows.reduce((sum, row) => sum + row.total, 0);
-  const gaps = [partial > 0 ? `${partial} con cobertura parcial` : "", unscored > 0 ? `${unscored} sin score` : ""]
+  const gaps = [partial > 0 ? tx("{0} con cobertura parcial", partial) : "", unscored > 0 ? tx("{0} sin score", unscored) : ""]
     .filter(Boolean)
     .join(" y ");
-  const description = `${total} ${total === 1 ? "hallazgo" : "hallazgos"} en ${counts.length} ${counts.length === 1 ? "dominio" : "dominios"}${incomplete ? `, ${gaps}` : ""}`;
+  const description = tx("{0} en {1}", cantidad(total, "hallazgo"), cantidad(counts.length, "dominio")) + (incomplete ? `, ${gaps}` : "");
   const others = Math.max(0, counts.length - SERIES);
 
   return (
-    <Card title={`Hallazgos abiertos por ${groupWord} y dominio`} description={description}>
+    <Card title={tx("Hallazgos abiertos por {0} y dominio", groupWord)} description={description}>
       {counts.length === 0 ? (
-        <p className="text-sm text-lt-muted">No hay dominios activos para mostrar.</p>
+        <p className="text-sm text-lt-muted">{tx("No hay dominios activos para mostrar.")}</p>
       ) : (
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_16rem]">
-          <ul aria-label={`Hallazgos abiertos por ${groupWord}`} className="space-y-5">
+          <ul aria-label={tx("Hallazgos abiertos por {0}", groupWord)} className="space-y-5">
             {rows.map((row) => (
               <li key={row.id}>
                 <div className="mb-2 flex items-baseline justify-between gap-3">
@@ -86,34 +88,34 @@ export function FindingsByTypeChart({ series, groupBy = "category" }: { series: 
                 </div>
                 <p className="sr-only">
                   {row.total === 0
-                    ? "Sin hallazgos abiertos."
+                    ? tx("Sin hallazgos abiertos.")
                     : row.parts.map((part) => `${part.domain}: ${part.value}`).join(", ")}
                 </p>
               </li>
             ))}
           </ul>
-          <ul aria-label="Dominios" className="space-y-2.5 border-lt-border lg:border-l lg:pl-6">
+          <ul aria-label={tx("Dominios")} className="space-y-2.5 border-lt-border lg:border-l lg:pl-6">
             {counts.slice(0, SERIES).map(({ domain, coverage, stateLabel }, index) => (
               <li key={domain} className="flex min-w-0 items-center gap-2.5 text-sm">
                 <span aria-hidden="true" className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: seriesColor(index) }} />
                 <span className="min-w-0 truncate text-lt-text" title={domain}>{domain}</span>
                 {coverage !== "complete" && (
-                  <span className="ml-auto shrink-0 text-xs text-lt-muted">{coverage === "partial" ? "Parcial" : stateLabel}</span>
+                  <span className="ml-auto shrink-0 text-xs text-lt-muted">{coverage === "partial" ? tx("Parcial") : stateLabel}</span>
                 )}
               </li>
             ))}
             {others > 0 && (
               <li className="flex items-center gap-2.5 text-sm">
                 <span aria-hidden="true" className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: seriesColor(SERIES) }} />
-                <span className="text-lt-muted">Otros {others} dominios</span>
+                <span className="text-lt-muted">{tx("Otros {0} dominios", others)}</span>
               </li>
             )}
           </ul>
           {total === 0 && (
             <p className="text-sm text-lt-muted lg:col-span-2">
               {incomplete
-                ? "No hay hallazgos abiertos registrados, pero con cobertura parcial o dominios sin score eso no confirma que no existan."
-                : "No se encontraron hallazgos abiertos."}
+                ? tx("No hay hallazgos abiertos registrados, pero con cobertura parcial o dominios sin score eso no confirma que no existan.")
+                : tx("No se encontraron hallazgos abiertos.")}
             </p>
           )}
         </div>

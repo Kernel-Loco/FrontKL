@@ -20,6 +20,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import type { Role, User } from "@/types";
+import { localized } from "@/i18n/tx";
 
 export type SectionId =
   | "dashboard"
@@ -49,7 +50,7 @@ function section(id: SectionId, label: string, href: string, icon: LucideIcon): 
   return { id, label, href, icon };
 }
 
-export const SECTIONS: Record<SectionId, SectionConfig> = {
+export const SECTIONS: Record<SectionId, SectionConfig> = localized({
   dashboard: section("dashboard", "Dashboard", "/dashboard", LayoutGrid),
   dominios: section("dominios", "Dominios y autorización", "/dashboard/dominios", Globe),
   detalle: section("detalle", "Detalle de dominio", "/dashboard/detalle", ScanSearch),
@@ -65,20 +66,20 @@ export const SECTIONS: Record<SectionId, SectionConfig> = {
   fuentes: section("fuentes", "Fuentes", "/dashboard/admin/fuentes", Radar),
   webhooks: section("webhooks", "Webhooks", "/dashboard/admin/webhooks", Webhook),
   bitacora: section("bitacora", "Bitácora", "/dashboard/admin/bitacora", ScrollText),
-};
+});
 
-export const ROLE_LABELS: Record<Role, string> = {
+export const ROLE_LABELS: Record<Role, string> = localized({
   analista: "Analista",
   gerente: "Gerente",
   admin: "Administrador",
-};
+});
 
 /** Qué puede hacer cada rol, para mostrarlo en Usuarios y roles. */
-export const ROLE_DESCRIPTIONS: Record<Role, string> = {
+export const ROLE_DESCRIPTIONS: Record<Role, string> = localized({
   analista: "Revisa dominios, hallazgos y su explicación, lanza escaneos y consulta el histórico.",
   gerente: "Consulta el riesgo de los dominios, el detalle y los reportes. Solo lectura.",
   admin: "Todo lo anterior, además de registrar dominios, verificar el TXT, gestionar usuarios, fuentes, llaves de API, webhooks y alertas.",
-};
+});
 
 /** Rol asignado a toda cuenta nueva; solo un Admin puede cambiarlo. */
 export const DEFAULT_ROLE: Role = "analista";
@@ -92,14 +93,14 @@ export interface NavGroup {
  * Menú de cada rol, en el orden en que aparece en la barra lateral. 'Activos' (RC-231) es para los tres: la API da el
  * inventario a todos los roles, como el de cada dominio en su detalle.
  */
-export const ROLE_NAVIGATION: Record<Role, NavGroup[]> = {
+export const ROLE_NAVIGATION: Record<Role, NavGroup[]> = localized({
   analista: [{ title: "Monitoreo", items: ["dashboard", "dominios", "detalle", "activos", "hallazgos", "historico", "plan"] }],
   gerente: [{ title: "Monitoreo", items: ["dashboard", "dominios", "detalle", "activos", "historico", "plan"] }],
   admin: [
     { title: "Monitoreo", items: ["dashboard", "dominios", "activos", "hallazgos", "historico", "plan", "alertas"] },
     { title: "Administración", items: ["admin", "usuarios", "pesos", "fuentes", "api", "webhooks", "bitacora"] },
   ],
-};
+});
 
 /**
  * Secciones a las que entra cada rol. Además de su menú, el Admin entra al detalle

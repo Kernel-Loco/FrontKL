@@ -1,3 +1,4 @@
+import { tx } from "@/i18n/tx";
 // Reporte ejecutivo (#45, RC-70 punto 4) y técnico (#46, RC-81) en PDF: sale del mismo HTML que la API entrega con
 // ?formato=html (BackKL cirdan/reporte.py y cirdan/reporte_tecnico.py, html()), no de otro armado en el portal. El HTML trae su @page A4, sus topes de texto,
 // la letra del score y la atribución de Have I Been Pwned. El portal lo carga en un iframe fuera de la vista y abre la
@@ -29,7 +30,7 @@ export function printReportHtml(html: string, doc: Document = document, signal?:
       if (signal?.aborted || !win) {
         remove();
         if (win) resolve(remove);
-        else reject(new Error("El navegador no pudo preparar el reporte para imprimir."));
+        else reject(new Error(tx("El navegador no pudo preparar el reporte para imprimir.")));
         return;
       }
       win.addEventListener("afterprint", remove, { once: true });

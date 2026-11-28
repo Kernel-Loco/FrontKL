@@ -2,9 +2,10 @@
 import { getServerSession } from "@/lib/session/server";
 import type { User } from "@/types";
 import { ServiceError } from "./errors";
+import { tx } from "@/i18n/tx";
 
 export async function getMyProfile(): Promise<User> {
   const session = await getServerSession();
-  if (!session) throw new ServiceError("unauthorized", "Tu sesión terminó. Vuelve a iniciar sesión.");
+  if (!session) throw new ServiceError("unauthorized", tx("Tu sesión terminó. Vuelve a iniciar sesión."));
   return session.user;
 }

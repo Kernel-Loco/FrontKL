@@ -24,6 +24,7 @@ import {
 import { getErrorMessage } from "@/services/errors";
 import { triageFinding } from "@/services/triageService";
 import type { DomainFinding, FindingStatus, ResolvedReason } from "@/types";
+import { tx } from "@/i18n/tx";
 
 const STATUS_TONE: Record<FindingStatus, "gray" | "green" | "amber" | "blue"> = {
   open: "gray",
@@ -65,7 +66,7 @@ export function TriagePanel({ finding, canTriage }: { finding: DomainFinding; ca
       const result = await triageFinding(finding.id, triageRequest(choice, { reviewDate, reason, note }));
       setMessage({
         tone: "success",
-        text: `Hallazgo en «${FINDING_STATUS_LABELS[result.status]}».${result.score_recalculated ? " El score del dominio se recalculó." : ""}`,
+        text: tx("Hallazgo en «{0}».{1}", FINDING_STATUS_LABELS[result.status], result.score_recalculated ? tx(" El score del dominio se recalculó.") : ""),
       });
       setChoice(null);
       setNote("");
@@ -78,22 +79,21 @@ export function TriagePanel({ finding, canTriage }: { finding: DomainFinding; ca
   };
 
   return (
-    <section aria-label="Estado del hallazgo" className="rounded-xl bg-lt-surface p-5">
+    <section aria-label={tx("Estado del hallazgo")} className="rounded-xl bg-lt-surface p-5">
       <header className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="flex items-center gap-2 text-sm font-semibold text-lt-text">
           <ClipboardCheck aria-hidden="true" className="h-4 w-4 text-lt-indigo-soft" />
-          Estado del hallazgo
-        </h3>
+          {tx("Estado del hallazgo")}</h3>
         <Badge tone={STATUS_TONE[finding.status]} dot>{FINDING_STATUS_LABELS[finding.status]}</Badge>
       </header>
       {finding.triage && <p className="mt-2 text-xs text-lt-muted">{triageSummary(finding.triage, formatDate)}</p>}
       {finding.triage?.note && <p className="mt-1 text-xs italic text-lt-muted">«{finding.triage.note}»</p>}
 
       {!canTriage ? (
-        <p className="mt-3 text-xs text-lt-faint">Solo Analista y Administrador cambian el estado de un hallazgo.</p>
+        <p className="mt-3 text-xs text-lt-faint">{tx("Solo Analista y Administrador cambian el estado de un hallazgo.")}</p>
       ) : (
         <form onSubmit={submit} noValidate className="mt-4 space-y-3">
-          <div role="group" aria-label="Cambiar estado" className="flex flex-wrap gap-2">
+          <div role="group" aria-label={tx("Cambiar estado")} className="flex flex-wrap gap-2">
             {choices.map((c) => (
               <ActionButton
                 key={c}
@@ -105,7 +105,7 @@ export function TriagePanel({ finding, canTriage }: { finding: DomainFinding; ca
                   setMessage(null);
                 }}
               >
-                {c === "accepted_risk" && finding.status === "accepted_risk" ? "Cambiar fecha" : TRIAGE_CHOICE_LABELS[c]}
+                {c === "accepted_risk" && finding.status === "accepted_risk" ? tx("Cambiar fecha") : TRIAGE_CHOICE_LABELS[c]}
               </ActionButton>
             ))}
           </div>
@@ -114,24 +114,24 @@ export function TriagePanel({ finding, canTriage }: { finding: DomainFinding; ca
             <div className="space-y-3 rounded-lg bg-lt-raised/40 p-3">
               <p className="text-xs text-lt-muted">{TRIAGE_CHOICE_HELP[choice]}</p>
               {choice === "accepted_risk" && (
-                <Field label="Fecha de revisión" htmlFor={ids.date} hint="Ese día el hallazgo vuelve al plan de acción.">
+                <Field label={tx("Fecha de revisión")} htmlFor={ids.date} hint={tx("Ese día el hallazgo vuelve al plan de acción.")}>
                   <input id={ids.date} type="date" required min={range.min} max={range.max} value={reviewDate}
                     onChange={(e) => setReviewDate(e.target.value)} className={INPUT} />
                 </Field>
               )}
               {choice === "resolved" && reasons.length > 1 && (
-                <Field label="Motivo" htmlFor={ids.reason}>
+                <Field label={tx("Motivo")} htmlFor={ids.reason}>
                   <select id={ids.reason} value={reason} onChange={(e) => setReason(e.target.value as ResolvedReason)} className={SELECT}>
                     {reasons.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
                   </select>
                 </Field>
               )}
-              <Field label="Nota (opcional)" htmlFor={ids.note} hint={`Queda en la bitácora. Hasta ${NOTE_MAX} caracteres.`}>
+              <Field label={tx("Nota (opcional)")} htmlFor={ids.note} hint={tx("Queda en la bitácora. Hasta {0} caracteres.", NOTE_MAX)}>
                 <textarea id={ids.note} value={note} maxLength={NOTE_MAX} rows={2}
                   onChange={(e) => setNote(e.target.value)} className={`${INPUT} h-auto py-2`} />
               </Field>
               <div className="flex justify-end">
-                <ActionButton type="submit" size="sm" loading={saving}>Guardar</ActionButton>
+                <ActionButton type="submit" size="sm" loading={saving}>{tx("Guardar")}</ActionButton>
               </div>
             </div>
           )}

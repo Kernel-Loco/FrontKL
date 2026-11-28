@@ -3,6 +3,7 @@
 import { Braces, FileSpreadsheet } from "lucide-react";
 import { ActionButton } from "@/components/ui/ActionButton";
 import { toCsv } from "@/lib/csv";
+import { tx } from "@/i18n/tx";
 
 type ExportRow = Record<string, unknown>;
 
@@ -31,12 +32,12 @@ export function DataExport({ filename, rows }: { filename: string; rows: ExportR
   };
 
   return (
-    <div className="flex flex-wrap gap-2" aria-label="Exportar datos">
-      <ActionButton variant="secondary" size="sm" disabled={disabled} onClick={exportCsv} title="Exportar CSV" aria-label="Exportar CSV">
+    <div className="flex flex-wrap gap-2" aria-label={tx("Exportar datos")}>
+      <ActionButton variant="secondary" size="sm" disabled={disabled} onClick={exportCsv} title={tx("Exportar CSV")} aria-label={tx("Exportar CSV")}>
         <FileSpreadsheet aria-hidden="true" className="h-4 w-4" />
         CSV
       </ActionButton>
-      <ActionButton variant="secondary" size="sm" disabled={disabled} onClick={exportJson} title="Exportar JSON" aria-label="Exportar JSON">
+      <ActionButton variant="secondary" size="sm" disabled={disabled} onClick={exportJson} title={tx("Exportar JSON")} aria-label={tx("Exportar JSON")}>
         <Braces aria-hidden="true" className="h-4 w-4" />
         JSON
       </ActionButton>

@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { SECTIONS } from "@/config/permissions";
 import { getDomains } from "@/services/queries";
+import { tx } from "@/i18n/tx";
 
 export const metadata: Metadata = { title: SECTIONS.detalle.label };
 
@@ -22,7 +23,7 @@ export default async function DetallePage() {
     <div className="space-y-8">
       <PageHeader title={SECTIONS.detalle.label} />
       <Card>
-        <EmptyState title="Todavía no hay resultados">El detalle aparece cuando un escaneo de un dominio autorizado calcula su riesgo o registra hallazgos.</EmptyState>
+        <EmptyState title={tx("Todavía no hay resultados")}>{tx("El detalle aparece cuando un escaneo de un dominio autorizado calcula su riesgo o registra hallazgos.")}</EmptyState>
       </Card>
     </div>
   );

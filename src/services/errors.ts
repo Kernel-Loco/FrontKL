@@ -1,5 +1,6 @@
 import { ApiError } from "@/lib/apiClient";
 import { STATUS_NETWORK } from "@/lib/http";
+import { tx } from "@/i18n/tx";
 
 interface ServiceErrorOptions {
   /** Status HTTP (o sintético: 0 sin red, 504 tiempo agotado) de la falla de la API. */
@@ -37,15 +38,15 @@ const GENERIC_MESSAGE = "No pudimos completar la solicitud. Intenta de nuevo en 
 
 /** Mensaje propio para los casos de falla de la API; undefined si el status no tiene uno. */
 export function messageForStatus(status: number, retryAfter?: number): string | undefined {
-  if (status === STATUS_NETWORK) return "No hay conexión con el servicio. Revisa tu red e inténtalo de nuevo.";
-  if (status === 401) return "Tu sesión venció. Vuelve a iniciar sesión.";
-  if (status === 403) return "No tienes permiso para realizar esta acción.";
+  if (status === STATUS_NETWORK) return tx("No hay conexión con el servicio. Revisa tu red e inténtalo de nuevo.");
+  if (status === 401) return tx("Tu sesión venció. Vuelve a iniciar sesión.");
+  if (status === 403) return tx("No tienes permiso para realizar esta acción.");
   if (status === 429) {
     return retryAfter
-      ? `Hiciste demasiadas solicitudes. Espera ${retryAfter} ${retryAfter === 1 ? "segundo" : "segundos"} e inténtalo de nuevo.`
-      : "Hiciste demasiadas solicitudes. Espera un momento e inténtalo de nuevo.";
+      ? tx("Hiciste demasiadas solicitudes. Espera {0} {1} e inténtalo de nuevo.", retryAfter, retryAfter === 1 ? tx("segundo") : tx("segundos"))
+      : tx("Hiciste demasiadas solicitudes. Espera un momento e inténtalo de nuevo.");
   }
-  if (status >= 500) return "El servicio no está disponible por ahora. Intenta de nuevo en unos minutos.";
+  if (status >= 500) return tx("El servicio no está disponible por ahora. Intenta de nuevo en unos minutos.");
   return undefined;
 }
 
@@ -61,7 +62,7 @@ export function getErrorMessage(error: unknown, { apiMessageOn403 = false }: { a
     // Los demás 4xx de FastAPI ya traen un mensaje en español apto para mostrar.
     if (error.status >= 400 && error.status < 500 && error.message) return error.message;
   }
-  return GENERIC_MESSAGE;
+  return tx(GENERIC_MESSAGE);
 }
 
 /** Recupera el mensaje de una falla de la API a partir del `digest` de un error del servidor. */

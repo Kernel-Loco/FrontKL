@@ -15,6 +15,7 @@ import { can, canAccessSection, SECTIONS } from "@/config/permissions";
 import { statusFilterFromParam } from "@/lib/triage";
 import { ServiceError } from "@/services/errors";
 import { getDomainFindings, getDomainRemediation, getDomainScore, getDomains } from "@/services/queries";
+import { tx } from "@/i18n/tx";
 
 export const metadata: Metadata = { title: SECTIONS.hallazgos.label };
 
@@ -35,9 +36,9 @@ export default async function HallazgosPage({ searchParams }: Props) {
   if (!fqdn) {
     return (
       <div className="space-y-8">
-        <PageHeader title="Hallazgos" />
+        <PageHeader title={tx("Hallazgos")} />
         <Card>
-          <EmptyState title="Todavía no hay hallazgos registrados">Los hallazgos aparecen cuando un escaneo los registra.</EmptyState>
+          <EmptyState title={tx("Todavía no hay hallazgos registrados")}>{tx("Los hallazgos aparecen cuando un escaneo los registra.")}</EmptyState>
         </Card>
       </div>
     );
@@ -62,20 +63,18 @@ export default async function HallazgosPage({ searchParams }: Props) {
   return (
     <div className="space-y-6">
       <PageHeader
-        breadcrumb={[{ label: fqdn, href: canOpenDetail ? `/dashboard/dominios/${fqdn}` : undefined }, { label: "Hallazgos" }]}
-        title="Hallazgos"
+        breadcrumb={[{ label: fqdn, href: canOpenDetail ? `/dashboard/dominios/${fqdn}` : undefined }, { label: tx("Hallazgos") }]}
+        title={tx("Hallazgos")}
         actions={<DomainPicker domains={options} value={fqdn} />}
       />
       {canOpenDetail && <DomainTabs tabs={domainTabs(fqdn, findings.total, "hallazgos", true, hasScore, coverageIncomplete(score))} />}
       {!score && (
         <InlineAlert tone="warning">
-          <strong>Sin escaneo completo.</strong> Ningún escaneo de este dominio ha calculado su riesgo todavía: sigue en curso o falló. La lista muestra lo que alcanzaron a registrar las fuentes, pero no permite concluir que los demás no existan.
-        </InlineAlert>
+          <strong>{tx("Sin escaneo completo.")}</strong> {" "}{tx("Ningún escaneo de este dominio ha calculado su riesgo todavía: sigue en curso o falló. La lista muestra lo que alcanzaron a registrar las fuentes, pero no permite concluir que los demás no existan.")}</InlineAlert>
       )}
       {score && coverageIncomplete(score) && (
         <InlineAlert tone="warning">
-          <strong>Cobertura parcial.</strong> En el último escaneo alguna fuente falló o no corrió, revisó solo una parte de sus repos o IP, o hay reglas que las fuentes actuales todavía no pueden revisar. La lista muestra los hallazgos detectados, pero no permite concluir que los demás no existan.
-          <CoverageGapsList gaps={score.coverage_gaps} />
+          <strong>{tx("Cobertura parcial.")}</strong> {" "}{tx("En el último escaneo alguna fuente falló o no corrió, revisó solo una parte de sus repos o IP, o hay reglas que las fuentes actuales todavía no pueden revisar. La lista muestra los hallazgos detectados, pero no permite concluir que los demás no existan.")}<CoverageGapsList gaps={score.coverage_gaps} />
         </InlineAlert>
       )}
       <RemediationSummary domain={fqdn} metrics={remediation} status={status} />

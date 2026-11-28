@@ -14,6 +14,7 @@ import { tokenFromHash } from "@/lib/loginLink";
 import { resetPasswordSchema, type ResetPasswordValues } from "@/lib/validation";
 import { resetPassword } from "@/services/authService";
 import { getErrorMessage } from "@/services/errors";
+import { tx } from "@/i18n/tx";
 
 const NO_TOKEN = "El enlace no es válido o ya venció. Pide otro desde «¿Olvidaste tu contraseña?».";
 
@@ -78,7 +79,7 @@ export function ResetPasswordForm() {
   // Tras guardar, el token ya no existe: el spinner evita mostrar «enlace no válido» mientras se va al login.
   if (token === undefined || navigating) {
     return (
-      <div className="flex justify-center py-8" role="status" aria-label="Cargando">
+      <div className="flex justify-center py-8" role="status" aria-label={tx("Cargando")}>
         <Spinner className="h-6 w-6" />
       </div>
     );
@@ -87,13 +88,11 @@ export function ResetPasswordForm() {
   if (!token) {
     return (
       <div className="space-y-4">
-        <Notice tone="error">{formError ?? NO_TOKEN}</Notice>
+        <Notice tone="error">{formError ?? tx(NO_TOKEN)}</Notice>
         <Link href="/forgot-password" className="block text-center text-sm font-semibold text-lt-primary hover:underline">
-          Pedir otro enlace
-        </Link>
+          {tx("Pedir otro enlace")}</Link>
         <Link href="/login" className="block text-center text-sm font-medium text-slate-500 hover:underline">
-          Volver a iniciar sesión
-        </Link>
+          {tx("Volver a iniciar sesión")}</Link>
       </div>
     );
   }
@@ -102,7 +101,7 @@ export function ResetPasswordForm() {
     <form method="post" onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
       <div>
         <TextInput
-          label="Contraseña nueva"
+          label={tx("Contraseña nueva")}
           type="password"
           autoComplete="new-password"
           autoFocus
@@ -112,7 +111,7 @@ export function ResetPasswordForm() {
         <PasswordStrength password={password} />
       </div>
       <TextInput
-        label="Confirma la contraseña"
+        label={tx("Confirma la contraseña")}
         type="password"
         autoComplete="new-password"
         error={errors.confirmPassword?.message}
@@ -120,8 +119,7 @@ export function ResetPasswordForm() {
       />
       {/* Un error de envío lleva a la vista sin token: el de un enlace anterior no se muestra sobre el nuevo. */}
       <Button type="submit" loading={isSubmitting || navigating} className="mt-2">
-        Guardar contraseña
-      </Button>
+        {tx("Guardar contraseña")}</Button>
     </form>
   );
 }

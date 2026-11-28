@@ -8,6 +8,7 @@ import { PASSKEYS_CHANGED, passwordChangedMessage } from "@/lib/passkeys";
 import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from "@/lib/validation";
 import { changePassword } from "@/services/authService";
 import { getErrorMessage } from "@/services/errors";
+import { tx } from "@/i18n/tx";
 
 export function ChangePasswordForm() {
   const formRef = useRef<HTMLFormElement>(null);
@@ -20,11 +21,11 @@ export function ChangePasswordForm() {
     const current = String(data.get("current") ?? "");
     const next = String(data.get("next") ?? "");
     const confirm = String(data.get("confirm") ?? "");
-    if (!current) return setResult({ tone: "error", message: "Escribe tu contraseña actual." });
+    if (!current) return setResult({ tone: "error", message: tx("Escribe tu contraseña actual.") });
     if (next.length < PASSWORD_MIN_LENGTH || next.length > PASSWORD_MAX_LENGTH) {
-      return setResult({ tone: "error", message: `La nueva contraseña debe tener de ${PASSWORD_MIN_LENGTH} a ${PASSWORD_MAX_LENGTH} caracteres.` });
+      return setResult({ tone: "error", message: tx("La nueva contraseña debe tener de {0} a {1} caracteres.", PASSWORD_MIN_LENGTH, PASSWORD_MAX_LENGTH) });
     }
-    if (next !== confirm) return setResult({ tone: "error", message: "Las contraseñas nuevas no coinciden." });
+    if (next !== confirm) return setResult({ tone: "error", message: tx("Las contraseñas nuevas no coinciden.") });
 
     setBusy(true);
     setResult(null);
@@ -43,17 +44,17 @@ export function ChangePasswordForm() {
 
   return (
     <form ref={formRef} method="post" onSubmit={onSubmit} noValidate className="space-y-4">
-      <Field label="Contraseña actual" htmlFor="pw-current">
+      <Field label={tx("Contraseña actual")} htmlFor="pw-current">
         <input id="pw-current" name="current" type="password" autoComplete="current-password" className={INPUT} />
       </Field>
-      <Field label="Contraseña nueva" htmlFor="pw-next" hint={`Al menos ${PASSWORD_MIN_LENGTH} caracteres.`}>
+      <Field label={tx("Contraseña nueva")} htmlFor="pw-next" hint={tx("Al menos {0} caracteres.", PASSWORD_MIN_LENGTH)}>
         <input id="pw-next" name="next" type="password" autoComplete="new-password" className={INPUT} />
       </Field>
-      <Field label="Confirma la contraseña nueva" htmlFor="pw-confirm">
+      <Field label={tx("Confirma la contraseña nueva")} htmlFor="pw-confirm">
         <input id="pw-confirm" name="confirm" type="password" autoComplete="new-password" className={INPUT} />
       </Field>
       {result && <InlineAlert tone={result.tone}>{result.message}</InlineAlert>}
-      <ActionButton type="submit" loading={busy}>Actualizar contraseña</ActionButton>
+      <ActionButton type="submit" loading={busy}>{tx("Actualizar contraseña")}</ActionButton>
     </form>
   );
 }

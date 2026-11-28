@@ -86,7 +86,7 @@ test("5. el login y el alta traen el aviso simplificado y los enlaces a /privaci
   const layout = leer("../app/(auth)/layout.tsx");
   assert.match(layout, /<AvisoSimplificado\b/);
   assert.match(layout, /<Link href="\/privacidad"/);
-  assert.match(layout, /Al iniciar sesión aceptas los\{" "\}\s*<Link href="\/terminos"/);
+  assert.match(layout, /Al iniciar sesión aceptas los(\{" "\}| )\s*<Link href="\/terminos"/);
   assert.match(leer("../components/legal/AvisoSimplificado.tsx"), /<Link href="\/privacidad"/);
 });
 

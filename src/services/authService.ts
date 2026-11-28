@@ -35,6 +35,7 @@ import type {
   User,
 } from "@/types";
 import { ServiceError } from "./errors";
+import { tx } from "@/i18n/tx";
 
 export async function login(payload: LoginRequest): Promise<LoginResponse> {
   return apiClient.post<LoginResponse>("/auth/login", payload);
@@ -144,6 +145,6 @@ const NO_SIGNUP = "El registro abierto no está disponible: un Administrador te 
 export async function register(payload: RegisterRequest): Promise<User> {
   // TODO: invitaciones de usuarios (POST /users/invitations) en lugar de registro abierto.
   void payload;
-  throw new ServiceError("signup_disabled", NO_SIGNUP);
+  throw new ServiceError("signup_disabled", tx(NO_SIGNUP));
 }
 

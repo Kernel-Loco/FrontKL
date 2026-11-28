@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { tx } from "@/i18n/tx";
 
 interface CardProps {
   title?: ReactNode;
@@ -39,7 +40,7 @@ export function Card({ title, action, description, icon, padded = true, classNam
 
 /** Contenedor de tabla con scroll horizontal en pantallas chicas. */
 export function TableWrap({ children }: { children: ReactNode }) {
-  return <div role="region" aria-label="Tabla desplazable horizontalmente" tabIndex={0} className="relative overflow-x-auto">{children}</div>;
+  return <div role="region" aria-label={tx("Tabla desplazable horizontalmente")} tabIndex={0} className="relative overflow-x-auto">{children}</div>;
 }
 
 export const TH = "px-5 py-3 text-left text-xs font-medium text-lt-muted";

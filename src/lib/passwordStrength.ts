@@ -1,4 +1,5 @@
 import { PASSWORD_MIN_LENGTH } from "./validation";
+import { tx, localized } from "@/i18n/tx";
 
 export type StrengthScore = 0 | 1 | 2 | 3 | 4;
 
@@ -25,19 +26,19 @@ const COMMON_PASSWORDS = new Set([
   "lowtidelowtide",
 ]);
 
-const LABELS: Record<StrengthScore, string> = {
+const LABELS: Record<StrengthScore, string> = localized({
   0: "Muy corta",
   1: "Débil",
   2: "Aceptable",
   3: "Buena",
   4: "Fuerte",
-};
+});
 
 export function evaluatePassword(password: string, context: string[] = []): PasswordStrength {
   const length = [...password].length;
 
   if (length < PASSWORD_MIN_LENGTH) {
-    return { score: 0, label: LABELS[0], hint: `Faltan ${PASSWORD_MIN_LENGTH - length} caracteres.` };
+    return { score: 0, label: LABELS[0], hint: tx("Faltan {0} caracteres.", PASSWORD_MIN_LENGTH - length) };
   }
 
   const lower = password.toLowerCase();
@@ -47,7 +48,7 @@ export function evaluatePassword(password: string, context: string[] = []): Pass
     context.some((value) => value.length >= 3 && lower.includes(value.toLowerCase()));
 
   if (isWeak) {
-    return { score: 1, label: LABELS[1], hint: "Evita contraseñas comunes, repetidas o con tus datos." };
+    return { score: 1, label: LABELS[1], hint: tx("Evita contraseñas comunes, repetidas o con tus datos.") };
   }
 
   const variety = [/[a-z]/, /[A-Z]/, /\d/, /[^a-zA-Z0-9]/].filter((re) => re.test(password)).length;
@@ -59,6 +60,6 @@ export function evaluatePassword(password: string, context: string[] = []): Pass
   return {
     score: clamped,
     label: LABELS[clamped],
-    hint: clamped < 4 ? "Una frase larga con espacios es fácil de recordar y difícil de adivinar." : "",
+    hint: clamped < 4 ? tx("Una frase larga con espacios es fácil de recordar y difícil de adivinar.") : "",
   };
 }

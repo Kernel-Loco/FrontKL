@@ -1,6 +1,7 @@
 import { apiClient, ApiError, apiErrorFromResponse } from "@/lib/apiClient";
 import { statusFromFetchFailure, withTimeout } from "@/lib/http";
 import type { ActionPlanSimulation, PlanGrouping } from "@/types";
+import { tx } from "@/i18n/tx";
 
 export type PlanExportFormat = "csv" | "json";
 
@@ -27,7 +28,7 @@ export async function downloadActionPlan(
       signal: withTimeout(),
     });
   } catch (error) {
-    throw new ApiError(statusFromFetchFailure(error), "Sin conexión con el servicio.");
+    throw new ApiError(statusFromFetchFailure(error), tx("Sin conexión con el servicio."));
   }
   if (!response.ok) throw await apiErrorFromResponse(response);
   return response.blob();

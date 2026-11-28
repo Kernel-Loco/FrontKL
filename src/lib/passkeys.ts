@@ -1,3 +1,4 @@
+import { tx } from "@/i18n/tx";
 // Ayudas de las passkeys (RC-331). Sin React ni @simplewebauthn/browser, para probarlas con node --test.
 
 /** Lo que importa de un WebAuthnError de @simplewebauthn/browser o de un DOMException del navegador. */
@@ -23,17 +24,17 @@ export function isCeremonyAborted(error: unknown): boolean {
 export function ceremonyErrorMessage(error: unknown): string | undefined {
   const { name, code } = fields(error);
   if (code === "ERROR_AUTHENTICATOR_PREVIOUSLY_REGISTERED" || name === "InvalidStateError") {
-    return "Este dispositivo ya tiene una passkey de tu cuenta.";
+    return tx("Este dispositivo ya tiene una passkey de tu cuenta.");
   }
   if (code === "ERROR_INVALID_DOMAIN" || code === "ERROR_INVALID_RP_ID" || name === "SecurityError") {
-    return "Las passkeys solo funcionan en la dirección oficial de LowTide.";
+    return tx("Las passkeys solo funcionan en la dirección oficial de LowTide.");
   }
-  if (name === "NotAllowedError") return "Se canceló la passkey o se agotó el tiempo. Inténtalo de nuevo.";
+  if (name === "NotAllowedError") return tx("Se canceló la passkey o se agotó el tiempo. Inténtalo de nuevo.");
   if (name === "NotSupportedError" || code === "ERROR_AUTHENTICATOR_MISSING_USER_VERIFICATION_SUPPORT"
     || code === "ERROR_AUTHENTICATOR_MISSING_DISCOVERABLE_CREDENTIAL_SUPPORT") {
-    return "Este dispositivo no admite passkeys con verificación (huella, rostro o PIN).";
+    return tx("Este dispositivo no admite passkeys con verificación (huella, rostro o PIN).");
   }
-  if (typeof code === "string" && code.startsWith("ERROR_")) return "El navegador no pudo usar la passkey. Inténtalo de nuevo.";
+  if (typeof code === "string" && code.startsWith("ERROR_")) return tx("El navegador no pudo usar la passkey. Inténtalo de nuevo.");
   return undefined;
 }
 
@@ -52,9 +53,9 @@ export const PASSKEYS_CHANGED = "lowtide:passkeys-changed";
 
 /** Aviso tras cambiar la contraseña: la API borra las passkeys, que se registraron con la anterior. */
 export function passwordChangedMessage(passkeysRemoved: number): string {
-  if (passkeysRemoved <= 0) return "Tu contraseña se actualizó.";
-  const passkeys = passkeysRemoved === 1 ? "tu passkey" : `tus ${passkeysRemoved} passkeys`;
-  return `Tu contraseña se actualizó. Se ${passkeysRemoved === 1 ? "borró" : "borraron"} ${passkeys}: puedes registrar otra con la contraseña nueva.`;
+  if (passkeysRemoved <= 0) return tx("Tu contraseña se actualizó.");
+  const passkeys = passkeysRemoved === 1 ? tx("tu passkey") : tx("tus {0} passkeys", passkeysRemoved);
+  return tx("Tu contraseña se actualizó. Se {0} {1}: puedes registrar otra con la contraseña nueva.", passkeysRemoved === 1 ? tx("borró") : tx("borraron"), passkeys);
 }
 
 /**
@@ -62,6 +63,6 @@ export function passwordChangedMessage(passkeysRemoved: number): string {
  * nuevo.' al final del mensaje se quita: con la pista, sobra y se contradice.
  */
 export function withNextCodeHint(message: string | null): string {
-  const base = (message ?? "Se canceló la passkey.").replace(/\s*Inténtalo de nuevo\.?$/, "");
-  return `${base} Para intentarlo otra vez, espera el siguiente código de tu app.`;
+  const base = (message ?? tx("Se canceló la passkey.")).replace(/\s*Inténtalo de nuevo\.?$/, "");
+  return tx("{0} Para intentarlo otra vez, espera el siguiente código de tu app.", base);
 }

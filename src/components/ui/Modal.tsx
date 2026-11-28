@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef } from "react";
 import { X } from "lucide-react";
+import { tx } from "@/i18n/tx";
 
 interface ModalProps {
   open: boolean;
@@ -41,7 +42,7 @@ export function Modal({ open, onClose, title, description, children }: ModalProp
             </h2>
             {description && <p className="mt-1 text-sm text-lt-muted">{description}</p>}
           </div>
-          <button type="button" onClick={onClose} aria-label="Cerrar" className="rounded-md p-1 text-lt-muted hover:bg-lt-raised hover:text-lt-text">
+          <button type="button" onClick={onClose} aria-label={tx("Cerrar")} className="rounded-md p-1 text-lt-muted hover:bg-lt-raised hover:text-lt-text">
             <X aria-hidden="true" className="h-5 w-5" />
           </button>
         </div>

@@ -3,6 +3,7 @@ import { mockDelay } from "@/lib/mock";
 import { mockAlertPolicies, mockSettings } from "@/mocks/api/provisional";
 import type { AlertPolicies, OrgSettings } from "@/types";
 import { ServiceError } from "./errors";
+import { tx } from "@/i18n/tx";
 
 export async function getSettings(): Promise<OrgSettings> {
   // TODO: conectar con backend → GET /settings
@@ -21,7 +22,7 @@ export async function updateAlertPolicies(policies: AlertPolicies): Promise<Aler
   await mockDelay(500);
   const threshold = policies.alert_score_threshold;
   if (!Number.isInteger(threshold) || threshold < 0 || threshold > 100) {
-    throw new ServiceError("invalid", "El umbral debe ser un número entero de 0 a 100.");
+    throw new ServiceError("invalid", tx("El umbral debe ser un número entero de 0 a 100."));
   }
   return structuredClone(policies);
 }

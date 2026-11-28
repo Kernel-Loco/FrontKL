@@ -1,6 +1,7 @@
 // Estado de un dominio para mostrarlo en tablas: autorizado, por validar, vencido, etc.
 import type { Domain, Scan, ScanBlockReason } from "@/types";
 import type { Tone } from "@/components/ui/tones";
+import { tx } from "@/i18n/tx";
 
 export interface DomainState {
   label: string;
@@ -16,13 +17,13 @@ export function exportBlockReasons(reasons: ScanBlockReason[]): ScanBlockReason[
 }
 
 export function domainState(domain: Domain): DomainState {
-  if (domain.status === "removed") return { label: "Eliminado", tone: "gray" };
-  if (domain.authorization.status === "revoked") return { label: "Revocada", tone: "red" };
-  if (domain.authorization.status === "expired") return { label: "Vencido", tone: "red" };
-  if (domain.status === "paused") return { label: "En pausa", tone: "gray" };
-  if (domain.authorization.status === "missing") return { label: "Sin autorización", tone: "amber" };
-  if (domain.txt.status !== "verified" || domain.status === "pending_verification") return { label: "Pendiente TXT", tone: "amber" };
-  return { label: "Autorizado", tone: "teal" };
+  if (domain.status === "removed") return { label: tx("Eliminado"), tone: "gray" };
+  if (domain.authorization.status === "revoked") return { label: tx("Revocada"), tone: "red" };
+  if (domain.authorization.status === "expired") return { label: tx("Vencido"), tone: "red" };
+  if (domain.status === "paused") return { label: tx("En pausa"), tone: "gray" };
+  if (domain.authorization.status === "missing") return { label: tx("Sin autorización"), tone: "amber" };
+  if (domain.txt.status !== "verified" || domain.status === "pending_verification") return { label: tx("Pendiente TXT"), tone: "amber" };
+  return { label: tx("Autorizado"), tone: "teal" };
 }
 
 /**
@@ -31,12 +32,12 @@ export function domainState(domain: Domain): DomainState {
  */
 export function unscoredLabel(domain: Domain): string {
   const state = domainState(domain);
-  return state.label === "Autorizado" ? "Sin escaneo completo" : state.label;
+  return state.label === tx("Autorizado") ? tx("Sin escaneo completo") : state.label;
 }
 
 /** Dominios autorizados sin score: los que el tablero llama «Sin escaneo completo», no los sin carta, vencidos o sin TXT. */
 export function unscannedDomains(domains: Domain[]): Domain[] {
-  return domains.filter((d) => d.score === null && unscoredLabel(d) === "Sin escaneo completo");
+  return domains.filter((d) => d.score === null && unscoredLabel(d) === tx("Sin escaneo completo"));
 }
 
 /** Dominios con score, de mayor a menor riesgo. */

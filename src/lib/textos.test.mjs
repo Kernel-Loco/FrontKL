@@ -83,7 +83,7 @@ test("el Detalle de un dominio sin score usa el estado de la tabla Dominios", ()
 
 test("Usuarios e Integraciones no prometen correo ni evento mientras son simulados", () => {
   assert.match(leer("components/screens/admin/UsersManager.tsx"), /esSimulada\("inviteUser"\) \? "Simulado: todavía no se envía ningún correo\."/);
-  assert.match(leer("components/screens/admin/IntegrationsManager.tsx"), /esSimulada\("createIntegration"\) \? `Simulado\. .*sin evento de prueba\.`/);
+  assert.match(leer("components/screens/admin/IntegrationsManager.tsx"), /esSimulada\("createIntegration"\) \? tx\("Simulado\. .*sin evento de prueba\."/);
 });
 
 test("el tope de 8 h tiene su propio aviso en el login", () => {

@@ -6,6 +6,7 @@ import { AvisoSimulado } from "@/components/ui/AvisoSimulado";
 import { SECTIONS } from "@/config/permissions";
 import { getScoringWeights } from "@/services/queries";
 import { getAlertPolicies } from "@/services/settingsService";
+import { tx } from "@/i18n/tx";
 
 export const metadata: Metadata = { title: SECTIONS.alertas.label };
 
@@ -16,7 +17,7 @@ export default async function AlertasPage() {
 
   return (
     <div className="space-y-8">
-      <PageHeader title={SECTIONS.alertas.label} description="Cuándo avisa LowTide y con qué umbral de riesgo." />
+      <PageHeader title={SECTIONS.alertas.label} description={tx("Cuándo avisa LowTide y con qué umbral de riesgo.")} />
       <AvisoSimulado acciones={["updateAlertPolicies"]} datos={["getAlertPolicies"]} />
       <AlertPoliciesForm initial={policies} bands={weights.bands} />
     </div>

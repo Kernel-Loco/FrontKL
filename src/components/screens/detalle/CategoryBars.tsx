@@ -3,6 +3,8 @@ import { BAND_TONE } from "@/components/ui/tones";
 import { CATEGORY_LABELS } from "@/config/labels";
 import { KRI_STATUS_LABELS, subcategoriesOf, subcategoryCoverage } from "@/lib/riesgo";
 import type { CategoryScore, Kri, SubcategoryScore } from "@/types";
+import { tx } from "@/i18n/tx";
+import { cantidad } from "@/lib/format";
 
 const POINTS = new Intl.NumberFormat("es-MX", { maximumFractionDigits: 1 });
 
@@ -20,16 +22,16 @@ export function CategoryBars({ categories, subcategories = [], kris = [] }: { ca
             <div className="mb-1.5 flex items-baseline justify-between gap-3 text-sm">
               <span className="text-lt-text">{CATEGORY_LABELS[c.category]}</span>
               <span className="text-xs text-lt-muted">
-                peso {Math.round(c.weight * 100)} % · <strong className="font-semibold text-lt-text">{c.score}</strong>
+                {tx("peso {0} %", Math.round(c.weight * 100))} · <strong className="font-semibold text-lt-text">{c.score}</strong>
               </span>
             </div>
-            <ProgressBar value={c.score} tone={BAND_TONE[c.band]} label={`${CATEGORY_LABELS[c.category]}: ${c.score} de 100`} className="h-2" />
+            <ProgressBar value={c.score} tone={BAND_TONE[c.band]} label={tx("{0}: {1} de 100", CATEGORY_LABELS[c.category], c.score)} className="h-2" />
             {subs.length > 0 && (
-              <ul aria-label={`Subcategorías de ${CATEGORY_LABELS[c.category]}`} className="mt-2.5 space-y-1 border-l border-lt-border pl-3">
+              <ul aria-label={tx("Subcategorías de {0}", CATEGORY_LABELS[c.category])} className="mt-2.5 space-y-1 border-l border-lt-border pl-3">
                 {subs.map((s) => {
                   const coverage = subcategoryCoverage(s.subcategory, kris);
                   const incomplete = coverage !== null && coverage !== "ok";
-                  const findings = `${s.findings} hallazgo${s.findings === 1 ? "" : "s"} · ${POINTS.format(s.penalty)} pts`;
+                  const findings = `${cantidad(s.findings, "hallazgo")} · ${POINTS.format(s.penalty)} pts`;
                   return (
                     <li
                       key={s.subcategory}

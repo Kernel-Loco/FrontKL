@@ -2,6 +2,7 @@
 // número, el nombre breve en español y el enlace; el texto de CIS y de MITRE no se copia. La atribución sale de NOTICE
 // de BackKL.
 import type { Frameworks } from "@/types";
+import { tx } from "@/i18n/tx";
 
 export interface MarcoVisible {
   marco: string;
@@ -22,12 +23,12 @@ export function marcosDelHallazgo(f: Frameworks | undefined): MarcoVisible[] {
   const a = f.mitre_attack;
   return [
     {
-      marco: `MITRE ATT&CK ${a.version}`,
-      texto: a.technique_id ? `${a.technique_id} ${a.technique_name ?? ""}`.trim() : `Sin técnica: ${a.unmapped_reason ?? "no aplica"}`,
+      marco: tx("MITRE ATT&CK {0}", a.version),
+      texto: a.technique_id ? `${a.technique_id} ${a.technique_name ?? ""}`.trim() : tx("Sin técnica: {0}", a.unmapped_reason ?? tx("no aplica")),
       url: a.technique_id ? url(a.source_url) : null,
     },
     {
-      marco: "ISO/IEC 27001:2022",
+      marco: tx("ISO/IEC 27001:2022"),
       texto: `${f.iso_27001_2022.control_id} ${f.iso_27001_2022.control_name}`.trim(),
       url: url(f.iso_27001_2022.source_url),
     },

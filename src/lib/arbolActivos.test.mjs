@@ -267,7 +267,7 @@ test("8. la pantalla monta los hijos de un nodo solo al abrirlo y conserva los f
   assert.match(arbol, /aria-expanded=\{abierto\}/);
   assert.match(arbol, /\{abierto && hijos\.length > 0 && \(/);
   // El botón no cambia de nombre al abrir: el estado lo dice aria-expanded. El motivo del suelto se ve en la fila.
-  assert.match(arbol, /aria-label=\{`Activos debajo de \$\{nombre\}`\}/);
+  assert.match(arbol, /aria-label=\{tx\("Activos debajo de \{0\}", nombre\)\}/);
   assert.doesNotMatch(arbol, /title=\{textoSuelto/);
   assert.match(arbol, /<span className="text-xs text-lt-amber">\{textoSuelto\(suelto, activo\.parent\)\}<\/span>/);
   const pagina = leer("../app/(dashboard)/dashboard/activos/page.tsx");

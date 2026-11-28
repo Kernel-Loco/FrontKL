@@ -5,6 +5,7 @@ import { newAssetsText, type NewAssetCounts } from "@/lib/activosNuevos";
 import { atribucionesDe } from "@/lib/atribucion";
 import { formatDateTime } from "@/lib/format";
 import type { DomainFinding, ScanStatus } from "@/types";
+import { tx, localized } from "@/i18n/tx";
 
 export interface Change {
   domain: string;
@@ -27,25 +28,25 @@ export interface ScanSummary {
   firstScan: boolean;
 }
 
-const count = (value: number | null, one: string, many: string) => `${value === null ? "—" : value} ${value === 1 ? one : many}`;
+const count = (value: number | null, one: string, many: string) => `${value === null ? "—" : value} ${tx(value === 1 ? one : many)}`;
 
-const STATUS_NOTE: Partial<Record<ScanStatus, string>> = {
+const STATUS_NOTE: Partial<Record<ScanStatus, string>> = localized({
   partial: "Parcial: solo cuenta lo que el escaneo revisó.",
   failed: "El escaneo falló.",
-};
+});
 
 export function RecentChanges({ summaries, changes, more }: { summaries: ScanSummary[]; changes: Change[]; more: number }) {
   return (
-    <Card title="Cambios desde el último escaneo">
+    <Card title={tx("Cambios desde el último escaneo")}>
       <div className="space-y-4">
         {summaries.length === 0 ? (
-          <p className="text-sm text-lt-muted">Ningún dominio activo tiene un escaneo terminado.</p>
+          <p className="text-sm text-lt-muted">{tx("Ningún dominio activo tiene un escaneo terminado.")}</p>
         ) : (
           <ul className="space-y-2">
             {summaries.map((s) => (
               <li key={s.domain} className="text-sm">
                 <span className="tabular-nums text-lt-text">{s.domain}</span>
-                <span className="text-lt-muted"> · {s.finishedAt ? formatDateTime(s.finishedAt) : "sin fecha de escaneo"}</span>
+                <span className="text-lt-muted"> · {s.finishedAt ? formatDateTime(s.finishedAt) : tx("sin fecha de escaneo")}</span>
                 <p className="mt-0.5 text-xs text-lt-muted">
                   <span className="tabular-nums">{count(s.newFindings, "nuevo", "nuevos")}</span> ·{" "}
                   <span className="tabular-nums">{count(s.resolvedFindings, "resuelto", "resueltos")}</span>
@@ -56,10 +57,10 @@ export function RecentChanges({ summaries, changes, more }: { summaries: ScanSum
                 {/* Los desaparecidos no se listan, igual que los resueltos. */}
                 <p className="mt-0.5 text-xs text-lt-muted">
                   {s.firstScan ? (
-                    "Activos: primer escaneo"
+                    tx("Activos: primer escaneo")
                   ) : (
                     <>
-                      Activos nuevos: <span className="tabular-nums">{s.newAssets ? newAssetsText(s.newAssets) : "—"}</span>
+                      {tx("Activos nuevos:")}{" "}<span className="tabular-nums">{s.newAssets ? newAssetsText(s.newAssets) : "—"}</span>
                     </>
                   )}
                 </p>
@@ -70,7 +71,7 @@ export function RecentChanges({ summaries, changes, more }: { summaries: ScanSum
         {changes.length > 0 && (
           <div className="border-t border-lt-border pt-3">
             {/* Abiertos que su último escaneo vio por primera vez: no siempre cuadran con los conteos de arriba. */}
-            <p className="text-xs font-medium text-lt-muted">Nuevos abiertos</p>
+            <p className="text-xs font-medium text-lt-muted">{tx("Nuevos abiertos")}</p>
             <ul className="divide-y divide-lt-border">
               {changes.map(({ domain, finding }) => (
                 <li key={finding.id} className="py-3">
@@ -80,7 +81,7 @@ export function RecentChanges({ summaries, changes, more }: { summaries: ScanSum
                   </p>
                 </li>
               ))}
-              {more > 0 && <li className="pt-3 text-xs text-lt-muted">y {more} más</li>}
+              {more > 0 && <li className="pt-3 text-xs text-lt-muted">{tx("y {0} más", more)}</li>}
             </ul>
             {atribucionesDe(changes.map((c) => c.finding)).map((a) => (
               <SourceAttribution key={a.url} atribucion={a} className="pt-2" />

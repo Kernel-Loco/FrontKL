@@ -3,6 +3,7 @@
 import { useId, useState, type InputHTMLAttributes, type ReactNode, type Ref } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { FieldError } from "./FieldError";
+import { tx } from "@/i18n/tx";
 
 interface TextInputProps extends InputHTMLAttributes<HTMLInputElement> {
   label: string;
@@ -44,7 +45,7 @@ export function TextInput({ label, error, labelAction, type = "text", id, ref, c
           <button
             type="button"
             onClick={() => setVisible((v) => !v)}
-            aria-label={visible ? "Ocultar contraseña" : "Mostrar contraseña"}
+            aria-label={visible ? tx("Ocultar contraseña") : tx("Mostrar contraseña")}
             aria-pressed={visible}
             aria-controls={inputId}
             className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"

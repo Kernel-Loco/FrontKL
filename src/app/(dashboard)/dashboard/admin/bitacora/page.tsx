@@ -5,6 +5,7 @@ import { AuditExplorer } from "@/components/screens/admin/AuditExplorer";
 import { AvisoSimulado } from "@/components/ui/AvisoSimulado";
 import { SECTIONS } from "@/config/permissions";
 import { getAuditLog } from "@/services/adminService";
+import { tx } from "@/i18n/tx";
 
 export const metadata: Metadata = { title: SECTIONS.bitacora.label };
 
@@ -14,7 +15,7 @@ export default async function BitacoraPage() {
 
   return (
     <div className="space-y-8">
-      <PageHeader title={SECTIONS.bitacora.label} description="Todo lo que se hace en la organización, quién y cuándo." />
+      <PageHeader title={SECTIONS.bitacora.label} description={tx("Todo lo que se hace en la organización, quién y cuándo.")} />
       <AvisoSimulado datos={["getAuditLog"]} />
       <AuditExplorer entries={(await getAuditLog()).items} />
     </div>

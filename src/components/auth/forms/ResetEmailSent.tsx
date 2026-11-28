@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Notice } from "@/components/auth/Notice";
 import { Spinner } from "@/components/Spinner";
 import { useFlowState } from "@/hooks/useFlowState";
+import { tx } from "@/i18n/tx";
 
 function maskEmail(email: string): string {
   const [user, domain] = email.split("@");
@@ -25,7 +26,7 @@ export function ResetEmailSent() {
 
   if (!ready || !data) {
     return (
-      <div className="flex justify-center py-8" role="status" aria-label="Cargando">
+      <div className="flex justify-center py-8" role="status" aria-label={tx("Cargando")}>
         <Spinner className="h-6 w-6" />
       </div>
     );
@@ -34,17 +35,15 @@ export function ResetEmailSent() {
   return (
     <div className="space-y-6">
       <p className="text-sm text-slate-600">
-        Lo pediste para <strong className="font-semibold text-lt-ink">{maskEmail(data.email)}</strong>.
+        {tx("Lo pediste para")}{" "}<strong className="font-semibold text-lt-ink">{maskEmail(data.email)}</strong>.
       </p>
       <Notice>{data.detail}</Notice>
-      <p className="text-sm text-slate-600">Abre el enlace en este mismo navegador. Si pides otro, el anterior deja de servir.</p>
+      <p className="text-sm text-slate-600">{tx("Abre el enlace en este mismo navegador. Si pides otro, el anterior deja de servir.")}</p>
       <div className="space-y-3 text-center text-sm">
         <Link href="/forgot-password" className="block font-semibold text-lt-primary hover:underline">
-          Pedir otro enlace
-        </Link>
+          {tx("Pedir otro enlace")}</Link>
         <Link href="/login" className="block font-medium text-slate-500 hover:underline">
-          Volver a iniciar sesión
-        </Link>
+          {tx("Volver a iniciar sesión")}</Link>
       </div>
     </div>
   );

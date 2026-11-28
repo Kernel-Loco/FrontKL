@@ -1,3 +1,4 @@
+import { tx } from "@/i18n/tx";
 // Filtros de la pantalla 'Activos' (RC-231): de los parámetros de la URL a la consulta de GET /api/v1/assets.
 // Sin imports, para que node --test lo cargue sin alias. Un valor que la API rechazaría con 422 se descarta aquí:
 // un tipo que no existe, un dominio que no es de la empresa, un texto vacío, de más de 200 caracteres o con caracteres
@@ -72,9 +73,9 @@ export function urlFiltros(filtros: FiltrosActivos): string {
  * solo el total, nunca un rango al revés como '451–450 de 120'.
  */
 export function conteo(total: number, offset: number, enPagina: number): string {
-  const nombre = total === 1 ? "activo" : "activos";
+  const nombre = total === 1 ? tx("activo") : tx("activos");
   if (total === 0 || enPagina === 0) return `${total} ${nombre}`;
-  return `${offset + 1}–${offset + enPagina} de ${total} ${nombre}`;
+  return tx("{0}–{1} de {2} {3}", offset + 1, offset + enPagina, total, tx(nombre));
 }
 
 /** Número de páginas para un total (al menos 1). */

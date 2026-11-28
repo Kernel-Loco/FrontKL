@@ -25,6 +25,7 @@ import {
 import { leaveSession, loginNoticeFrom, type LoginNotice } from "@/lib/session/logout";
 import { getCurrentUser, logout } from "@/services/authService";
 import type { SessionLimits } from "@/types";
+import { tx } from "@/i18n/tx";
 
 const ACTIVITY_EVENTS = ["mousemove", "mousedown", "keydown", "wheel", "touchstart", "scroll"] as const;
 
@@ -36,7 +37,7 @@ interface Warning {
 
 function formatWait(seconds: number) {
   if (seconds < 60) return `${seconds} s`;
-  return `${Math.floor(seconds / 60)} min ${String(seconds % 60).padStart(2, "0")} s`;
+  return tx("{0} min {1} s", Math.floor(seconds / 60), String(seconds % 60).padStart(2, "0"));
 }
 
 /**
@@ -238,14 +239,14 @@ export function IdleTimeout({ limits, userId }: { limits?: SessionLimits; userId
       >
         <Clock aria-hidden="true" className="h-6 w-6 text-lt-muted" />
         <h2 id={titleId} className="mt-4 text-lg font-bold text-lt-text">
-          {isAbsolute ? "Tu sesión está por llegar a su límite" : "¿Sigues ahí?"}
+          {isAbsolute ? tx("Tu sesión está por llegar a su límite") : tx("¿Sigues ahí?")}
         </h2>
         <p id={descriptionId} className="mt-1 text-sm text-lt-muted">
           {isAbsolute
-            ? "Por seguridad, la sesión dura un máximo de 8 horas. Guarda tu trabajo: se cerrará en "
-            : "Por seguridad, tu sesión se cerrará por inactividad en "}
+            ? tx("Por seguridad, la sesión dura un máximo de 8 horas. Guarda tu trabajo: se cerrará en ")
+            : tx("Por seguridad, tu sesión se cerrará por inactividad en ")}
           <strong className="tabular-nums text-lt-text">{formatWait(warning.secondsLeft)}</strong>
-          {isAbsolute ? " y tendrás que iniciar sesión de nuevo." : "."}
+          {isAbsolute ? tx(" y tendrás que iniciar sesión de nuevo.") : "."}
         </p>
         <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <button
@@ -253,8 +254,7 @@ export function IdleTimeout({ limits, userId }: { limits?: SessionLimits; userId
             onClick={() => void endSession("logout")}
             className="rounded-lg px-4 py-2 text-sm font-semibold text-lt-muted hover:bg-lt-raised"
           >
-            Cerrar sesión
-          </button>
+            {tx("Cerrar sesión")}</button>
           <button
             type="button"
             autoFocus
@@ -268,7 +268,7 @@ export function IdleTimeout({ limits, userId }: { limits?: SessionLimits; userId
             }
             className="rounded-lg bg-lt-indigo px-4 py-2 text-sm font-semibold text-white hover:bg-lt-indigo/90"
           >
-            {isAbsolute ? "Entendido" : "Continuar sesión"}
+            {isAbsolute ? tx("Entendido") : tx("Continuar sesión")}
           </button>
         </div>
       </div>

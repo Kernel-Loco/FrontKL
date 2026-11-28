@@ -15,6 +15,7 @@ import type { Category, DomainFinding, FindingStatusFilter, Severity } from "@/t
 import { AssistantPanel } from "./AssistantPanel";
 import { ExplanationPanel } from "./ExplanationPanel";
 import { TriagePanel } from "./TriagePanel";
+import { tx } from "@/i18n/tx";
 
 export function FindingsExplorer({
   domain,
@@ -65,23 +66,21 @@ export function FindingsExplorer({
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,2fr)_repeat(3,minmax(0,1fr))]">
         <div>
           <label htmlFor={ids.search} className="mb-1.5 block text-xs font-medium text-lt-muted">
-            Buscar
-          </label>
+            {tx("Buscar")}</label>
           <input
             id={ids.search}
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Subdominio, correo, tecnología…"
+            placeholder={tx("Subdominio, correo, tecnología…")}
             className={`${INPUT} h-11`}
           />
         </div>
         <div>
           <label htmlFor={ids.category} className="mb-1.5 block text-xs font-medium text-lt-muted">
-            Categoría
-          </label>
+            {tx("Categoría")}</label>
           <select id={ids.category} value={category} onChange={(e) => setCategory(e.target.value as Category | "")} className={`${SELECT} h-11`}>
-            <option value="">Todas</option>
+            <option value="">{tx("Todas")}</option>
             {(Object.keys(CATEGORY_LABELS) as Category[]).map((c) => (
               <option key={c} value={c}>
                 {CATEGORY_LABELS[c]}
@@ -91,10 +90,9 @@ export function FindingsExplorer({
         </div>
         <div>
           <label htmlFor={ids.severity} className="mb-1.5 block text-xs font-medium text-lt-muted">
-            Criticidad
-          </label>
+            {tx("Criticidad")}</label>
           <select id={ids.severity} value={severity} onChange={(e) => setSeverity(e.target.value as Severity | "")} className={`${SELECT} h-11`}>
-            <option value="">Todas</option>
+            <option value="">{tx("Todas")}</option>
             {(Object.keys(SEVERITY_LABELS) as Severity[]).map((s) => (
               <option key={s} value={s}>
                 {SEVERITY_LABELS[s]}
@@ -104,10 +102,9 @@ export function FindingsExplorer({
         </div>
         <div>
           <label htmlFor={ids.rule} className="mb-1.5 block text-xs font-medium text-lt-muted">
-            Acción del plan
-          </label>
+            {tx("Acción del plan")}</label>
           <select id={ids.rule} value={rule} onChange={(e) => setRule(e.target.value)} className={`${SELECT} h-11`}>
-            <option value="">Todas</option>
+            <option value="">{tx("Todas")}</option>
             {rules.map((code) => <option key={code} value={code}>{code.replace(/_/g, " ")}</option>)}
           </select>
         </div>
@@ -116,40 +113,39 @@ export function FindingsExplorer({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-xs text-lt-muted">
           {findingsCountLabel(visible.length, findings.length, partialCoverage || unscored)}
-          {visible.length < findings.length && " · la exportación trae todos, sin los filtros"}
+          {visible.length < findings.length && tx(" · la exportación trae todos, sin los filtros")}
         </p>
         {/* La API arma el archivo (#24): todos los hallazgos abiertos del dominio, sin los filtros, y 403 sin autorización vigente. */}
-        <ApiExport filename={`${domain}-hallazgos`} label="Exportar hallazgos" disabled={findings.length === 0}
+        <ApiExport filename={`${domain}-hallazgos`} label={tx("Exportar hallazgos")} disabled={findings.length === 0}
           download={(format, signal) => downloadFindings(domain, format, signal)} />
       </div>
 
       <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
         <div className="overflow-hidden rounded-xl bg-lt-surface">
           {visible.length === 0 && findings.length === 0 && status !== "open" ? (
-            <EmptyState title="Ningún hallazgo en este estado">
-              Cuando un Analista o Administrador marque un hallazgo con este estado, aparecerá aquí con quién y cuándo.
-            </EmptyState>
+            <EmptyState title={tx("Ningún hallazgo en este estado")}>
+              {tx("Cuando un Analista o Administrador marque un hallazgo con este estado, aparecerá aquí con quién y cuándo.")}</EmptyState>
           ) : visible.length === 0 ? (
-            <EmptyState title={findings.length === 0 ? unscored ? "Sin escaneo completo" : partialCoverage ? NO_FINDINGS_PARTIAL : "Sin hallazgos abiertos" : "Ningún hallazgo coincide"}>
+            <EmptyState title={findings.length === 0 ? unscored ? tx("Sin escaneo completo") : partialCoverage ? tx(NO_FINDINGS_PARTIAL) : tx("Sin hallazgos abiertos") : tx("Ningún hallazgo coincide")}>
               {findings.length === 0
                 ? unscored
-                  ? "Ningún escaneo de este dominio ha calculado su riesgo todavía; no se puede concluir que no haya hallazgos."
+                  ? tx("Ningún escaneo de este dominio ha calculado su riesgo todavía; no se puede concluir que no haya hallazgos.")
                   : partialCoverage
-                    ? "El último escaneo fue parcial; no se puede concluir que no haya más hallazgos."
-                    : "Este dominio no tiene hallazgos abiertos en su último escaneo."
-                : "Prueba con otra búsqueda o quita los filtros."}
+                    ? tx("El último escaneo fue parcial; no se puede concluir que no haya más hallazgos.")
+                    : tx("Este dominio no tiene hallazgos abiertos en su último escaneo.")
+                : tx("Prueba con otra búsqueda o quita los filtros.")}
             </EmptyState>
           ) : (
-            <div role="region" aria-label="Tabla desplazable horizontalmente" tabIndex={0} className="relative overflow-x-auto">
+            <div role="region" aria-label={tx("Tabla desplazable horizontalmente")} tabIndex={0} className="relative overflow-x-auto">
               <table className="w-full min-w-[560px]">
-                <caption className="sr-only">Hallazgos. Elige uno para ver por qué tiene su criticidad.</caption>
+                <caption className="sr-only">{tx("Hallazgos. Elige uno para ver por qué tiene su criticidad.")}</caption>
                 <thead>
                   <tr>
-                    <th scope="col" className={TH}>Hallazgo</th>
-                    <th scope="col" className={TH}>Categoría</th>
-                    <th scope="col" className={TH}>Fuente</th>
-                    <th scope="col" className={TH}>Criticidad</th>
-                    {status !== "open" && <th scope="col" className={TH}>Estado</th>}
+                    <th scope="col" className={TH}>{tx("Hallazgo")}</th>
+                    <th scope="col" className={TH}>{tx("Categoría")}</th>
+                    <th scope="col" className={TH}>{tx("Fuente")}</th>
+                    <th scope="col" className={TH}>{tx("Criticidad")}</th>
+                    {status !== "open" && <th scope="col" className={TH}>{tx("Estado")}</th>}
                   </tr>
                 </thead>
                 <tbody>

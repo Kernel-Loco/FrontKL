@@ -14,6 +14,7 @@ import { groupSecret, isQrDataUri, minutesLeft } from "@/lib/mfaSetup";
 import { enableMfaEnroll, startMfaEnroll } from "@/services/authService";
 import { getErrorMessage } from "@/services/errors";
 import type { MfaSetupResponse } from "@/types";
+import { tx } from "@/i18n/tx";
 
 const MFA_LENGTH = 6;
 
@@ -56,7 +57,7 @@ export function MfaEnrollForm() {
     setError(null);
     try {
       const result = await startMfaEnroll({ mfa_setup_token: data.mfa_setup_token });
-      if (!isQrDataUri(result.qr_svg)) throw new Error("La respuesta del servicio no trae el código QR.");
+      if (!isQrDataUri(result.qr_svg)) throw new Error(tx("La respuesta del servicio no trae el código QR."));
       setSetup(result);
       setCode("");
       setCodeKey((key) => key + 1);
@@ -70,7 +71,7 @@ export function MfaEnrollForm() {
   const onCode = async (event: FormEvent) => {
     event.preventDefault();
     if (!data || busy) return;
-    if (code.length !== MFA_LENGTH) return setError(`Escribe los ${MFA_LENGTH} dígitos que muestra tu app.`);
+    if (code.length !== MFA_LENGTH) return setError(tx("Escribe los {0} dígitos que muestra tu app.", MFA_LENGTH));
     setBusy(true);
     setError(null);
     try {
@@ -96,7 +97,7 @@ export function MfaEnrollForm() {
 
   if (!ready || !data) {
     return (
-      <div className="flex justify-center py-8" role="status" aria-label="Cargando">
+      <div className="flex justify-center py-8" role="status" aria-label={tx("Cargando")}>
         <Spinner className="h-6 w-6" />
       </div>
     );
@@ -110,8 +111,7 @@ export function MfaEnrollForm() {
         disabled={busy || navigating}
         className="rounded-sm font-medium text-lt-primary hover:underline disabled:opacity-60"
       >
-        Volver al inicio
-      </button>
+        {tx("Volver al inicio")}</button>
     </div>
   );
 
@@ -119,7 +119,7 @@ export function MfaEnrollForm() {
     return (
       <div className="space-y-5">
         {error && <Notice tone="error">{error}</Notice>}
-        <Button onClick={goBack}>Iniciar sesión de nuevo</Button>
+        <Button onClick={goBack}>{tx("Iniciar sesión de nuevo")}</Button>
       </div>
     );
   }
@@ -128,20 +128,19 @@ export function MfaEnrollForm() {
     return (
       <form method="post" onSubmit={onCode} noValidate className="space-y-5">
         <p className="text-sm text-slate-600">
-          Escanea el código con tu app autenticadora (Google Authenticator, Microsoft Authenticator, 1Password u otra) y
-          escribe el código de 6 dígitos que te muestra. Vence en {minutesLeft(setup.expires_in_seconds)} minutos.
+          {tx("Escanea el código con tu app autenticadora (Google Authenticator, Microsoft Authenticator, 1Password u otra) y escribe el código de 6 dígitos que te muestra. Vence en")}{" "}{tx("{0} minutos.", minutesLeft(setup.expires_in_seconds))}
         </p>
         {/* El QR lo dibuja la API como data: URI; no pasa por ningún servicio de terceros. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={setup.qr_svg}
-          alt="Código QR para agregar LowTide a tu app autenticadora"
+          alt={tx("Código QR para agregar LowTide a tu app autenticadora")}
           width={216}
           height={216}
           className="mx-auto block h-auto w-full max-w-[216px] rounded-lg bg-white p-2"
         />
         <div>
-          <p className="text-xs text-slate-500">¿No puedes escanearlo? Escribe esta clave en la app:</p>
+          <p className="text-xs text-slate-500">{tx("¿No puedes escanearlo? Escribe esta clave en la app:")}</p>
           <p className="mt-1 break-all tabular-nums text-sm text-lt-ink" data-testid="mfa-secret">
             {groupSecret(setup.secret)}
           </p>
@@ -149,7 +148,7 @@ export function MfaEnrollForm() {
         <CodeInput
           key={codeKey}
           length={MFA_LENGTH}
-          label="Código de 6 dígitos de tu app"
+          label={tx("Código de 6 dígitos de tu app")}
           onChange={(value) => {
             setCode(value);
             if (error) setError(null);
@@ -158,8 +157,7 @@ export function MfaEnrollForm() {
         />
         {error && <Notice tone="error">{error}</Notice>}
         <Button type="submit" loading={busy || navigating} disabled={code.length !== MFA_LENGTH}>
-          Verificar y entrar
-        </Button>
+          {tx("Verificar y entrar")}</Button>
         {back}
       </form>
     );
@@ -170,8 +168,7 @@ export function MfaEnrollForm() {
       <Notice>{data.detail}</Notice>
       {error && <Notice tone="error">{error}</Notice>}
       <Button onClick={onQr} loading={busy}>
-        Mostrar código QR
-      </Button>
+        {tx("Mostrar código QR")}</Button>
       {back}
     </div>
   );

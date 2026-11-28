@@ -6,6 +6,7 @@ import { ActionButton } from "@/components/ui/ActionButton";
 import { InlineAlert } from "@/components/ui/InlineAlert";
 import { getErrorMessage } from "@/services/errors";
 import type { ExportFormat } from "@/services/exportService";
+import { tx } from "@/i18n/tx";
 
 function saveBlob(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
@@ -67,8 +68,8 @@ export function ApiExport({
       <div className="flex flex-wrap gap-2" role="group" aria-label={label}>
         {formats.map((format) => (
           <ActionButton key={format} variant={variant} size="sm" disabled={disabled || exporting !== null}
-            loading={exporting === format} onClick={() => run(format)} title={`Exportar ${format.toUpperCase()}`}
-            aria-label={`${label} en ${format.toUpperCase()}`}>
+            loading={exporting === format} onClick={() => run(format)} title={tx("Exportar {0}", format.toUpperCase())}
+            aria-label={tx("{0} en {1}", label, format.toUpperCase())}>
             {format === "csv"
               ? <FileSpreadsheet aria-hidden="true" className="h-4 w-4" />
               : <Braces aria-hidden="true" className="h-4 w-4" />}

@@ -13,6 +13,7 @@ import { bandaEnRangos } from "@/lib/bandas";
 import { getErrorMessage } from "@/services/errors";
 import { updateAlertPolicies } from "@/services/settingsService";
 import type { AlertPolicies, BandRange, Severity } from "@/types";
+import { tx } from "@/i18n/tx";
 
 /** `bands` son las del juego activo de la empresa (`GET /scoring/weights`, RC-237). */
 export function AlertPoliciesForm({ initial, bands }: { initial: AlertPolicies; bands: BandRange[] }) {
@@ -34,7 +35,7 @@ export function AlertPoliciesForm({ initial, bands }: { initial: AlertPolicies; 
     setResult(null);
     try {
       setPolicies(await updateAlertPolicies(policies));
-      setResult({ tone: "success", message: mensajeDeExito("updateAlertPolicies", "Políticas guardadas.") });
+      setResult({ tone: "success", message: mensajeDeExito("updateAlertPolicies", tx("Políticas guardadas.")) });
     } catch (error) {
       setResult({ tone: "error", message: getErrorMessage(error) });
     } finally {
@@ -44,10 +45,9 @@ export function AlertPoliciesForm({ initial, bands }: { initial: AlertPolicies; 
 
   return (
     <form onSubmit={onSubmit} className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
-      <Card title="Umbral de riesgo" description="La alerta se crea cuando el score de un dominio llega a este valor o lo pasa." icon={<Gauge aria-hidden="true" className="h-4 w-4" />}>
+      <Card title={tx("Umbral de riesgo")} description={tx("La alerta se crea cuando el score de un dominio llega a este valor o lo pasa.")} icon={<Gauge aria-hidden="true" className="h-4 w-4" />}>
         <label htmlFor={thresholdId} className="mb-1.5 block text-xs font-medium text-lt-muted">
-          Umbral (0 a 100)
-        </label>
+          {tx("Umbral (0 a 100)")}</label>
         <div className="flex items-center gap-4">
           <input
             type="range"
@@ -55,7 +55,7 @@ export function AlertPoliciesForm({ initial, bands }: { initial: AlertPolicies; 
             max={100}
             value={validThreshold ? threshold : 60}
             onChange={(e) => setPolicies((c) => ({ ...c, alert_score_threshold: Number(e.target.value) }))}
-            aria-label="Umbral de riesgo"
+            aria-label={tx("Umbral de riesgo")}
             className="min-w-0 flex-1 accent-lt-indigo"
           />
           <input
@@ -70,18 +70,16 @@ export function AlertPoliciesForm({ initial, bands }: { initial: AlertPolicies; 
         </div>
         {validThreshold ? (
           <p className="mt-3 flex items-center gap-2 text-xs text-lt-muted">
-            Un score de {threshold} está en la banda {thresholdBand ? <BandBadge band={thresholdBand} /> : "sin banda"}
+            {tx("Un score de")}{" "}{threshold} {" "}{tx("está en la banda")}{" "}{thresholdBand ? <BandBadge band={thresholdBand} /> : tx("sin banda")}
           </p>
         ) : (
-          <p className="mt-3 text-xs font-medium text-lt-red">Escribe un número entero de 0 a 100.</p>
+          <p className="mt-3 text-xs font-medium text-lt-red">{tx("Escribe un número entero de 0 a 100.")}</p>
         )}
         <p className="mt-4 text-xs leading-relaxed text-lt-faint">
-          El umbral no cambia con los cortes de bandas de la empresa.{highFrom !== undefined && ` La banda alta de tu empresa empieza en ${highFrom}.`} Las
-          alertas se envían por las integraciones de Webhooks.
-        </p>
+          {tx("El umbral no cambia con los cortes de bandas de la empresa.")}{highFrom !== undefined && tx(" La banda alta de tu empresa empieza en {0}.", highFrom)} {" "}{tx("Las alertas se envían por las integraciones de Webhooks.")}</p>
       </Card>
 
-      <Card title="Eventos que avisan" icon={<Bell aria-hidden="true" className="h-4 w-4" />}>
+      <Card title={tx("Eventos que avisan")} icon={<Bell aria-hidden="true" className="h-4 w-4" />}>
         <ul className="-my-3 divide-y divide-lt-border">
           {policies.policies.map((policy, index) => {
             const info = ALERT_EVENT_LABELS[policy.event];
@@ -97,7 +95,7 @@ export function AlertPoliciesForm({ initial, bands }: { initial: AlertPolicies; 
                 </label>
                 {policy.min_severity !== null && (
                   <select
-                    aria-label={`Severidad mínima para «${info.label}»`}
+                    aria-label={tx("Severidad mínima para «{0}»", info.label)}
                     value={policy.min_severity}
                     disabled={!policy.enabled}
                     onChange={(e) => update(index, { min_severity: e.target.value as Severity })}
@@ -105,7 +103,7 @@ export function AlertPoliciesForm({ initial, bands }: { initial: AlertPolicies; 
                   >
                     {(Object.keys(SEVERITY_LABELS) as Severity[]).map((s) => (
                       <option key={s} value={s}>
-                        Desde {SEVERITY_LABELS[s].toLowerCase()}
+                        {tx("Desde")}{" "}{SEVERITY_LABELS[s].toLowerCase()}
                       </option>
                     ))}
                   </select>
@@ -117,8 +115,7 @@ export function AlertPoliciesForm({ initial, bands }: { initial: AlertPolicies; 
         <div className="mt-5 flex flex-wrap items-center justify-end gap-3 border-t border-lt-border pt-4">
           {result && <InlineAlert tone={result.tone} className="mr-auto">{result.message}</InlineAlert>}
           <ActionButton type="submit" loading={busy} disabled={!validThreshold}>
-            Guardar políticas
-          </ActionButton>
+            {tx("Guardar políticas")}</ActionButton>
         </div>
       </Card>
     </form>

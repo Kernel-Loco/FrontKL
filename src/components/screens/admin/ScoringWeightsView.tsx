@@ -7,6 +7,7 @@ import { mismosCortes } from "@/lib/bandas";
 import { formatDateTime } from "@/lib/format";
 import type { Category, ScoringWeights } from "@/types";
 import { ScoringWeightsEditor } from "./ScoringWeightsEditor";
+import { tx } from "@/i18n/tx";
 
 const TH = "px-3 py-3 text-left text-xs font-medium text-lt-muted first:pl-5 last:pr-5";
 const TD = "px-3 py-3 align-middle text-sm text-lt-text first:pl-5 last:pr-5";
@@ -19,18 +20,17 @@ export function ScoringWeightsView({ weights }: { weights: ScoringWeights }) {
   return (
     <div className="space-y-6">
       <Card
-        title="Juego de reglas activo"
+        title={tx("Juego de reglas activo")}
         icon={<Scale aria-hidden="true" className="h-4 w-4" />}
-        action={<Badge tone="indigo">Versión {weights.rule_set_version}</Badge>}
+        action={<Badge tone="indigo">{tx("Versión")}{" "}{weights.rule_set_version}</Badge>}
       >
         <p className="text-sm text-lt-muted">
-          Activo desde {formatDateTime(weights.activated_at)}
-          {weights.validated_by ? ` · validado por ${weights.validated_by}` : " · sin validar"}. El score de cada dominio va de 0 a 100.
-        </p>
+          {tx("Activo desde")}{" "}{formatDateTime(weights.activated_at)}
+          {weights.validated_by ? tx(" · validado por {0}", weights.validated_by) : tx(" · sin validar")}{tx(". El score de cada dominio va de 0 a 100.")}</p>
       </Card>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card title="Peso de cada categoría" description="Cuánto aporta cada categoría al score total.">
+        <Card title={tx("Peso de cada categoría")} description={tx("Cuánto aporta cada categoría al score total.")}>
           <ul className="space-y-3">
             {categories.map((category) => (
               <li key={category}>
@@ -53,11 +53,11 @@ export function ScoringWeightsView({ weights }: { weights: ScoringWeights }) {
         </Card>
 
         <Card
-          title="Bandas de riesgo"
+          title={tx("Bandas de riesgo")}
           description={
             mismosCortes(weights.band_cutoffs, weights.band_cutoffs_template)
-              ? "El nivel que corresponde a cada rango del score. Tu empresa usa los cortes de la plantilla."
-              : `El nivel que corresponde a cada rango del score. Tu empresa usa sus propios cortes; los de la plantilla son ${weights.band_cutoffs_template.medium}, ${weights.band_cutoffs_template.high} y ${weights.band_cutoffs_template.critical}.`
+              ? tx("El nivel que corresponde a cada rango del score. Tu empresa usa los cortes de la plantilla.")
+              : tx("El nivel que corresponde a cada rango del score. Tu empresa usa sus propios cortes; los de la plantilla son {0}, {1} y {2}.", weights.band_cutoffs_template.medium, weights.band_cutoffs_template.high, weights.band_cutoffs_template.critical)
           }
         >
           <ul className="divide-y divide-lt-border">
@@ -67,35 +67,34 @@ export function ScoringWeightsView({ weights }: { weights: ScoringWeights }) {
                   {BAND_LABELS[b.band]}
                 </Badge>
                 <span className="tabular-nums text-lt-muted">
-                  {b.from} a {b.to}
+                  {tx("{0} a {1}", b.from, b.to)}
                 </span>
               </li>
             ))}
           </ul>
           <p className="mt-4 text-xs text-lt-muted">
-            Piso: con 1 hallazgo crítico vigente el score no baja de {weights.floor.one_critical}; con 2 o más, de {weights.floor.two_or_more_critical}. Umbral de
-            alerta por defecto: {weights.alert_threshold_default}.
+            {tx("Piso: con 1 hallazgo crítico vigente el score no baja de")}{" "}{weights.floor.one_critical}{tx("; con 2 o más, de")}{" "}{weights.floor.two_or_more_critical}{tx(". Umbral de alerta por defecto:")}{" "}{weights.alert_threshold_default}.
           </p>
-          <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-lt-muted" aria-label="Letras del score">
+          <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-lt-muted" aria-label={tx("Letras del score")}>
             {weights.grades.map((g) => (
               <li key={g.grade} className="tabular-nums">
-                <span className="font-semibold text-lt-text">{g.grade}</span> {g.from} a {g.to}
+                <span className="font-semibold text-lt-text">{g.grade}</span> {tx("{0} a {1}", g.from, g.to)}
               </li>
             ))}
           </ul>
         </Card>
       </div>
 
-      <Card title="Reglas" description="Peso y penalización máxima de cada regla." action={`${weights.rules.length} reglas`} padded={false}>
+      <Card title={tx("Reglas")} description={tx("Peso y penalización máxima de cada regla.")} action={tx("{0} reglas", weights.rules.length)} padded={false}>
         <TableWrap>
           <table className="w-full min-w-[560px]">
             <thead>
               <tr>
-                <th scope="col" className={TH}>Regla</th>
-                <th scope="col" className={TH}>Categoría</th>
-                <th scope="col" className={TH}>Severidad base</th>
-                <th scope="col" className={`${TH} text-right`}>Peso</th>
-                <th scope="col" className={`${TH} text-right`}>Penalización máx.</th>
+                <th scope="col" className={TH}>{tx("Regla")}</th>
+                <th scope="col" className={TH}>{tx("Categoría")}</th>
+                <th scope="col" className={TH}>{tx("Severidad base")}</th>
+                <th scope="col" className={`${TH} text-right`}>{tx("Peso")}</th>
+                <th scope="col" className={`${TH} text-right`}>{tx("Penalización máx.")}</th>
               </tr>
             </thead>
             <tbody>

@@ -12,13 +12,14 @@ import { errorDeCortes, mensajeDePesos, mismosCortes, vistaPrevia } from "@/lib/
 import { updateScoringWeights } from "@/services/scoringService";
 import { getErrorMessage } from "@/services/errors";
 import type { BandCutoffs, Category, ScoringWeights } from "@/types";
+import { tx, localized } from "@/i18n/tx";
 
 const CATEGORIES = Object.keys(CATEGORY_LABELS) as Category[];
-const CUTOFFS: { key: keyof BandCutoffs; label: string }[] = [
+const CUTOFFS: { key: keyof BandCutoffs; label: string }[] = localized([
   { key: "medium", label: "El medio empieza en" },
   { key: "high", label: "El alto empieza en" },
   { key: "critical", label: "El crítico empieza en" },
-];
+]);
 
 type WeightValues = Record<Category, string>;
 type CutoffValues = Record<keyof BandCutoffs, string>;
@@ -67,7 +68,7 @@ export function ScoringWeightsEditor({
   const [message, setMessage] = useState<ResultMessage | null>(null);
 
   const parsedCutoffs = parseCutoffs(cutoffs);
-  const cutoffError = parsedCutoffs ? errorDeCortes(parsedCutoffs) : "Cada corte debe ser un número entero.";
+  const cutoffError = parsedCutoffs ? errorDeCortes(parsedCutoffs) : tx("Cada corte debe ser un número entero.");
   const preview = parsedCutoffs && !cutoffError ? vistaPrevia(parsedCutoffs) : null;
   const cutoffsChanged = parsedCutoffs !== null && !mismosCortes(parsedCutoffs, savedCutoffs);
 
@@ -84,13 +85,13 @@ export function ScoringWeightsEditor({
     for (const category of CATEGORIES) {
       const percent = Number(values[category]);
       if (values[category].trim() === "" || !Number.isFinite(percent) || percent < 0 || percent > 100) {
-        setMessage({ tone: "error", text: "Cada peso debe ser un número entre 0 % y 100 %." });
+        setMessage({ tone: "error", text: tx("Cada peso debe ser un número entre 0 % y 100 %.") });
         return;
       }
 
       const hundredthsOfPercent = Math.round(percent * 100);
       if (Math.abs(percent * 100 - hundredthsOfPercent) > 1e-7) {
-        setMessage({ tone: "error", text: "Usa como máximo dos decimales en cada porcentaje." });
+        setMessage({ tone: "error", text: tx("Usa como máximo dos decimales en cada porcentaje.") });
         return;
       }
       parsed[category] = hundredthsOfPercent / 10_000;
@@ -98,15 +99,15 @@ export function ScoringWeightsEditor({
 
     const total = CATEGORIES.reduce((sum, category) => sum + (parsed[category] ?? 0), 0);
     if (Math.abs(total - 1) > 1e-9) {
-      setMessage({ tone: "error", text: "Los cuatro pesos deben sumar exactamente 100 %." });
+      setMessage({ tone: "error", text: tx("Los cuatro pesos deben sumar exactamente 100 %.") });
       return;
     }
     if (!parsedCutoffs || cutoffError) {
-      setMessage({ tone: "error", text: cutoffError ?? "Cada corte debe ser un número entero." });
+      setMessage({ tone: "error", text: cutoffError ?? tx("Cada corte debe ser un número entero.") });
       return;
     }
     if (!confirmed) {
-      setMessage({ tone: "error", text: "Confirma que entiendes el efecto de publicar los cambios." });
+      setMessage({ tone: "error", text: tx("Confirma que entiendes el efecto de publicar los cambios.") });
       return;
     }
 
@@ -138,8 +139,7 @@ export function ScoringWeightsEditor({
   return (
     <form onSubmit={submit} noValidate className="mt-5 space-y-4 border-t border-lt-border pt-5">
       <p className="text-xs text-lt-muted">
-        Ajusta la contribución relativa de cada categoría. La suma debe ser 100 %. Publicar cambios crea una versión nueva y recalcula los scores de la organización.
-      </p>
+        {tx("Ajusta la contribución relativa de cada categoría. La suma debe ser 100 %. Publicar cambios crea una versión nueva y recalcula los scores de la organización.")}</p>
       <div className="grid gap-3 sm:grid-cols-2">
         {CATEGORIES.map((category) => (
           <Field key={category} label={`${CATEGORY_LABELS[category]} (%)`} htmlFor={`weight-${category}`}>
@@ -156,19 +156,16 @@ export function ScoringWeightsEditor({
                 setMessage(null);
               }}
               className={INPUT}
-              aria-label={`${CATEGORY_LABELS[category]} en porcentaje`}
+              aria-label={tx("{0} en porcentaje", CATEGORY_LABELS[category])}
             />
           </Field>
         ))}
       </div>
 
       <fieldset className="space-y-3 border-t border-lt-border pt-4">
-        <legend className="text-sm font-medium text-lt-text">Cortes de bandas</legend>
+        <legend className="text-sm font-medium text-lt-text">{tx("Cortes de bandas")}</legend>
         <p className="text-xs text-lt-muted">
-          Dónde empieza cada banda, en números enteros. El bajo empieza en 0, cada banda necesita al menos 10 puntos y el crítico termina en 100. Los de la
-          plantilla son {templateCutoffs.medium}, {templateCutoffs.high} y {templateCutoffs.critical}. Las letras y el piso de los hallazgos críticos se mueven
-          con los cortes.
-        </p>
+          {tx("Dónde empieza cada banda, en números enteros. El bajo empieza en 0, cada banda necesita al menos 10 puntos y el crítico termina en 100. Los de la plantilla son")}{" "}{tx("{0}, {1} y {2}", templateCutoffs.medium, templateCutoffs.high, templateCutoffs.critical)}{tx(". Las letras y el piso de los hallazgos críticos se mueven con los cortes.")}</p>
         <div className="grid gap-3 sm:grid-cols-3">
           {CUTOFFS.map(({ key, label }) => (
             <Field key={key} label={label} htmlFor={`cutoff-${key}`}>
@@ -194,28 +191,27 @@ export function ScoringWeightsEditor({
           <p className="text-xs font-medium text-lt-red" role="alert">{cutoffError}</p>
         ) : (
           preview && (
-            <div className="space-y-2 rounded-md bg-lt-raised p-3 text-xs text-lt-muted" aria-label="Vista previa de los cortes">
+            <div className="space-y-2 rounded-md bg-lt-raised p-3 text-xs text-lt-muted" aria-label={tx("Vista previa de los cortes")}>
               <ul className="flex flex-wrap gap-2">
                 {preview.bands.map((b) => (
                   <li key={b.band} className="flex items-center gap-1.5 tabular-nums">
                     <Badge tone={BAND_TONE[b.band]}>{BAND_LABELS[b.band]}</Badge>
-                    {b.from} a {b.to}
+                    {tx("{0} a {1}", b.from, b.to)}
                   </li>
                 ))}
               </ul>
               <p className="tabular-nums">
-                Letras: {preview.grades.map((g) => `${g.grade} ${g.from} a ${g.to}`).join(" · ")}
+                {tx("Letras:")}{" "}{preview.grades.map((g) => `${g.grade} ${g.from} a ${g.to}`).join(" · ")}
               </p>
               <p className="tabular-nums">
-                Piso: con 1 hallazgo crítico vigente el score no baja de {preview.floor.one_critical}; con 2 o más, de {preview.floor.two_or_more_critical}.
+                {tx("Piso: con 1 hallazgo crítico vigente el score no baja de")}{" "}{preview.floor.one_critical}{tx("; con 2 o más, de")}{" "}{preview.floor.two_or_more_critical}.
               </p>
             </div>
           )
         )}
         {cutoffsChanged && !cutoffError && (
           <InlineAlert tone="warning">
-            Cambiar los cortes recalcula el score, la banda y la letra de cada dominio de la organización, y cambia su plan de acción.
-          </InlineAlert>
+            {tx("Cambiar los cortes recalcula el score, la banda y la letra de cada dominio de la organización, y cambia su plan de acción.")}</InlineAlert>
         )}
       </fieldset>
 
@@ -226,12 +222,10 @@ export function ScoringWeightsEditor({
           onChange={(event) => setConfirmed(event.target.checked)}
           className={`${CHECKBOX} mt-0.5`}
         />
-        Confirmo que publicar los cambios crea una versión nueva y recalcula los scores y el plan de acción de la organización.
-      </label>
+        {tx("Confirmo que publicar los cambios crea una versión nueva y recalcula los scores y el plan de acción de la organización.")}</label>
       {message && <InlineAlert tone={message.tone}>{message.text}</InlineAlert>}
       <ActionButton type="submit" loading={saving} disabled={!confirmed}>
-        Guardar y recalcular
-      </ActionButton>
+        {tx("Guardar y recalcular")}</ActionButton>
     </form>
   );
 }

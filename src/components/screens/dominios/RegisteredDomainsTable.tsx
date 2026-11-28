@@ -9,6 +9,7 @@ import { SOLID_TONES } from "@/components/ui/tones";
 import { formatDate } from "@/lib/format";
 import type { Domain } from "@/types";
 import { domainState, hasResults } from "../shared/domainState";
+import { tx } from "@/i18n/tx";
 
 interface RegisteredDomainsTableProps {
   domains: Domain[];
@@ -21,11 +22,11 @@ export function RegisteredDomainsTable({ domains, canOpenDetail }: RegisteredDom
       <table className="w-full min-w-[560px]">
         <thead>
           <tr>
-            <th scope="col" className={TH}>Dominio</th>
-            <th scope="col" className={TH}>Autorizó</th>
-            <th scope="col" className={TH}>Vigencia</th>
-            <th scope="col" className={TH}>Estado</th>
-            <th scope="col" className={TH}><span className="sr-only">Acciones</span></th>
+            <th scope="col" className={TH}>{tx("Dominio")}</th>
+            <th scope="col" className={TH}>{tx("Autorizó")}</th>
+            <th scope="col" className={TH}>{tx("Vigencia")}</th>
+            <th scope="col" className={TH}>{tx("Estado")}</th>
+            <th scope="col" className={TH}><span className="sr-only">{tx("Acciones")}</span></th>
           </tr>
         </thead>
         <tbody>
@@ -40,7 +41,7 @@ export function RegisteredDomainsTable({ domains, canOpenDetail }: RegisteredDom
                 </td>
                 <td className={`${TD} whitespace-nowrap text-[13px] text-lt-muted`}>{d.authorization.signer_email ?? "—"}</td>
                 <td className={`${TD} whitespace-nowrap text-[13px] text-lt-muted`}>
-                  {valid_until ? `${d.authorization.status === "expired" ? "venció " : "hasta "}${formatDate(valid_until)}` : "—"}
+                  {valid_until ? `${d.authorization.status === "expired" ? tx("venció ") : "hasta "}${formatDate(valid_until)}` : "—"}
                 </td>
                 <td className={TD}>
                   <Badge tone={state.tone} dot>
@@ -50,7 +51,7 @@ export function RegisteredDomainsTable({ domains, canOpenDetail }: RegisteredDom
                 <td className={`${TD} whitespace-nowrap text-right`}>
                   {canOpenDetail && hasResults(d) && (
                     <Link href={`/dashboard/dominios/${d.fqdn}`} className={`${TEXT_LINK} text-[13px]`}>
-                      Ver<span className="sr-only"> {d.fqdn}</span>
+                      {tx("Ver")}<span className="sr-only"> {d.fqdn}</span>
                     </Link>
                   )}
                 </td>

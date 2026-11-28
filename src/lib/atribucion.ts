@@ -2,6 +2,7 @@
 // bajo CC BY 4.0: el portal dice «Fuente: Have I Been Pwned» con enlace en cada hallazgo suyo, como el CSV (columna
 // atribucion de BackKL) y el reporte (attributions). Los enlaces son fijos: no se toman de la evidencia.
 import type { FindingSource } from "@/types";
+import { localized } from "@/i18n/tx";
 
 export interface Atribucion {
   text: string;
@@ -11,7 +12,7 @@ export interface Atribucion {
   licenseUrl: string;
 }
 
-export const ATRIBUCIONES: Partial<Record<FindingSource, Atribucion>> = {
+export const ATRIBUCIONES: Partial<Record<FindingSource, Atribucion>> = localized({
   hibp: {
     text: "Fuente: Have I Been Pwned",
     name: "Have I Been Pwned",
@@ -19,7 +20,7 @@ export const ATRIBUCIONES: Partial<Record<FindingSource, Atribucion>> = {
     license: "CC BY 4.0",
     licenseUrl: "https://creativecommons.org/licenses/by/4.0/",
   },
-};
+});
 
 /** La atribución de la fuente de un hallazgo, o null si su fuente no la pide. */
 export function atribucionDe(source: string): Atribucion | null {

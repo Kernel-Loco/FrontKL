@@ -3,6 +3,7 @@
 
 import { API_ACTIVITY_EVENT } from "@/config/session";
 import { parseRetryAfter, statusFromFetchFailure, withTimeout } from "./http";
+import { tx } from "@/i18n/tx";
 
 const API_URL = "/api/v1";
 
@@ -29,7 +30,7 @@ export async function apiErrorFromResponse(response: Response): Promise<ApiError
     detail && typeof detail === "object" && "detail" in detail && typeof detail.detail === "string"
       ? detail.detail
       : response.status === 422
-        ? "Revisa los datos e inténtalo de nuevo."
+        ? tx("Revisa los datos e inténtalo de nuevo.")
         : response.statusText;
   return new ApiError(response.status, message, detail, parseRetryAfter(response.headers));
 }
@@ -72,7 +73,7 @@ async function request<T>(
     body: body !== undefined ? JSON.stringify(body) : undefined,
     });
   } catch (error) {
-    throw new ApiError(statusFromFetchFailure(error, init.signal), "Sin conexión con el servicio.");
+    throw new ApiError(statusFromFetchFailure(error, init.signal), tx("Sin conexión con el servicio."));
   }
 
   if (!response.ok) {

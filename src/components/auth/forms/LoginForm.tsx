@@ -21,6 +21,7 @@ import { ceremonyErrorMessage, isCeremonyAborted } from "@/lib/passkeys";
 import { loginSchema, type LoginValues } from "@/lib/validation";
 import { login, passkeyLoginOptions, passkeyLoginVerify, requestLoginLink } from "@/services/authService";
 import { getErrorMessage } from "@/services/errors";
+import { tx } from "@/i18n/tx";
 
 const CAPTCHA_MISSING = "Marca 'No soy un robot' y espera a que diga Verificado.";
 
@@ -93,7 +94,7 @@ export function LoginForm() {
     setLinkNotice(null);
     if (!(await trigger("email"))) return;
     if (!captcha) {
-      setFormError(CAPTCHA_MISSING);
+      setFormError(tx(CAPTCHA_MISSING));
       return;
     }
     buttonActive.current = true;
@@ -115,13 +116,13 @@ export function LoginForm() {
   const onCaptcha = (payload: string | null) => {
     setCaptcha(payload);
     // El aviso de falta de captcha sobra en cuanto el widget dice Verificado. Los errores de la API se quedan.
-    if (payload) setFormError((current) => (current === CAPTCHA_MISSING ? null : current));
+    if (payload) setFormError((current) => (current === tx(CAPTCHA_MISSING) ? null : current));
   };
 
   const onSubmit = async (values: LoginValues) => {
     setFormError(null);
     if (!captcha) {
-      setFormError(CAPTCHA_MISSING);
+      setFormError(tx(CAPTCHA_MISSING));
       return;
     }
     try {
@@ -156,7 +157,7 @@ export function LoginForm() {
   return (
     <form method="post" onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
       <TextInput
-        label="Correo"
+        label={tx("Correo")}
         type="email"
         placeholder="nombre@organizacion.com"
         autoComplete="username"
@@ -164,15 +165,14 @@ export function LoginForm() {
         {...register("email")}
       />
       <TextInput
-        label="Contraseña"
+        label={tx("Contraseña")}
         type="password"
         placeholder="••••••••••••"
         autoComplete="current-password"
         error={errors.password?.message}
         labelAction={
           <Link href="/forgot-password" className="rounded-sm text-xs font-medium text-lt-primary hover:underline">
-            ¿Olvidaste tu contraseña?
-          </Link>
+            {tx("¿Olvidaste tu contraseña?")}</Link>
         }
         {...register("password")}
       />
@@ -180,17 +180,14 @@ export function LoginForm() {
       {formError && <Notice tone="error">{formError}</Notice>}
       {linkNotice && <Notice>{linkNotice}</Notice>}
       <Button type="submit" loading={busy && !passkeyBusy} disabled={passkeyBusy || linkBusy} className="!mt-6">
-        Iniciar sesión
-      </Button>
+        {tx("Iniciar sesión")}</Button>
       {supportsPasskeys && (
         <Button variant="secondary" onClick={onPasskey} loading={passkeyBusy} disabled={busy || linkBusy}>
-          Entrar con passkey
-        </Button>
+          {tx("Entrar con passkey")}</Button>
       )}
       {/* Junto a la contraseña, sin esconderla (decisión 7 de RC-327). */}
       <Button variant="secondary" onClick={onLink} loading={linkBusy} disabled={busy || passkeyBusy}>
-        Entrar con un enlace al correo
-      </Button>
+        {tx("Entrar con un enlace al correo")}</Button>
     </form>
   );
 }

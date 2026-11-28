@@ -13,6 +13,7 @@ import { ThemeToggle, type ThemeMode } from "./ThemeToggle";
 import { Logo } from "./Logo";
 import { OrganizationSwitcher } from "./OrganizationSwitcher";
 import { Spinner } from "./Spinner";
+import { tx } from "@/i18n/tx";
 
 export const MOBILE_NAV_ID = "mobile-navigation";
 export const DESKTOP_NAV_ID = "desktop-navigation";
@@ -50,15 +51,15 @@ function SidebarContent({ user, badges, theme, onThemeToggle, onNavigate, onColl
   return (
     <>
       <div className="flex h-20 shrink-0 items-center justify-between gap-2 pl-6 pr-3">
-        <Link href="/dashboard" onClick={onNavigate} className="rounded-md" aria-label="LowTide, ir al dashboard">
+        <Link href="/dashboard" onClick={onNavigate} className="rounded-md" aria-label={tx("LowTide, ir al dashboard")}>
           <Logo />
         </Link>
         {onCollapse && (
           <button
             type="button"
             onClick={onCollapse}
-            aria-label="Ocultar menú"
-            title="Ocultar menú"
+            aria-label={tx("Ocultar menú")}
+            title={tx("Ocultar menú")}
             className="rounded-md p-1.5 text-lt-faint hover:text-lt-text"
           >
             <Menu aria-hidden="true" className="h-[18px] w-[18px]" strokeWidth={1.5} />
@@ -70,18 +71,18 @@ function SidebarContent({ user, badges, theme, onThemeToggle, onNavigate, onColl
           <OrganizationSwitcher user={user} />
         ) : (
           <>
-            <p className="text-xs font-medium text-lt-faint">Empresa activa</p>
+            <p className="text-xs font-medium text-lt-faint">{tx("Empresa activa")}</p>
             {user ? (
               <p title={user.organization_name} className="mt-1 truncate text-sm font-semibold text-lt-text">
                 {user.organization_name}
               </p>
             ) : (
-              <p className="mt-1 text-sm font-semibold text-lt-amber">Sin conexión con el servicio</p>
+              <p className="mt-1 text-sm font-semibold text-lt-amber">{tx("Sin conexión con el servicio")}</p>
             )}
           </>
         )}
       </div>
-      <nav aria-label="Navegación principal" className="flex-1 space-y-7 overflow-y-auto px-3 py-2">
+      <nav aria-label={tx("Navegación principal")} className="flex-1 space-y-7 overflow-y-auto px-3 py-2">
         {getNavigation(role).map((group) => (
           <div key={group.title}>
             <p className="px-3 pb-2 text-xs font-medium text-lt-faint">{group.title}</p>
@@ -109,7 +110,7 @@ function SidebarContent({ user, badges, theme, onThemeToggle, onNavigate, onColl
                         ) : null}
                       </span>
                       <span className="truncate">{item.label}</span>
-                      {count ? <span className="sr-only">({count} requieren atención)</span> : null}
+                      {count ? <span className="sr-only">({count} {" "}{tx("requieren atención)")}</span> : null}
                     </Link>
                   </li>
                 );
@@ -125,7 +126,7 @@ function SidebarContent({ user, badges, theme, onThemeToggle, onNavigate, onColl
             href="/dashboard/perfil"
             onClick={onNavigate}
             className="-mx-2 flex items-center gap-3 rounded-lg px-2 py-1.5 hover:bg-lt-raised"
-            aria-label={`Mi perfil: ${user.full_name}, ${ROLE_LABELS[user.role]}`}
+            aria-label={tx("Mi perfil: {0}, {1}", user.full_name, ROLE_LABELS[user.role])}
           >
             <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-lt-nav text-xs font-bold text-lt-indigo-soft">
               {initials(user.full_name)}
@@ -144,8 +145,7 @@ function SidebarContent({ user, badges, theme, onThemeToggle, onNavigate, onColl
           className="mt-3 flex items-center gap-2 rounded-md px-1 py-1 text-sm text-lt-muted hover:text-lt-text disabled:opacity-60"
         >
           {loggingOut ? <Spinner /> : <LogOut aria-hidden="true" className="h-4 w-4" />}
-          Cerrar sesión
-        </button>
+          {tx("Cerrar sesión")}</button>
       </div>
     </>
   );
@@ -186,13 +186,13 @@ export function Sidebar({ user, badges, theme, onThemeToggle, mobileOpen, onMobi
           <div aria-hidden="true" className="absolute inset-0 bg-black/60" onClick={onMobileClose} />
           <aside
             id={MOBILE_NAV_ID}
-            aria-label="Menú"
+            aria-label={tx("Menú")}
             className="lt-side absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col border-r border-lt-border bg-lt-sidebar shadow-lg"
           >
             <button
               type="button"
               onClick={onMobileClose}
-              aria-label="Cerrar menú"
+              aria-label={tx("Cerrar menú")}
               autoFocus
               className="absolute right-3 top-6 z-20 rounded-md p-1.5 text-lt-muted hover:bg-lt-raised hover:text-lt-text"
             >

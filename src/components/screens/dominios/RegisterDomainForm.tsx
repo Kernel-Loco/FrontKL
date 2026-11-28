@@ -12,6 +12,7 @@ import { registerDomain, sendForSignature, uploadMifielSigned } from "@/services
 import { getErrorMessage } from "@/services/errors";
 import { ANEXO_A, PLANTILLA_VIGENTE, actividadesMarcadas } from "@/lib/anexoA";
 import type { Domain, DomainRegistrationRequest, SignatureRequest, SignatureRequestList, TxtVerification } from "@/types";
+import { tx, localized } from "@/i18n/tx";
 
 const MAX_PDF_BYTES = 5 * 1024 * 1024;
 const MAX_XML_BYTES = 7 * 1024 * 1024;
@@ -20,11 +21,11 @@ const VERIFY_XML = "https://app.mifiel.com/verify-xml";
 /** Cómo llega la carta (RC-211): subida a mano, firmada en la web de Mifiel (camino A) o mandada a firmar (camino B). */
 type LetterMode = "manual" | "mifiel_web" | "mifiel_api";
 
-const MODES: { id: LetterMode; label: string }[] = [
+const MODES: { id: LetterMode; label: string }[] = localized([
   { id: "manual", label: "Subir carta firmada" },
   { id: "mifiel_web", label: "Firmada en Mifiel" },
   { id: "mifiel_api", label: "Enviar a firmar" },
-];
+]);
 
 type Errors = Partial<
   Record<"fqdn" | "signer_name" | "signer_title" | "signer_email" | "letter" | "xml" | "valid_from" | "valid_until" | "activities" | "confirm", string>
@@ -67,22 +68,22 @@ export function RegisterDomainForm({ onRegistered, onSent, apiMode }: RegisterDo
     const activities = actividadesMarcadas(data.getAll("activities"));
 
     const next: Errors = {};
-    if (!fqdn) next.fqdn = "Escribe el dominio.";
-    if (!signer_name || signer_name.length > 200) next.signer_name = "Escribe el nombre de quien firma (máximo 200 caracteres).";
-    if (!signer_title || signer_title.length > 200) next.signer_title = "Escribe el cargo de quien firma (máximo 200 caracteres).";
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(signer_email)) next.signer_email = "Escribe un correo válido.";
-    if (!letter) next.letter = current === "mifiel_api" ? "Sube la carta de autorización sin firmar." : "Sube la carta de autorización firmada.";
-    else if (letter.type !== "application/pdf") next.letter = "La carta debe ser un PDF.";
-    else if (letter.size > MAX_PDF_BYTES) next.letter = "El PDF pesa más de 5 MB.";
+    if (!fqdn) next.fqdn = tx("Escribe el dominio.");
+    if (!signer_name || signer_name.length > 200) next.signer_name = tx("Escribe el nombre de quien firma (máximo 200 caracteres).");
+    if (!signer_title || signer_title.length > 200) next.signer_title = tx("Escribe el cargo de quien firma (máximo 200 caracteres).");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(signer_email)) next.signer_email = tx("Escribe un correo válido.");
+    if (!letter) next.letter = current === "mifiel_api" ? tx("Sube la carta de autorización sin firmar.") : tx("Sube la carta de autorización firmada.");
+    else if (letter.type !== "application/pdf") next.letter = tx("La carta debe ser un PDF.");
+    else if (letter.size > MAX_PDF_BYTES) next.letter = tx("El PDF pesa más de 5 MB.");
     if (current === "mifiel_web") {
-      if (!xml) next.xml = "Sube el XML que entrega Mifiel.";
-      else if (xml.size > MAX_XML_BYTES) next.xml = "El XML pesa más de 7 MB.";
+      if (!xml) next.xml = tx("Sube el XML que entrega Mifiel.");
+      else if (xml.size > MAX_XML_BYTES) next.xml = tx("El XML pesa más de 7 MB.");
     }
-    if (!valid_from) next.valid_from = "Elige la fecha de inicio.";
-    if (!valid_until) next.valid_until = "Elige la fecha de fin.";
-    else if (valid_from && valid_until <= valid_from) next.valid_until = "Debe ser posterior al inicio.";
-    if (activities.length === 0) next.activities = "Marca al menos una actividad que autoriza la carta.";
-    if (data.get("confirm") !== "on") next.confirm = "Confirma que la organización autorizó el monitoreo pasivo.";
+    if (!valid_from) next.valid_from = tx("Elige la fecha de inicio.");
+    if (!valid_until) next.valid_until = tx("Elige la fecha de fin.");
+    else if (valid_from && valid_until <= valid_from) next.valid_until = tx("Debe ser posterior al inicio.");
+    if (activities.length === 0) next.activities = tx("Marca al menos una actividad que autoriza la carta.");
+    if (data.get("confirm") !== "on") next.confirm = tx("Confirma que la organización autorizó el monitoreo pasivo.");
     setErrors(next);
     setResult(null);
     if (Object.keys(next).length > 0 || !letter) return;
@@ -105,7 +106,7 @@ export function RegisterDomainForm({ onRegistered, onSent, apiMode }: RegisterDo
         onSent?.(sent);
         setResult({
           tone: "success",
-          message: `Mifiel mandó la invitación a ${sent.signer_email}. Cuando firme, consulta el estado en «Cartas en firma» y confírmala.`,
+          message: tx("Mifiel mandó la invitación a {0}. Cuando firme, consulta el estado en «Cartas en firma» y confírmala.", sent.signer_email),
         });
       } else {
         const { domain, txt } =
@@ -115,8 +116,8 @@ export function RegisterDomainForm({ onRegistered, onSent, apiMode }: RegisterDo
           tone: "success",
           message:
             current === "mifiel_web"
-              ? `La carta de ${domain.fqdn} quedó registrada con el XML de Mifiel. Si el dominio es nuevo, publica el TXT de «Verificación TXT».`
-              : `${domain.fqdn} quedó registrado. Publica el TXT de «Verificación TXT» para comprobar el dominio.`,
+              ? tx("La carta de {0} quedó registrada con el XML de Mifiel. Si el dominio es nuevo, publica el TXT de «Verificación TXT».", domain.fqdn)
+              : tx("{0} quedó registrado. Publica el TXT de «Verificación TXT» para comprobar el dominio.", domain.fqdn),
         });
       }
       formRef.current?.reset();
@@ -133,16 +134,15 @@ export function RegisterDomainForm({ onRegistered, onSent, apiMode }: RegisterDo
 
   return (
     <Card
-      title="Registrar dominio"
-      description="Elige cómo llega la carta y marca las actividades del Anexo A que autoriza."
+      title={tx("Registrar dominio")}
+      description={tx("Elige cómo llega la carta y marca las actividades del Anexo A que autoriza.")}
       icon={<Globe aria-hidden="true" className="h-4 w-4" />}
       action={
         <Badge tone="indigo">
-          <ShieldCheck aria-hidden="true" className="h-3 w-3" /> Solo Administrador
-        </Badge>
+          <ShieldCheck aria-hidden="true" className="h-3 w-3" /> {" "}{tx("Solo Administrador")}</Badge>
       }
     >
-      <div role="radiogroup" aria-label="Cómo llega la carta" className="mb-4 grid gap-2 sm:grid-cols-3">
+      <div role="radiogroup" aria-label={tx("Cómo llega la carta")} className="mb-4 grid gap-2 sm:grid-cols-3">
         {MODES.filter((m) => m.id !== "mifiel_api" || apiOn).map((m) => (
           <button
             key={m.id}
@@ -165,7 +165,7 @@ export function RegisterDomainForm({ onRegistered, onSent, apiMode }: RegisterDo
       </div>
       {current === "mifiel_web" && (
         <p className="mb-4 text-xs text-lt-muted">
-          Sube el PDF firmado y el XML que descargaste de Mifiel. El XML trae la constancia NOM-151. Antes de subirlo, revísalo en{" "}
+          {tx("Sube el PDF firmado y el XML que descargaste de Mifiel. El XML trae la constancia NOM-151. Antes de subirlo, revísalo en")}{" "}
           <a href={VERIFY_XML} target="_blank" rel="noopener noreferrer" className="font-medium text-lt-indigo-soft underline underline-offset-2">
             app.mifiel.com/verify-xml
           </a>
@@ -174,31 +174,29 @@ export function RegisterDomainForm({ onRegistered, onSent, apiMode }: RegisterDo
       )}
       {current === "mifiel_api" && (
         <p className="mb-4 text-xs text-lt-muted">
-          Sube la carta sin firmar. Mifiel invita por correo a quien firma, que firma con su e.firma. La carta cuenta para el dominio hasta que la
-          confirmes en «Cartas en firma».
-          {apiMode === "sandbox" ? " Mifiel está en modo de pruebas: esta firma no tiene validez legal." : ""}
+          {tx("Sube la carta sin firmar. Mifiel invita por correo a quien firma, que firma con su e.firma. La carta cuenta para el dominio hasta que la confirmes en «Cartas en firma».")}{apiMode === "sandbox" ? tx(" Mifiel está en modo de pruebas: esta firma no tiene validez legal.") : ""}
         </p>
       )}
       <form ref={formRef} onSubmit={onSubmit} noValidate className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Dominio" htmlFor="fqdn" error={errors.fqdn}>
+          <Field label={tx("Dominio")} htmlFor="fqdn" error={errors.fqdn}>
             <input id="fqdn" name="fqdn" placeholder="ejemplo.com" autoComplete="off" className={`${INPUT} tabular-nums`} {...err("fqdn")} />
           </Field>
-          <Field label="Nombre de quien firma" htmlFor="signer_name" error={errors.signer_name}>
+          <Field label={tx("Nombre de quien firma")} htmlFor="signer_name" error={errors.signer_name}>
             <input id="signer_name" name="signer_name" maxLength={200} className={INPUT} {...err("signer_name")} />
           </Field>
         </div>
-        <Field label="Cargo de quien firma" htmlFor="signer_title" error={errors.signer_title}>
+        <Field label={tx("Cargo de quien firma")} htmlFor="signer_title" error={errors.signer_title}>
           <input id="signer_title" name="signer_title" maxLength={200} className={INPUT} {...err("signer_title")} />
         </Field>
         <Field
-          label={current === "mifiel_api" ? "Correo de quien firma (ahí llega la invitación de Mifiel)" : "Responsable que autoriza (correo)"}
+          label={current === "mifiel_api" ? tx("Correo de quien firma (ahí llega la invitación de Mifiel)") : tx("Responsable que autoriza (correo)")}
           htmlFor="signer_email"
           error={errors.signer_email}
         >
           <input id="signer_email" name="signer_email" type="email" placeholder="ciso@organizacion.com" className={INPUT} {...err("signer_email")} />
         </Field>
-        <Field label="Carta de autorización" htmlFor="letter" error={errors.letter}>
+        <Field label={tx("Carta de autorización")} htmlFor="letter" error={errors.letter}>
           <label
             htmlFor="letter"
             className={`flex cursor-pointer items-center justify-between gap-3 rounded-lg border border-dashed px-4 py-3 text-sm transition hover:bg-lt-indigo/5 ${
@@ -207,9 +205,9 @@ export function RegisterDomainForm({ onRegistered, onSent, apiMode }: RegisterDo
           >
             <span className="flex min-w-0 items-center gap-2 text-lt-indigo-soft">
               <Upload aria-hidden="true" className="h-4 w-4 shrink-0" />
-              <span className="truncate">{letter ? letter.name : current === "mifiel_api" ? "Subir PDF sin firmar" : "Subir PDF firmado"}</span>
+              <span className="truncate">{letter ? letter.name : current === "mifiel_api" ? tx("Subir PDF sin firmar") : tx("Subir PDF firmado")}</span>
             </span>
-            <span className="shrink-0 text-xs text-lt-faint">Máx. 5 MB</span>
+            <span className="shrink-0 text-xs text-lt-faint">{tx("Máx. 5 MB")}</span>
           </label>
           <input
             id="letter"
@@ -222,7 +220,7 @@ export function RegisterDomainForm({ onRegistered, onSent, apiMode }: RegisterDo
           />
         </Field>
         {current === "mifiel_web" && (
-          <Field label="XML de Mifiel" htmlFor="xml" error={errors.xml}>
+          <Field label={tx("XML de Mifiel")} htmlFor="xml" error={errors.xml}>
             <label
               htmlFor="xml"
               className={`flex cursor-pointer items-center justify-between gap-3 rounded-lg border border-dashed px-4 py-3 text-sm transition hover:bg-lt-indigo/5 ${
@@ -231,9 +229,9 @@ export function RegisterDomainForm({ onRegistered, onSent, apiMode }: RegisterDo
             >
               <span className="flex min-w-0 items-center gap-2 text-lt-indigo-soft">
                 <FileCode2 aria-hidden="true" className="h-4 w-4 shrink-0" />
-                <span className="truncate">{xml ? xml.name : "Subir XML"}</span>
+                <span className="truncate">{xml ? xml.name : tx("Subir XML")}</span>
               </span>
-              <span className="shrink-0 text-xs text-lt-faint">Máx. 7 MB</span>
+              <span className="shrink-0 text-xs text-lt-faint">{tx("Máx. 7 MB")}</span>
             </label>
             <input
               id="xml"
@@ -247,15 +245,15 @@ export function RegisterDomainForm({ onRegistered, onSent, apiMode }: RegisterDo
           </Field>
         )}
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Vigente desde" htmlFor="valid_from" error={errors.valid_from}>
+          <Field label={tx("Vigente desde")} htmlFor="valid_from" error={errors.valid_from}>
             <input id="valid_from" name="valid_from" type="date" className={INPUT} {...err("valid_from")} />
           </Field>
-          <Field label="Hasta" htmlFor="valid_until" error={errors.valid_until}>
+          <Field label={tx("Hasta")} htmlFor="valid_until" error={errors.valid_until}>
             <input id="valid_until" name="valid_until" type="date" className={INPUT} {...err("valid_until")} />
           </Field>
         </div>
         <fieldset aria-describedby={errors.activities ? "activities-error" : undefined}>
-          <legend className="mb-2 text-xs font-medium text-lt-muted">Actividades que autoriza la carta (Anexo A)</legend>
+          <legend className="mb-2 text-xs font-medium text-lt-muted">{tx("Actividades que autoriza la carta (Anexo A)")}</legend>
           <ul className="space-y-2">
             {ANEXO_A.map((a) => (
               <li key={a.id}>
@@ -268,7 +266,7 @@ export function RegisterDomainForm({ onRegistered, onSent, apiMode }: RegisterDo
               </li>
             ))}
           </ul>
-          <p className="mt-2 text-xs text-lt-faint">Desmarca las que la carta no autoriza. Esas fuentes no corren en los análisis.</p>
+          <p className="mt-2 text-xs text-lt-faint">{tx("Desmarca las que la carta no autoriza. Esas fuentes no corren en los análisis.")}</p>
           {errors.activities && (
             <p id="activities-error" className="mt-1.5 text-xs font-medium text-lt-red">
               {errors.activities}
@@ -279,8 +277,8 @@ export function RegisterDomainForm({ onRegistered, onSent, apiMode }: RegisterDo
           <label className="flex items-start gap-2.5 text-[13px] text-lt-muted">
             <input type="checkbox" name="confirm" className={`${CHECKBOX} mt-0.5`} {...err("confirm")} />
             {current === "mifiel_api"
-              ? "Confirmo que la carta autoriza el dominio y las actividades marcadas, que quien firma tiene facultad para hacerlo y que tengo permiso para mandarla a firmar para mi organización."
-              : "Confirmo que la carta está firmada, que autoriza el dominio y las actividades marcadas, y que tengo permiso para registrarlo para mi organización."}
+              ? tx("Confirmo que la carta autoriza el dominio y las actividades marcadas, que quien firma tiene facultad para hacerlo y que tengo permiso para mandarla a firmar para mi organización.")
+              : tx("Confirmo que la carta está firmada, que autoriza el dominio y las actividades marcadas, y que tengo permiso para registrarlo para mi organización.")}
           </label>
           {errors.confirm && (
             <p id="confirm-error" className="mt-1.5 text-xs font-medium text-lt-red">
@@ -290,7 +288,7 @@ export function RegisterDomainForm({ onRegistered, onSent, apiMode }: RegisterDo
         </div>
         {result && <InlineAlert tone={result.tone}>{result.message}</InlineAlert>}
         <ActionButton type="submit" loading={busy} className="h-11 w-full">
-          {current === "mifiel_api" ? "Enviar a firmar con Mifiel" : "Registrar carta"}
+          {current === "mifiel_api" ? tx("Enviar a firmar con Mifiel") : tx("Registrar carta")}
         </ActionButton>
       </form>
     </Card>

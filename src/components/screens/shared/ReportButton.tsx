@@ -6,6 +6,7 @@ import { ActionButton } from "@/components/ui/ActionButton";
 import { printReportHtml } from "@/lib/imprimirReporte";
 import { getErrorMessage } from "@/services/errors";
 import { downloadExecutiveHtml, downloadTechnicalHtml } from "@/services/reportService";
+import { tx } from "@/i18n/tx";
 
 interface ReportButtonProps {
   domain: string;
@@ -78,30 +79,27 @@ export function ReportButton({ domain, disabledReason, variant = "secondary", si
   return (
     <span className="relative inline-flex flex-col items-end">
       <span className="inline-flex flex-wrap justify-end gap-2">
-        <span className="inline-flex gap-2" role="group" aria-label="Reporte ejecutivo">
+        <span className="inline-flex gap-2" role="group" aria-label={tx("Reporte ejecutivo")}>
           <ActionButton variant={variant} size={size} loading={busy === "pdf"} disabled={Boolean(disabledReason) || busy !== null}
-            title={disabledReason ?? PDF_HINT} onClick={() => run("pdf")}>
+            title={disabledReason ?? tx(PDF_HINT)} onClick={() => run("pdf")}>
             {busy !== "pdf" && <FileDown aria-hidden="true" className={icon} />}
-            Exportar PDF
-          </ActionButton>
+            {tx("Exportar PDF")}</ActionButton>
           <ActionButton variant={variant} size={size} loading={busy === "html"} disabled={Boolean(disabledReason) || busy !== null}
-            title={disabledReason} onClick={() => run("html")} aria-label="Exportar reporte ejecutivo en HTML">
+            title={disabledReason} onClick={() => run("html")} aria-label={tx("Exportar reporte ejecutivo en HTML")}>
             {busy !== "html" && <FileCode aria-hidden="true" className={icon} />}
             HTML
           </ActionButton>
         </span>
         {technical && (
-          <span className="inline-flex gap-2" role="group" aria-label="Reporte técnico">
+          <span className="inline-flex gap-2" role="group" aria-label={tx("Reporte técnico")}>
             <ActionButton variant={variant} size={size} loading={busy === "tpdf"} disabled={Boolean(disabledReason) || busy !== null}
-              title={disabledReason ?? PDF_HINT} onClick={() => run("tpdf")} aria-label="Exportar reporte técnico en PDF">
+              title={disabledReason ?? tx(PDF_HINT)} onClick={() => run("tpdf")} aria-label={tx("Exportar reporte técnico en PDF")}>
               {busy !== "tpdf" && <FileDown aria-hidden="true" className={icon} />}
-              Técnico PDF
-            </ActionButton>
+              {tx("Técnico PDF")}</ActionButton>
             <ActionButton variant={variant} size={size} loading={busy === "thtml"} disabled={Boolean(disabledReason) || busy !== null}
-              title={disabledReason} onClick={() => run("thtml")} aria-label="Exportar reporte técnico en HTML">
+              title={disabledReason} onClick={() => run("thtml")} aria-label={tx("Exportar reporte técnico en HTML")}>
               {busy !== "thtml" && <FileCode aria-hidden="true" className={icon} />}
-              Técnico HTML
-            </ActionButton>
+              {tx("Técnico HTML")}</ActionButton>
           </span>
         )}
       </span>

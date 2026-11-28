@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { TriangleAlert } from "lucide-react";
 import { messageForStatus, messageFromDigest } from "@/services/errors";
+import { tx } from "@/i18n/tx";
 
 export interface SectionErrorProps {
   error: unknown;
@@ -36,7 +37,7 @@ export function SectionError({ error, retry, section, message }: SectionErrorPro
   return (
     <div role="alert" className="mx-auto mt-8 max-w-lg rounded-xl bg-lt-surface p-8 text-center">
       <TriangleAlert aria-hidden="true" className="mx-auto mb-4 h-7 w-7 text-lt-amber" />
-      <h1 className="text-xl font-bold text-lt-text">{section ? `No pudimos cargar ${section}` : "Algo salió mal"}</h1>
+      <h1 className="text-xl font-bold text-lt-text">{section ? tx("No pudimos cargar {0}", section) : tx("Algo salió mal")}</h1>
       <p className="mt-2 text-sm text-lt-muted">{message ?? messageFor(error)}</p>
       <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
         <button
@@ -44,11 +45,9 @@ export function SectionError({ error, retry, section, message }: SectionErrorPro
           onClick={() => retry()}
           className="inline-flex items-center rounded-lg bg-lt-indigo px-4 py-2 text-sm font-semibold text-white hover:bg-lt-indigo/90"
         >
-          Reintentar
-        </button>
+          {tx("Reintentar")}</button>
         <Link href="/dashboard" className="text-sm font-medium text-lt-muted underline underline-offset-2 hover:text-lt-text">
-          Ir al dashboard
-        </Link>
+          {tx("Ir al dashboard")}</Link>
       </div>
     </div>
   );

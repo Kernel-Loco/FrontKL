@@ -10,6 +10,7 @@ import { writeFlow } from "@/lib/flowStorage";
 import { tokenFromHash } from "@/lib/loginLink";
 import { redeemLoginLink } from "@/services/authService";
 import { getErrorMessage } from "@/services/errors";
+import { tx } from "@/i18n/tx";
 
 const NO_TOKEN = "El enlace no es válido o ya venció. Pide otro o entra con tu contraseña.";
 
@@ -72,10 +73,9 @@ export function LoginLinkForm() {
   if (!token) {
     return (
       <div className="space-y-4">
-        <Notice tone="error">{error ?? NO_TOKEN}</Notice>
+        <Notice tone="error">{error ?? tx(NO_TOKEN)}</Notice>
         <Link href="/login" className="block text-center text-sm font-medium text-lt-primary hover:underline">
-          Volver a iniciar sesión
-        </Link>
+          {tx("Volver a iniciar sesión")}</Link>
       </div>
     );
   }
@@ -83,11 +83,9 @@ export function LoginLinkForm() {
   return (
     <form method="post" onSubmit={onSubmit} noValidate className="space-y-4">
       <Button type="submit" loading={busy}>
-        Entrar a LowTide
-      </Button>
+        {tx("Entrar a LowTide")}</Button>
       <Link href="/login" className="block text-center text-sm font-medium text-lt-primary hover:underline">
-        Entrar con contraseña o passkey
-      </Link>
+        {tx("Entrar con contraseña o passkey")}</Link>
     </form>
   );
 }

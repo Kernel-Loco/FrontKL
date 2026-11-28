@@ -11,6 +11,7 @@ import { canAccessSection, SECTIONS } from "@/config/permissions";
 import { coverageIncomplete } from "@/lib/cobertura";
 import { leerAgrupar } from "@/lib/planAcumulado";
 import { getActionPlan, getDomainFindings, getDomains, getDomainScore } from "@/services/queries";
+import { tx } from "@/i18n/tx";
 
 export const metadata: Metadata = { title: SECTIONS.plan.label };
 
@@ -28,9 +29,9 @@ export default async function ActionPlanPage({ searchParams }: Props) {
   if (!fqdn) {
     return (
       <div className="space-y-6">
-        <PageHeader title="Plan de acción" description="Recomendaciones para reducir la exposición del dominio." />
+        <PageHeader title={tx("Plan de acción")} description={tx("Recomendaciones para reducir la exposición del dominio.")} />
         <Card>
-          <EmptyState title="Sin dominios con score">El plan aparecerá cuando un dominio complete su primer escaneo.</EmptyState>
+          <EmptyState title={tx("Sin dominios con score")}>{tx("El plan aparecerá cuando un dominio complete su primer escaneo.")}</EmptyState>
         </Card>
       </div>
     );
@@ -52,9 +53,9 @@ export default async function ActionPlanPage({ searchParams }: Props) {
   return (
     <div className="space-y-6">
       <PageHeader
-        breadcrumb={[{ label: fqdn, href: canOpenDetail ? `/dashboard/dominios/${fqdn}` : undefined }, { label: "Plan de acción" }]}
-        title="Plan de acción"
-        description="Revisa el impacto estimado y combina acciones para comparar el score resultante."
+        breadcrumb={[{ label: fqdn, href: canOpenDetail ? `/dashboard/dominios/${fqdn}` : undefined }, { label: tx("Plan de acción") }]}
+        title={tx("Plan de acción")}
+        description={tx("Revisa el impacto estimado y combina acciones para comparar el score resultante.")}
         actions={<DomainPicker domains={options} value={fqdn} />}
       />
       {canOpenDetail && <DomainTabs tabs={domainTabs(fqdn, findings?.total ?? 0, "plan", canSeeFindings, true, coverageIncomplete(score))} />}
