@@ -25,7 +25,9 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           <source src="/auth/oceano.mp4" type="video/mp4" />
         </video>
         <div aria-hidden="true" className="absolute inset-0 -z-10 bg-lt-paper/70" />
-        <Logo tone="light" />
+        <Link href="/" aria-label="LowTide, ir al inicio" className="self-start rounded-md">
+          <Logo tone="light" />
+        </Link>
         <div className="my-10 max-w-xl lg:mb-10 lg:mt-32">
           <h2 className="text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl lg:text-[2.6rem]">
             Inteligencia de la superficie de ataque externa

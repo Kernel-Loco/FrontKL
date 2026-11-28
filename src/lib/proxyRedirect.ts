@@ -11,7 +11,8 @@ function matches(pathname: string, base: string) {
 
 /** La ruta a la que redirigir, o null para seguir. */
 export function proxyRedirect(pathname: string, hasSession: boolean): string | null {
-  if (pathname === "/") return hasSession ? "/dashboard" : "/login";
+  // Sin sesión, "/" es la página de inicio del producto (RC-379).
+  if (pathname === "/") return hasSession ? "/dashboard" : null;
   if (!hasSession && matches(pathname, "/dashboard")) return "/login";
   if (ALWAYS_OPEN.some((base) => matches(pathname, base))) return null;
   if (hasSession && GUEST_ONLY.some((base) => matches(pathname, base))) return "/dashboard";

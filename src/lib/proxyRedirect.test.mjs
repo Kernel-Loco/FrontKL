@@ -14,7 +14,7 @@ test("1. la página del enlace se abre con o sin cookie, para que el #t= llegue 
 
 test("2. lo demás sigue igual", () => {
   assert.equal(proxyRedirect("/", true), "/dashboard");
-  assert.equal(proxyRedirect("/", false), "/login");
+  assert.equal(proxyRedirect("/", false), null); // la página de inicio (RC-379)
   assert.equal(proxyRedirect("/dashboard", false), "/login");
   assert.equal(proxyRedirect("/dashboard/dominios", false), "/login");
   assert.equal(proxyRedirect("/dashboard", true), null);
