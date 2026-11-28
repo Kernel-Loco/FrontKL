@@ -129,7 +129,7 @@ export function ComparadorInventario({ control }: { control: Comparacion }) {
       {inventario && resultado && (
         <>
           <InlineAlert tone="info">
-            La comparación con <span className="break-all font-mono">{inventario.archivo}</span> vive solo en esta pestaña: si recargas la
+            La comparación con <span className="break-all tabular-nums">{inventario.archivo}</span> vive solo en esta pestaña: si recargas la
             página se pierde y hay que volver a subir el archivo.
           </InlineAlert>
           {(inventario.invalidas > 0 || inventario.duplicadas > 0) && (
@@ -162,7 +162,7 @@ export function ComparadorInventario({ control }: { control: Comparacion }) {
               <p className="mt-2 text-xs text-lt-muted">
                 No aparecieron en las fuentes públicas de este escaneo. Eso no quiere decir que no existan.
               </p>
-              <ul className="mt-2 max-h-48 space-y-0.5 overflow-y-auto font-mono text-xs text-lt-muted">
+              <ul className="mt-2 max-h-48 space-y-0.5 overflow-y-auto tabular-nums text-xs text-lt-muted">
                 {resultado.noVistos.map((v) => (
                   <li key={v} className="break-all">{v}</li>
                 ))}

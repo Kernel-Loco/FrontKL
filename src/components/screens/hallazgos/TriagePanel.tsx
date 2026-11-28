@@ -78,7 +78,7 @@ export function TriagePanel({ finding, canTriage }: { finding: DomainFinding; ca
   };
 
   return (
-    <section aria-label="Estado del hallazgo" className="rounded-xl border border-lt-border bg-lt-surface p-5">
+    <section aria-label="Estado del hallazgo" className="rounded-xl bg-lt-surface p-5">
       <header className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="flex items-center gap-2 text-sm font-semibold text-lt-text">
           <ClipboardCheck aria-hidden="true" className="h-4 w-4 text-lt-indigo-soft" />
@@ -111,7 +111,7 @@ export function TriagePanel({ finding, canTriage }: { finding: DomainFinding; ca
           </div>
 
           {choice && (
-            <div className="space-y-3 rounded-lg border border-lt-border bg-lt-raised/40 p-3">
+            <div className="space-y-3 rounded-lg bg-lt-raised/40 p-3">
               <p className="text-xs text-lt-muted">{TRIAGE_CHOICE_HELP[choice]}</p>
               {choice === "accepted_risk" && (
                 <Field label="Fecha de revisión" htmlFor={ids.date} hint="Ese día el hallazgo vuelve al plan de acción.">

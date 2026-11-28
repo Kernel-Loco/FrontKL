@@ -31,7 +31,7 @@ export function Modal({ open, onClose, title, description, children }: ModalProp
       onClick={(event) => {
         if (event.target === ref.current) onClose();
       }}
-      className="m-auto w-[min(32rem,calc(100vw-2rem))] rounded-xl border border-lt-border bg-lt-surface p-0 text-lt-text shadow-2xl"
+      className="m-auto w-[min(32rem,calc(100vw-2rem))] rounded-xl bg-lt-surface p-0 text-lt-text shadow-lg"
     >
       <div className="p-6">
         <div className="flex items-start justify-between gap-4">

@@ -77,7 +77,7 @@ export function IntegrationsManager({ initial }: { initial: Integration[] }) {
               name="endpoint"
               type={kind === "email" ? "email" : "url"}
               placeholder={kind === "email" ? "seguridad@organizacion.com" : "https://hooks.organizacion.com/lowtide"}
-              className={`${INPUT} font-mono text-[13px]`}
+              className={`${INPUT} tabular-nums text-[13px]`}
               autoComplete="off"
             />
           </Field>
@@ -110,7 +110,7 @@ export function IntegrationsManager({ initial }: { initial: Integration[] }) {
                 <p className="flex items-center gap-2 text-sm font-medium text-lt-text">
                   {item.name} <Badge tone="indigo">{INTEGRATION_KIND_LABELS[item.kind]}</Badge>
                 </p>
-                <p className="mt-1 break-all font-mono text-[11px] text-lt-muted">{item.endpoint}</p>
+                <p className="mt-1 break-all tabular-nums text-[11px] text-lt-muted">{item.endpoint}</p>
                 <div className="mt-2 flex flex-wrap gap-1">
                   {item.events.map((e) => (
                     <Badge key={e} tone="gray">{eventLabel(e)}</Badge>

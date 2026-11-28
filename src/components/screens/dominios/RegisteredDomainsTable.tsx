@@ -21,10 +21,10 @@ export function RegisteredDomainsTable({ domains, canOpenDetail }: RegisteredDom
       <table className="w-full min-w-[560px]">
         <thead>
           <tr>
-            <th scope="col" className={`${TH} font-mono uppercase tracking-wider !text-[10px]`}>Dominio</th>
-            <th scope="col" className={`${TH} font-mono uppercase tracking-wider !text-[10px]`}>Autorizó</th>
-            <th scope="col" className={`${TH} font-mono uppercase tracking-wider !text-[10px]`}>Vigencia</th>
-            <th scope="col" className={`${TH} font-mono uppercase tracking-wider !text-[10px]`}>Estado</th>
+            <th scope="col" className={TH}>Dominio</th>
+            <th scope="col" className={TH}>Autorizó</th>
+            <th scope="col" className={TH}>Vigencia</th>
+            <th scope="col" className={TH}>Estado</th>
             <th scope="col" className={TH}><span className="sr-only">Acciones</span></th>
           </tr>
         </thead>
@@ -34,7 +34,7 @@ export function RegisteredDomainsTable({ domains, canOpenDetail }: RegisteredDom
             const { valid_until } = d.authorization;
             return (
               <tr key={d.id} className={TR}>
-                <td className={`${TD} whitespace-nowrap font-mono text-[13px]`}>
+                <td className={`${TD} whitespace-nowrap tabular-nums text-[13px]`}>
                   <span aria-hidden="true" className={`mr-2.5 inline-block h-1.5 w-1.5 rounded-full align-middle ${SOLID_TONES[state.tone].bg}`} />
                   {d.fqdn}
                 </td>

@@ -142,7 +142,7 @@ export function MfaEnrollForm() {
         />
         <div>
           <p className="text-xs text-slate-500">¿No puedes escanearlo? Escribe esta clave en la app:</p>
-          <p className="mt-1 break-all font-mono text-sm text-lt-ink" data-testid="mfa-secret">
+          <p className="mt-1 break-all tabular-nums text-sm text-lt-ink" data-testid="mfa-secret">
             {groupSecret(setup.secret)}
           </p>
         </div>

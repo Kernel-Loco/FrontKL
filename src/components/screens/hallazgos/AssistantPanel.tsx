@@ -160,7 +160,7 @@ export function AssistantPanel({ domain, findings }: { domain: string; findings:
   }
 
   return (
-    <section aria-labelledby={ids.titulo} className="rounded-xl border border-lt-border bg-lt-surface p-5">
+    <section aria-labelledby={ids.titulo} className="rounded-xl bg-lt-surface p-5">
       <div className="flex items-start gap-3">
         <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-lt-raised text-lt-teal">
           <Bot aria-hidden="true" className="h-4 w-4" />
@@ -251,7 +251,7 @@ export function AssistantPanel({ domain, findings }: { domain: string; findings:
           const total = intercambio.titulos.length;
           const citas = citasDeRespuesta(intercambio.respuesta, total);
           return (
-            <article key={intercambio.id} className="rounded-lg border border-lt-border bg-lt-bg p-4">
+            <article key={intercambio.id} className="rounded-lg bg-lt-bg p-4">
               {intercambio.automatica && (
                 <p className="mb-2 inline-flex rounded-md bg-lt-raised px-2 py-0.5 text-[11px] font-semibold text-lt-text">
                   Respuesta automática · no es de IA

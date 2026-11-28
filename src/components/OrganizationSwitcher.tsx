@@ -133,7 +133,7 @@ export function OrganizationSwitcher({ user }: { user: User }) {
 
   return (
     <div>
-      <label htmlFor={selectId} className="font-mono text-[10px] uppercase tracking-[0.15em] text-lt-faint">
+      <label htmlFor={selectId} className="text-xs font-medium text-lt-faint">
         Empresa activa
       </label>
       <div className="mt-1 flex items-center gap-2">

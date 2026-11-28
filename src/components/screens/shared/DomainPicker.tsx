@@ -19,7 +19,7 @@ export function DomainPicker({ domains, value }: { domains: string[]; value: str
         id={id}
         value={value}
         onChange={(e) => router.push(`${pathname}?dominio=${encodeURIComponent(e.target.value)}`)}
-        className={`${SELECT} font-mono text-[13px]`}
+        className={`${SELECT} tabular-nums text-[13px]`}
       >
         {domains.map((d) => (
           <option key={d} value={d}>

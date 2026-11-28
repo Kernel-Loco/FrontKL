@@ -15,12 +15,12 @@ interface CardProps {
 export function Card({ title, action, description, icon, padded = true, className = "", children }: CardProps) {
   const hasHeader = title || action;
   return (
-    <section className={`min-w-0 rounded-xl border border-lt-border bg-lt-surface ${className}`}>
+    <section className={`min-w-0 rounded-xl bg-lt-surface ${className}`}>
       {hasHeader && (
         <header className={`flex flex-wrap items-start justify-between gap-3 ${padded ? "px-5 pt-5" : "border-b border-lt-border px-5 py-4"}`}>
           <div className="flex min-w-0 items-start gap-3">
             {icon && (
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-lt-indigo/15 text-lt-indigo-soft">
+              <span className="flex h-5 shrink-0 items-center text-lt-muted">
                 {icon}
               </span>
             )}

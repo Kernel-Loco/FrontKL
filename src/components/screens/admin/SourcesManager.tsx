@@ -90,7 +90,7 @@ export function SourcesManager({ initial }: { initial: SourceSetting[] }) {
                       {s.org_enabled === false && <Badge tone="amber">Apagada por tu empresa</Badge>}
                       {s.effective_enabled && <Badge tone="green">Corre</Badge>}
                     </p>
-                    <p className="mt-1 font-mono text-[11px] text-lt-muted">{s.code}</p>
+                    <p className="mt-1 tabular-nums text-[11px] text-lt-muted">{s.code}</p>
                     {cambio && <p className="mt-1 text-[11px] text-lt-muted">{cambio}</p>}
                   </div>
                   <button

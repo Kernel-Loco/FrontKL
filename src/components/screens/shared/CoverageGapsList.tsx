@@ -20,7 +20,7 @@ export function CoverageGapsList({ gaps }: { gaps: CoverageGap[] | undefined }) 
             {group.sources.map((s, index) => (
               <span key={`${s.source ?? "sin-fuente"}-${s.name}`}>
                 {index > 0 && "; "}
-                {s.name} (<span className="font-mono text-[11px]">{s.codes.join(", ")}</span>)
+                {s.name} (<span className="tabular-nums text-[11px]">{s.codes.join(", ")}</span>)
               </span>
             ))}
           </li>

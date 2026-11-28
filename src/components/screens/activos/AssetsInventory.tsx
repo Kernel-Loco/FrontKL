@@ -90,7 +90,7 @@ export function AssetsInventory({
         <div>
           <label htmlFor={ids.dominio} className="mb-1.5 block text-xs font-medium text-lt-muted">Dominio</label>
           <select id={ids.dominio} value={dominio} onChange={(e) => setDominio(e.target.value)}
-            className={`${SELECT} font-mono text-[13px]`}>
+            className={`${SELECT} tabular-nums text-[13px]`}>
             <option value="">Todos</option>
             {dominios.map((d) => <option key={d} value={d}>{d}</option>)}
           </select>
@@ -178,14 +178,14 @@ export function AssetsInventory({
             <tbody>
               {activos.items.map((a) => (
                 <tr key={a.id} className={TR}>
-                  <td className={`${TD} max-w-xs break-all font-mono text-[13px]`}>{a.value}</td>
+                  <td className={`${TD} max-w-xs break-all tabular-nums text-[13px]`}>{a.value}</td>
                   <td className={TD}><Badge tone="indigo">{ASSET_TYPE_LABELS[a.type] ?? a.type}</Badge></td>
-                  <td className={`${TD} break-all font-mono text-xs`}>
+                  <td className={`${TD} break-all tabular-nums text-xs`}>
                     {canOpenDetail
                       ? <Link href={`/dashboard/dominios/${encodeURIComponent(a.domain)}`} className={TEXT_LINK}>{a.domain}</Link>
                       : a.domain}
                   </td>
-                  <td className={`${TD} break-all font-mono text-xs text-lt-muted`}>{a.parent ?? "—"}</td>
+                  <td className={`${TD} break-all tabular-nums text-xs text-lt-muted`}>{a.parent ?? "—"}</td>
                   <td className={`${TD} whitespace-nowrap text-[13px] text-lt-muted`}>{formatDateTime(a.first_seen_at)}</td>
                   <td className={`${TD} whitespace-nowrap text-[13px] text-lt-muted`}>{formatDateTime(a.last_seen_at)}</td>
                 </tr>

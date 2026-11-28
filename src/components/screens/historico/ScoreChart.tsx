@@ -29,7 +29,7 @@ export function ScoreChart({ points }: { points: ScoreHistoryPoint[] }) {
         {ticks.map((t) => (
           <g key={t}>
             <line x1={PAD.left} x2={W - PAD.right} y1={y(t)} y2={y(t)} className="stroke-white/8" />
-            <text x={PAD.left - 12} y={y(t)} dy="0.35em" textAnchor="end" className="fill-lt-muted font-mono text-[12px]">
+            <text x={PAD.left - 12} y={y(t)} dy="0.35em" textAnchor="end" className="fill-lt-muted tabular-nums text-[12px]">
               {t}
             </text>
           </g>

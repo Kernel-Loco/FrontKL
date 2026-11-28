@@ -48,7 +48,7 @@ export default async function AdminOverviewPage() {
                   const state = domainState(d);
                   return (
                     <li key={d.id} className="flex flex-wrap items-center justify-between gap-3 py-2.5">
-                      <span className="min-w-0 break-all font-mono text-[13px] text-lt-text">{d.fqdn}</span>
+                      <span className="min-w-0 break-all tabular-nums text-[13px] text-lt-text">{d.fqdn}</span>
                       <Badge tone={state.tone} dot>
                         {state.label}
                       </Badge>

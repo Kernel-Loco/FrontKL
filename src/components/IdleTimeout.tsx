@@ -228,17 +228,15 @@ export function IdleTimeout({ limits, userId }: { limits?: SessionLimits; userId
   const isAbsolute = warning.reason === "absolute";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
       <div
         role="alertdialog"
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={descriptionId}
-        className="w-full max-w-sm rounded-xl border border-lt-border bg-lt-surface p-6 shadow-2xl"
+        className="w-full max-w-sm rounded-xl bg-lt-surface p-6 shadow-lg"
       >
-        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-lt-indigo/15">
-          <Clock aria-hidden="true" className="h-6 w-6 text-lt-indigo-soft" />
-        </div>
+        <Clock aria-hidden="true" className="h-6 w-6 text-lt-muted" />
         <h2 id={titleId} className="mt-4 text-lg font-bold text-lt-text">
           {isAbsolute ? "Tu sesión está por llegar a su límite" : "¿Sigues ahí?"}
         </h2>
@@ -268,7 +266,7 @@ export function IdleTimeout({ limits, userId }: { limits?: SessionLimits; userId
                   }
                 : keepAlive
             }
-            className="rounded-lg bg-gradient-to-r from-lt-indigo to-lt-teal px-4 py-2 text-sm font-semibold text-white hover:brightness-110"
+            className="rounded-lg bg-lt-indigo px-4 py-2 text-sm font-semibold text-white hover:bg-lt-indigo/90"
           >
             {isAbsolute ? "Entendido" : "Continuar sesión"}
           </button>

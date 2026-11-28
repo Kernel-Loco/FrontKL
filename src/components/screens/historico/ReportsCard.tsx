@@ -33,7 +33,7 @@ export function ReportsCard({ reports, action }: { reports: Report[]; action?: R
                     {REPORT_KIND_LABELS[r.kind]}
                     {r.generated_at && <span className="block text-xs text-lt-faint">{formatDateTime(r.generated_at)}</span>}
                   </td>
-                  <td className={`${TD} font-mono text-[13px] text-lt-muted`}>{r.domain ?? "Todos"}</td>
+                  <td className={`${TD} tabular-nums text-[13px] text-lt-muted`}>{r.domain ?? "Todos"}</td>
                   <td className={`${TD} whitespace-nowrap text-[13px] text-lt-muted`}>
                     {formatDate(r.period_start)} – {formatDate(r.period_end)}
                   </td>

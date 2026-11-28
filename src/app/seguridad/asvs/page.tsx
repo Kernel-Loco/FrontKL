@@ -73,7 +73,7 @@ export default function AsvsPage() {
               {capitulo.lista.map((requisito) => (
                 <li key={requisito.id} className="px-4 py-4 sm:px-5">
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-                    <span className="font-mono text-xs font-semibold text-lt-muted">{requisito.id}</span>
+                    <span className="tabular-nums text-xs font-semibold text-lt-muted">{requisito.id}</span>
                     <Badge tone={ESTADOS[requisito.estado].tono} dot>
                       {ESTADOS[requisito.estado].etiqueta}
                     </Badge>

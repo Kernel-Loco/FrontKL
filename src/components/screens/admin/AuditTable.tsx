@@ -34,9 +34,9 @@ export function AuditTable({ entries }: { entries: AuditEntry[] }) {
               </td>
               <td className={TD}>
                 <span className="block text-[13px]">{AUDIT_ACTION_LABELS[e.action] ?? e.action}</span>
-                <code className="font-mono text-[11px] text-lt-faint">{e.action}</code>
+                <code className="tabular-nums text-[11px] text-lt-faint">{e.action}</code>
               </td>
-              <td className={`${TD} max-w-56 break-words font-mono text-[11px] text-lt-muted`}>{detailText(e.details)}</td>
+              <td className={`${TD} max-w-56 break-words tabular-nums text-[11px] text-lt-muted`}>{detailText(e.details)}</td>
             </tr>
           ))}
         </tbody>

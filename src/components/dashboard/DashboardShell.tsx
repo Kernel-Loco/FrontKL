@@ -6,7 +6,7 @@ import { Menu } from "lucide-react";
 import type { User } from "@/types";
 import { IdleTimeout } from "../IdleTimeout";
 import { Logo } from "../Logo";
-import { MOBILE_NAV_ID, Sidebar, type NavBadges } from "../Sidebar";
+import { DESKTOP_NAV_ID, MOBILE_NAV_ID, Sidebar, type NavBadges } from "../Sidebar";
 import { ThemeToggle, type ThemeMode } from "../ThemeToggle";
 
 interface DashboardShellProps {
@@ -41,10 +41,42 @@ function getServerThemeSnapshot(): ThemeMode {
   return "dark";
 }
 
+// Menú lateral oculto en escritorio (RC-369). Se recuerda en este navegador; si el almacenamiento falla, se muestra.
+const SIDEBAR_KEY = "lowtide-sidebar";
+
+function subscribeToSidebar(onChange: () => void) {
+  window.addEventListener("storage", onChange);
+  window.addEventListener("lowtide-sidebar-change", onChange);
+  return () => {
+    window.removeEventListener("storage", onChange);
+    window.removeEventListener("lowtide-sidebar-change", onChange);
+  };
+}
+
+function getSidebarSnapshot(): boolean {
+  try {
+    return window.localStorage.getItem(SIDEBAR_KEY) === "hidden";
+  } catch {
+    return false;
+  }
+}
+
+function setSidebarHidden(hidden: boolean) {
+  try {
+    if (hidden) window.localStorage.setItem(SIDEBAR_KEY, "hidden");
+    else window.localStorage.removeItem(SIDEBAR_KEY);
+  } catch {
+    // Sin almacenamiento el menú solo vuelve a mostrarse al recargar.
+  }
+  window.dispatchEvent(new Event("lowtide-sidebar-change"));
+}
+
 export function DashboardShell({ user, badges, children }: DashboardShellProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const theme = useSyncExternalStore(subscribeToTheme, getThemeSnapshot, getServerThemeSnapshot);
   const closeMenu = useCallback(() => setMenuOpen(false), []);
+  const sidebarHidden = useSyncExternalStore(subscribeToSidebar, getSidebarSnapshot, () => false);
+  const hideSidebar = useCallback(() => setSidebarHidden(true), []);
 
   const toggleTheme = () => {
     const nextTheme = theme === "dark" ? "light" : "dark";
@@ -60,9 +92,22 @@ export function DashboardShell({ user, badges, children }: DashboardShellProps) 
       >
         Saltar al contenido
       </a>
-      <Sidebar user={user} badges={badges} theme={theme} onThemeToggle={toggleTheme} mobileOpen={menuOpen} onMobileClose={closeMenu} />
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-lt-border bg-lt-bg/95 px-4 backdrop-blur md:hidden">
+      <Sidebar user={user} badges={badges} theme={theme} onThemeToggle={toggleTheme} mobileOpen={menuOpen} onMobileClose={closeMenu} collapsed={sidebarHidden} onCollapse={hideSidebar} />
+      <div className="relative flex min-w-0 flex-1 flex-col">
+        {sidebarHidden && (
+          <button
+            type="button"
+            onClick={() => setSidebarHidden(false)}
+            aria-label="Mostrar menú"
+            aria-controls={DESKTOP_NAV_ID}
+            aria-expanded={false}
+            title="Mostrar menú"
+            className="absolute left-3 top-3 z-30 hidden rounded-md p-1.5 text-lt-faint hover:text-lt-text md:block"
+          >
+            <Menu aria-hidden="true" className="h-[18px] w-[18px]" strokeWidth={1.5} />
+          </button>
+        )}
+        <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-lt-border bg-lt-bg px-4 md:hidden">
           <button
             type="button"
             onClick={() => setMenuOpen(true)}
@@ -81,10 +126,12 @@ export function DashboardShell({ user, badges, children }: DashboardShellProps) 
         </header>
         <main id="contenido" className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 md:px-10 md:py-10">
           {user && DEMO_ORGANIZATIONS.has(user.organization_name) && (
-            <div role="status" className="mb-6 border-l-2 border-lt-amber bg-lt-amber/5 px-4 py-3">
-              <p className="text-sm font-semibold text-lt-amber">Datos de demostración</p>
-              <p className="mt-0.5 text-xs text-lt-muted">Esta empresa usa información de prueba.</p>
-            </div>
+            <p role="status" className="mb-6 flex items-center gap-2 text-sm text-lt-muted">
+              <span aria-hidden="true" className="h-1.5 w-1.5 shrink-0 rounded-full bg-lt-amber" />
+              <span>
+                <span className="font-medium text-lt-text">Datos de demostración.</span> Esta empresa usa información de prueba.
+              </span>
+            </p>
           )}
           {children}
         </main>
